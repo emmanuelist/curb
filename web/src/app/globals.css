@@ -1,26 +1,167 @@
 @import "tailwindcss";
 
+/*
+ * Curb design tokens. Source: docs/BRIEF.md §4 (colours) with the D-011 amendments.
+ * Tier 1 names the road materials; tier 2 names what they mean. Components use tier 2 only.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Tier 1: materials */
+  --asphalt-950: #0b0d0f;
+  --asphalt-900: #111417;
+  --asphalt-800: #191d21;
+  --asphalt-700: #262b30;
+  --road-white: #ededed;
+  --road-grey: #9ea3a8;
+  --road-grey-dim: #5d6368;
+  --kerb-yellow: #ffd600;
+  --stop-red: #ff3838;
+
+  /* Tier 2: meaning */
+  --surface: var(--asphalt-950);
+  --surface-lane: var(--asphalt-900);
+  --surface-raised: var(--asphalt-800);
+  --rule: var(--asphalt-700);
+  --text: var(--road-white);
+  --text-muted: var(--road-grey);
+  --mark-faint: var(--road-grey-dim);
+  /** Trading-key activity and everything inside the lane. */
+  --trading-key: var(--road-white);
+  /** Owner key, and any money moving in or out. */
+  --owner-key: var(--kerb-yellow);
+  /** Refused onchain. Never "price down". */
+  --refused: var(--stop-red);
+
+  /* Motion */
+  --spring: linear(0, 0.06, 0.202, 0.38, 0.561, 0.723, 0.856, 0.955, 1.023, 1.062, 1.081, 1.083, 1.075, 1.062, 1.047, 1.032, 1.019, 1.009, 1.002, 0.997, 0.994, 0.993, 0.993, 0.994, 0.995, 0.996, 0.998, 0.999, 1);
+  --dash-period: 36px;
+
+  color-scheme: dark;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* Wide-gamut screens get the paint at full strength. */
+@supports (color: color(display-p3 1 1 1)) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --kerb-yellow: color(display-p3 1 0.84 0);
+    --stop-red: color(display-p3 1 0.2 0.18);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme inline {
+  --color-asphalt: var(--surface);
+  --color-lane: var(--surface-lane);
+  --color-raised: var(--surface-raised);
+  --color-rule: var(--rule);
+  --color-road: var(--text);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--mark-faint);
+  --color-kerb: var(--owner-key);
+  --color-stop: var(--refused);
+
+  --font-sans: var(--font-switzer), system-ui, sans-serif;
+  --font-display: var(--font-archivo), system-ui, sans-serif;
+  --font-mono: var(--font-martian), ui-monospace, monospace;
+  --font-stencil: var(--font-stencil-face), var(--font-archivo), sans-serif;
+}
+
+/* Reduced motion, per element: set --animation-reduced next to the animation it replaces. */
+@property --animation-reduced {
+  syntax: "*";
+  inherits: false;
+  initial-value: none;
+}
+
+@layer base {
+  html {
+    background: var(--surface);
+    color: var(--text);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-block-size: 100dvh;
+    font-family: var(--font-sans);
+    /* Asphalt aggregate: two sparse speckle layers, meant to be noticed late. */
+    background-color: var(--surface);
+    background-image:
+      radial-gradient(rgb(237 237 237 / 0.028) 1px, transparent 1.3px),
+      radial-gradient(rgb(0 0 0 / 0.4) 1px, transparent 1.4px);
+    background-size: 6px 6px, 9px 9px;
+    background-position: 0 0, 3px 4px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+  }
+
+  :where(button, a, input, select) {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  /* Numbers: fixed-width everywhere they are compared. */
+  .figures {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The off-book zone: road hatching. */
+  .hatch {
+    background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--text) 22%, transparent) 0 5px, transparent 0 12px);
+  }
+
+  .hatch-refused {
+    background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--refused) 55%, transparent) 0 5px, transparent 0 12px);
+  }
+
+  /* A curb line: a solid double line the trading key may not cross. */
+  .curb-line {
+    block-size: 9px;
+    border-block: 3px solid var(--trading-key);
+  }
+
+  /* The lane's centre dashes. They advance one period per real block (--step), and only then. */
+  .lane-dashes {
+    block-size: 4px;
+    background-image: repeating-linear-gradient(90deg, var(--trading-key) 0 22px, transparent 0 var(--dash-period));
+    background-position-x: calc(var(--step, 0) * var(--dash-period));
+    transition: background-position-x 300ms var(--spring);
+  }
+
+  .lane-dashes[data-status="stalled"],
+  .lane-dashes[data-status="error"] {
+    opacity: 0.35;
+  }
+
+  /* Painted kerb: owner-key territory, where money moves in and out. */
+  .kerb-painted {
+    block-size: 7px;
+    background-image: repeating-linear-gradient(90deg, var(--owner-key) 0 77px, rgb(0 0 0 / 0.45) 0 78px);
+  }
+
+  /* Price change: the display face stretches and settles, once per change. */
+  .price-settle {
+    animation: price-settle 420ms var(--spring) both;
+    --animation-reduced: none;
+  }
+}
+
+@keyframes price-settle {
+  from {
+    font-variation-settings: "wdth" 88;
+  }
+  to {
+    font-variation-settings: "wdth" 62;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .price-settle {
+    animation: var(--animation-reduced) !important;
+  }
+
+  .lane-dashes {
+    transition: none;
+  }
 }

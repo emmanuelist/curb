@@ -32,3 +32,16 @@ export const formatToken = (amount: bigint, decimals: number, dp = 2) =>
 
 /** "0x6Fa0…6e4a" */
 export const shortAddress = (address: string) => `${address.slice(0, 6)}…${address.slice(-4)}`;
+
+/**
+ * Parse a typed decimal ("0.026320", "200") into integer units of `precision` (a power of ten).
+ * Returns null for anything that isn't a plain non-negative decimal, or has more digits than the unit allows.
+ */
+export function parseDecimal(text: string, precision: bigint): bigint | null {
+  const trimmed = text.trim();
+  if (!/^\d*\.?\d*$/.test(trimmed) || trimmed === "" || trimmed === ".") return null;
+  const [whole = "", fraction = ""] = trimmed.split(".");
+  const digits = digitsOf(precision);
+  if (fraction.length > digits) return null;
+  return BigInt(whole || "0") * precision + BigInt((fraction || "").padEnd(digits, "0") || "0");
+}
