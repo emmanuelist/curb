@@ -20,6 +20,7 @@ Entered in **Monad Metropolis, Track 1 (Onchain Finance & Trading)**. The deadli
 ```
 contracts/   Foundry: CurbAccount + tests (fork tests against Monad mainnet)   [M0 spike → M2]
 web/         Next.js mobile-first app: Mera passkeys, viem, Kuru reads/writes   [M1]
+spikes/      throwaway M0 spikes kept with their evidence (not product code)
 docs/        STATE, PLAN, DECISIONS, EVIDENCE, CONTEXT
 internal/    research dossier, raw captures, strategy (gitignored, never commit)
 ```

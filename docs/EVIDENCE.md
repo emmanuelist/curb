@@ -34,3 +34,18 @@ Ran 1 test suite in 13.54s (13.53s CPU time): 1 tests passed, 0 failed, 0 skippe
 ```
 
 The resting buy locked exactly price × size: 0.026702 USDC × 200 MON = 5.3404 USDC (50 → 44.6596).
+
+| E-002 | 2026-09-26 | One passkey yields two distinct, reproducible EVM keys (owner/trading) via Mera PRF salts, and the trading key signs a tx with zero passkey prompts (anvil fork of Monad mainnet) | `spikes/passkey`: `window.runSpike()` driven by Playwright in Chromium 154 with a CDP virtual authenticator (`hasPrf: true`); output below | 6ad701a |
+
+### E-002 output (virtual authenticator; fork tx, not a real mainnet tx)
+
+```json
+{"authenticatorCredentials":1,
+ "result":{"rpId":"localhost","prfOutputBytes":[32,32,32],
+  "approachA_separateSalts":{"owner":"0xF8892B015A2207Fe1C11805da7423b6D663D3910","trade":"0xDe0eD293861B5FaeDC3670059FddCA5118516bcB","distinct":true,"tradeDeterministic":true},
+  "approachB_indices":{"owner":"0xdf640201e0229a5D05fEB6aC7F6BDe3071631a02","trade":"0x798bF6518CA9f57e42F0663d78bcEE82579bD642","distinct":true},
+  "createTimePrfEqualsDefaultSaltPrf":true,
+  "forkTx":{"from":"0xDe0eD293861B5FaeDC3670059FddCA5118516bcB","to":"0xF8892B015A2207Fe1C11805da7423b6D663D3910","hash":"0x061a3ac16b869fca3b88023926cc7fc5277dca886bf365ed7765e9939f2aeb96","status":"success","block":"108237484","ownerBalanceWei":"10000000000000000"},
+  "ceremonies":5,"ceremoniesDuringSigning":0}}
+```
+

@@ -98,6 +98,11 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
   - Which one Curb uses is decided at M2, after reading the Mera bounty text (#5).
 - **Sessions** (verified: captured "signing-sessions"): a session holds the key in memory until `end()`. After `end()`, the next signature needs a new ceremony and prompt. Session lifetime is "a trade-off between that prompt and the open window."
 - **Mera's live demo** (for checking a real device with zero setup): https://mera.category.xyz/demo/index.html
+- **Verified end to end in a browser (E-002, 2026-09-26):**
+  - Both derivation approaches produce distinct, reproducible addresses: separate salts (`sha256("curb.owner.v1")` / `sha256("curb.trade.v1")`), and BIP-44 indices 0/1 from the default salt.
+  - The PRF output returned by `createPasskeyWithPrfOutput` equals a later `getPasskeyPrfOutput` with the default salt.
+  - `toViemAccount(session)` + viem `sendTransaction` works with **0 passkey ceremonies**.
+- **Automating passkeys (for tests and the demo recording):** Chromium 154 via CDP `WebAuthn.addVirtualAuthenticator` supports `hasPrf: true`. Only **one `internal` authenticator per browser environment** is allowed; a second throws, so use `transport: "usb"` or reuse the first. `rp.id` `localhost` is accepted over http.
 
 ## Traps
 
@@ -124,3 +129,5 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 | `NEXT_PUBLIC_RP_ID` | WebAuthn relying-party ID, which must equal the deployed domain |
 | `DEPLOYER_PRIVATE_KEY` | Local only, for deploying CurbAccount contracts. Never committed. |
 | `ELEVENLABS_API_KEY` | M3 narration only (user-provided) |
+
+Local dev note (the user's machine): **port 5173 is already used by another project's Vite server**, and `localhost` resolves to it over IPv6. Use another port for Curb's dev server.
