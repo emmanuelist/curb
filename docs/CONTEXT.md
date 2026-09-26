@@ -28,15 +28,24 @@ Addresses from https://docs.kuru.io/contracts/Contract-addresses (captured 2026-
 | WMON | `0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A` | from docs only; code unverified |
 | KuruFlowEntrypoint / KuruFlowRouter / KuruForwarder | `0xb3e6…13cb` / `0x0d3a…FFa2` / `0x974E…FAA` | from docs only; unverified |
 
-### MON-USDC market parameters (verified: `getMarketParams()` at block 108,227,602)
-
-Field names follow the SDK's order; confirm them in #1.
+### MON-USDC market parameters (verified: `getMarketParams()` at block 108,227,602; field order confirmed by E-001)
 
 | pricePrecision | sizePrecision | base | baseDecimals | quote | quoteDecimals | tickSize | minSize | maxSize | takerFeeBps | makerFeeBps |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1e8 | 1e10 | native MON (`0x0`) | 18 | USDC | 6 | 100 | 2e12 | 2e18 | 0 | 0 |
 
-`bestBidAsk()` values look 1e18-scaled (2.6866e16 = 0.026866 USDC per MON). Unverified; confirm in #1.
+`bestBidAsk()` is **1e18-scaled** (verified, E-001): order price (pricePrecision units) = `bestBid * pricePrecision / 1e18`. An order placed at that price became the new best bid exactly.
+
+**Kuru behaviour confirmed on a mainnet fork (E-001, 2026-09-26):**
+
+- A **contract** can be the order owner: `s_orders(id)` returns the contract as the owner. (resolves D-004's open question)
+- `MarginAccount.getBalance` is in the **token's own decimals** (50 USDC → `50000000`).
+- A resting buy locks **price × size** of quote from margin (0.026702 × 200 MON = 5.3404 USDC).
+- A new order's id is `s_orderIdCounter()` read **after** placement (the counter increments, then assigns).
+- `batchCancelOrders` returns the locked quote; `withdraw(amount, token)` pays `msg.sender`.
+- **Smallest order = minSize 2e12 / sizePrecision 1e10 = 200 MON**, about $5.34 at 0.0267. Budget any real mainnet trade at ≥ $6 of USDC plus gas.
+- Forking Monad mainnet through the public RPC works: the test completes in about 13.5 s, with no historical-state errors at the fork block.
+- Caveat: fork tests run Kuru's bytecode in revm under **Ethereum** gas rules. Monad's gas-limit charging and reserve-balance rules are not simulated.
 
 ## Kuru ABI surface (from `@kuru-labs/kuru-sdk` 0.0.95 `abi/*.json`, last published 2026-01-27)
 
@@ -60,7 +69,7 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 
 **Errors seen onchain:** `Unauthorized()` 0x82b42900 · `SizeError()` 0x0a5c4f1f · `InsufficientBalance()` 0xf4d678b8
 
-**Order placement is permissionless** (verified): `eth_call addBuyOrder` from a random EOA reverts `InsufficientBalance()`, not `Unauthorized()`. Whether a **contract** can be the order owner is unverified (#1).
+**Order placement is permissionless** (verified): `eth_call addBuyOrder` from a random EOA reverts `InsufficientBalance()`, not `Unauthorized()`. A **contract** can be the order owner (verified on a fork, E-001).
 
 ## Mera (`@category-labs/mera` 0.2.0; verified by reading `dist/*.d.ts`, 2026-09-26)
 
