@@ -4,8 +4,8 @@ _Last verified: 2026-09-26, branch `2-passkey-two-keys`; repo: https://github.co
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M0 · Spikes (due 2026-09-28) · **Deadline:** 2026-10-13 23:59 ET · 17 days left
-**Next action:** M0 is done except #4 (needs ~$2 of MON + go-ahead) and #5 (bounty texts). Without those, start M1 (#6): scaffold web/, CI, design direction.
-**Blocked on:** #4 needs ~$2 of MON and a go-ahead. #5 needs the bounty texts pasted.
+**Next action:** M0 is done except #5 (bounty texts, from the user). #4 is folded into M1 (D-010). Waiting on the user's go-ahead for M1 (#6): scaffold web/, CI, design direction, deploy.
+**Blocked on:** #5 needs the bounty texts pasted. M1's exit needs ~50 MON sent to the phone-derived address (D-010).
 
 ## Works (verified this session)
 

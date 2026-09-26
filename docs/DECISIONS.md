@@ -107,3 +107,10 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** none.
 **Consequences:** The local numbering in D-008 maps to GitHub as follows: 3a → **#3** (closed, verified), 3b → **#4**, bounty texts → **#5**. Placeholders are #6–#9 for M1–M4.
 **Evidence:** GitHub issues #1–#9; the #3 closing comment.
+
+## D-010 · Fold the "real mainnet tx" spike (#4) into M1's exit test · 2026-09-26 · accepted
+**Context:** #4 asked for one real mainnet tx from a Mera-derived key. E-002 already proves the signing path (a fork tx with zero prompts), and #3 proves PRF works on the user's iPhone. Funding a key that lives only in a virtual authenticator risks losing the funds when the browser session ends.
+**Decision:** Close #4. The real-mainnet check moves to M1 (#6), whose exit criterion is already stronger: from the deployed URL, on the user's phone, a real passkey creates the account and sends one real Monad mainnet tx.
+**Alternatives:** Persist the virtual authenticator's credential and fund it now. That adds ceremony and money risk for no extra confidence.
+**Consequences:** M0's exit criterion (3) is dropped. M1 needs the user to send a little MON (about 50 MON ≈ $1.35 at 0.027) to the phone-derived address. Real Kuru orders in M2 need ≥ $6 USDC (the minimum order is 200 MON) plus gas.
+**Evidence:** E-002; #3; docs/PLAN.md M1.
