@@ -114,3 +114,24 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** Persist the virtual authenticator's credential and fund it now. That adds ceremony and money risk for no extra confidence.
 **Consequences:** M0's exit criterion (3) is dropped. M1 needs the user to send a little MON (about 50 MON ≈ $1.35 at 0.027) to the phone-derived address. Real Kuru orders in M2 need ≥ $6 USDC (the minimum order is 200 MON) plus gas.
 **Evidence:** E-002; #3; docs/PLAN.md M1.
+
+## D-011 · Adopt the master build brief with seven amendments · 2026-09-26 · accepted
+**Context:** The user supplied a full design and frontend brief (now docs/BRIEF.md) and an AI-generated concept board. The brief formalises the painted-curb direction drawn on the design canvas. Parts of it conflict with the hackathon rules, earlier decisions, or the calendar.
+**Decision:** docs/BRIEF.md is the design and frontend spec. Its amendments block takes precedence:
+
+1. No mock data layer. Dev runs on an anvil fork of mainnet; fixtures live in tests only.
+2. No wagmi (D-003 stands). TanStack Query for onchain state.
+3. Scope is 11 thesis-carrying screens, with the rest cut openly.
+4. Onboarding added, with an in-app-browser guard and PRF error guidance.
+5. Desktop terminal is first-class from M1.
+6. The brief's hex colours are canonical, plus P3 versions.
+7. The concept board is a mood reference only and is never published.
+
+**Alternatives:** Adopting the brief as written (24 screens, a mock layer, wagmi) risks rules §9.1 ("not a mockup") and the 2026-10-13 deadline.
+**Consequences:**
+
+- PLAN milestones now map the brief's phases: M1 = phases 1–2 plus onboarding and deploy; M2 = phases 3–5 plus CurbAccount; M3 = phases 7–11 plus proof.
+- The cut list grows.
+- The design canvas used draft colours (#151516 / #f2efe6 / #ffd12a / #e8372c). The code uses the brief's values.
+
+**Evidence:** docs/BRIEF.md; user choice "Adopt with amendments", 2026-09-26.
