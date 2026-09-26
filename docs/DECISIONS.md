@@ -135,3 +135,21 @@ Append-only. To change a decision, add a new entry that supersedes it.
 - The design canvas used draft colours (#151516 / #f2efe6 / #ffd12a / #e8372c). The code uses the brief's values.
 
 **Evidence:** docs/BRIEF.md; user choice "Adopt with amendments", 2026-09-26.
+
+## D-012 · Keys: one PRF salt per role, Mera's canonical path within each · 2026-09-26 · accepted
+**Context:** E-002 verified two ways to get several keys from one passkey: separate PRF salts, or BIP-44 indices from one PRF output. The Mera bounty text (#5) is still missing, and M1 needs real addresses now.
+**Decision:**
+
+- Owner key: PRF salt `sha256("curb.owner.v1")`. Trading key: PRF salt `sha256("curb.trade.v1")`.
+- Within each salt, Mera's recipe applies: PRF output → BIP-39 → BIP-32 `m/44'/60'/0'/0/0`.
+- Creating an account costs two biometric prompts; signing in costs two; every owner-key action costs one.
+
+**Alternatives:** Indices 0 and 1 from one PRF output need one prompt, but deriving the trading key then makes the owner key derivable in the same moment. That contradicts the thesis.
+**Consequences:**
+
+- Changing either salt changes every address, so these strings are now permanent.
+- The trading key never needs owner material. Each role's key can be exported as a standard mnemonic.
+- Revisit only if the Mera bounty requires something else.
+
+**Evidence:** E-002, E-004; web/src/lib/passkey/keys.ts.
+

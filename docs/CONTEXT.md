@@ -11,7 +11,9 @@ Status tags: **verified** = a check we ran (command + date) · **reported** = re
 | Monad mainnet | 143 | `https://rpc.monad.xyz` | verified 2026-09-26: `eth_chainId` → 0x8f; block ~108.2M |
 | Monad testnet | 10143 | `https://testnet-rpc.monad.xyz` | verified 2026-09-26 (not used; D-005) |
 
-Explorer URLs (MonadScan / MonadVision): unverified. Confirm before linking from the README.
+**WebSocket:** `wss://rpc.monad.xyz` streams new blocks (verified 2026-09-26: 6 blocks, gaps 24–517 ms, about 330 ms average). `wss://rpc.monad.xyz/ws` timed out; drpc's free plan refuses subscriptions.
+**viem:** `viem/chains` → `monad` (id 143) carries both RPCs, both WebSockets, Multicall3 `0xcA11bde05977b3631167028862bE2a173976CA11` (code verified onchain) and explorers.
+**Explorers:** Monadscan `https://monadscan.com/tx/<hash>` and `/address/<addr>` return 200 (verified); Curb links there. MonadVision returns 403 to non-browser clients, so it's unverified.
 
 ## Contracts we call (Monad mainnet)
 
@@ -102,6 +104,7 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
   - Both derivation approaches produce distinct, reproducible addresses: separate salts (`sha256("curb.owner.v1")` / `sha256("curb.trade.v1")`), and BIP-44 indices 0/1 from the default salt.
   - The PRF output returned by `createPasskeyWithPrfOutput` equals a later `getPasskeyPrfOutput` with the default salt.
   - `toViemAccount(session)` + viem `sendTransaction` works with **0 passkey ceremonies**.
+- **End-to-end on a fork (E-004):** run `anvil --fork-url https://rpc.monad.xyz --chain-id 143`, then `NEXT_PUBLIC_MONAD_RPC_URL=http://127.0.0.1:8545 npx next dev`. A fresh Playwright context lets you add an `internal` virtual authenticator again. Fund keys with `anvil_setBalance`.
 - **Automating passkeys (for tests and the demo recording):** Chromium 154 via CDP `WebAuthn.addVirtualAuthenticator` supports `hasPrf: true`. Only **one `internal` authenticator per browser environment** is allowed; a second throws, so use `transport: "usb"` or reuse the first. `rp.id` `localhost` is accepted over http.
 
 ## Traps
@@ -112,6 +115,7 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 - **Kuru market creation is gated on mainnet** (`Unauthorized()` on Router and MonadDeployer) and open on testnet. (verified)
 - **An empty book returns sentinels:** MON-AUSD `bestBidAsk()` → (2^256−1, 0); testnet MON-USDC → (2^256−1, 1.001e18) with no bids. The price check must treat these as "no market" and **refuse**, never compute a band from them. (verified)
 - Orders below `minSize` revert `SizeError()`. (verified)
+- **Newer Foundry refuses Monad forks.** CI's default Foundry (via foundry-toolchain v1.9.1, 2026-09-26) failed `vm.createSelectFork` with "cannot create a `monad` fork with an EVM instantiated for `ethereum`". Foundry **1.4.4** forks fine (E-001). CI is pinned to v1.4.4. Before upgrading, find the Monad network setting in the newer Foundry's docs. (verified in CI run 36271718824)
 - Kuru's `Trade` event records `txOrigin`, so the trading-key EOA shows up as the origin even when CurbAccount is the owner.
 - The testnet book is unusable for demos: no bids, one stray ask at 1.001 USDC, empty vault. (verified) → D-005.
 - **Passkeys without PRF fail at creation.** `createPasskeyWithPrfOutput` throws `PRF_UNAVAILABLE`, most likely for judges on desktop Chrome with local-profile passkeys, or with Bitwarden/Dashlane intercepting. The app must catch it and say exactly what to do: use Safari, turn on Chrome's "Offer to save passwords and passkeys" (Google Password Manager), or open it on a phone. (verified: authenticator-support capture)
