@@ -1,0 +1,32 @@
+# Strategy, research, PRD: never commit (rules §5.3, submissions are non-confidential)
+internal/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/31337/
+contracts/broadcast/**/dry-run/
+
+# Tool scratch
+.playwright-mcp/
+.vercel/
+.DS_Store
+*.log
+
+# Local copy of the platform rules (archived in internal/research/raw/)
+rules-and-guildline.md
