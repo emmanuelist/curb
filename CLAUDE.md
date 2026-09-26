@@ -40,6 +40,9 @@ Latest on npm as of 2026-09-26. Pin exactly in package.json at scaffold (M1) and
 | @category-labs/mera | **0.2.0 exact.** New library, pre-1.0; read its `.d.ts` before using anything. |
 | Foundry | forge 1.4.4 |
 | TypeScript | decide at scaffold: use TS 7 only if Next 16.3 typechecks with it; otherwise the newest version it supports |
+| TanStack Query | latest v5 at scaffold. All async and onchain reads go through it (D-011). |
+| wagmi | **Not used** (D-011): there's no browser wallet, since passkey → Mera → viem signs. |
+| Motion | Optional, only for gesture and spring interactions CSS can't express (BRIEF §15). Verify the version at scaffold. |
 | ethers | **Never in the web runtime.** `@kuru-labs/kuru-sdk` bundles ethers 5.7.1. Use the SDK only for its ABI JSON files; call Kuru through viem (D-003). |
 
 ## Rules
@@ -77,7 +80,8 @@ forge test                         # contracts (fork tests need MONAD_RPC_URL)
 | Why we chose what we chose | docs/DECISIONS.md (append-only) |
 | Proof that things work | docs/EVIDENCE.md (append-only) |
 | Verified facts about dependencies, and traps | docs/CONTEXT.md. Read it before touching Kuru, Mera or Monad specifics. |
-| Research, bounty requirements, strategy | internal/ (gitignored) |
+| Design and frontend spec | docs/BRIEF.md (amendments first) |
+| Research, bounty requirements, strategy, concept art | internal/ (gitignored) |
 
 ## Operating protocol
 
