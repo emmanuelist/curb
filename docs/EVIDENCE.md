@@ -63,3 +63,5 @@ The resting buy locked exactly price × size: 0.026702 USDC × 200 MON = 5.3404 
  "signInSameAddresses":true,"inAppGuard":true,"createButtonHidden":true}
 ```
 
+| E-005 | 2026-09-26 | CI green on both jobs: web (lint 0 warnings, typecheck, 17 tests, build) and contracts (fmt, build, Kuru fork test against the public Monad RPC) | [CI run 36271831598](https://github.com/emmanuelist/curb/actions/runs/36271831598) | PR #14 |
+

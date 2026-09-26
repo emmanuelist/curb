@@ -16,7 +16,7 @@ _Last verified: 2026-09-26, branch `6-m1-scaffold`; repo: https://github.com/emm
 | Passkey PRF on the user's iPhone (Safari) | Mera live demo | #3 |
 | Trade screen on live data; lane dashes step once per real block | Playwright on mainnet data | E-003 |
 | Onboarding, owner-key tx, sign-in recovery, in-app guard | Playwright + virtual authenticator + anvil fork | E-004 |
-| Gate: lint (0 warnings), typecheck, 17 tests, warning-free production build | local run | — |
+| Gate: lint (0 warnings), typecheck, 17 tests, warning-free build; contracts fork test | CI on GitHub | E-005 |
 
 ## Deployed
 
@@ -26,7 +26,6 @@ _Last verified: 2026-09-26, branch `6-m1-scaffold`; repo: https://github.com/emm
 
 ## Broken or unverified
 
-- CI has not run yet; it will on the first PR.
 - The Buy button is disabled until CurbAccount exists (M2, #7), and the UI says so.
 - `evm_version = cancun` for Monad is still assumed (contracts/foundry.toml).
 - Visual pass at 430 and 1280 not done yet (390/768/1440 checked).
