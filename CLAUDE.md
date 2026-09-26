@@ -20,7 +20,7 @@ Entered in **Monad Metropolis, Track 1 (Onchain Finance & Trading)**. The deadli
 ```
 contracts/   Foundry: CurbAccount + tests (fork tests against Monad mainnet)   [M0 spike → M2]
 web/         Next.js mobile-first app: Mera passkeys, viem, Kuru reads/writes   [M1]
-docs/        STATE, PLAN, DECISIONS, EVIDENCE, CONTEXT (+ ISSUES until a GitHub remote exists)
+docs/        STATE, PLAN, DECISIONS, EVIDENCE, CONTEXT
 internal/    research dossier, raw captures, strategy (gitignored, never commit)
 ```
 
@@ -72,7 +72,7 @@ forge test                         # contracts (fork tests need MONAD_RPC_URL)
 | Concern | File |
 |---|---|
 | Milestones and exit criteria | docs/PLAN.md |
-| Work items | docs/ISSUES.md until the GitHub remote exists, then GitHub issues (`gh issue list --milestone "<current>"`) |
+| Work items | GitHub issues on emmanuelist/curb (`gh issue list --milestone "<current>"`); milestone titles match docs/PLAN.md |
 | Why we chose what we chose | docs/DECISIONS.md (append-only) |
 | Proof that things work | docs/EVIDENCE.md (append-only) |
 | Verified facts about dependencies, and traps | docs/CONTEXT.md. Read it before touching Kuru, Mera or Monad specifics. |

@@ -100,3 +100,10 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** none needed; this narrows D-007.
 **Consequences:** #3 splits into 3a (PRF on the user's iPhone via Mera's live demo; no funds, required) and 3b (one mainnet tx; needs about $2 and the user's go-ahead).
 **Evidence:** internal/research/raw/mera-authenticator-support-2026-09-26.md.
+
+## D-009 · Repo is public on GitHub; issues moved there · 2026-09-26 · accepted (supersedes D-006's "proposed" status)
+**Context:** The user approved D-006.
+**Decision:** https://github.com/emmanuelist/curb is public. Work items live in GitHub issues with milestones M0–M4 (due 23:59 ET on the PLAN dates). docs/ISSUES.md is deleted.
+**Alternatives:** none.
+**Consequences:** The local numbering in D-008 maps to GitHub as follows: 3a → **#3** (closed, verified), 3b → **#4**, bounty texts → **#5**. Placeholders are #6–#9 for M1–M4.
+**Evidence:** GitHub issues #1–#9; the #3 closing comment.

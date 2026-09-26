@@ -86,7 +86,7 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 - **Mera's canonical key derivation** (verified: captured recipe "create-passkey-accounts"): `prfOutput` → `entropyToMnemonic` (BIP-39) → `mnemonicToSeedSync` → BIP-32 `m/44'/60'/0'/0/{index}` → `createSecp256k1SigningSession`. This needs `@scure/bip32`, `@scure/bip39` and `@noble/hashes`.
   - In that scheme **one prompt yields every indexed key**. So whenever the trading key is derived, the owner key is derivable in the same moment.
   - The alternative is a **separate PRF salt per role**: `getPasskeyPrfOutput({ prfSalt })` gives unrelated outputs, so the trading-key material never contains the owner key. The cost is one prompt per role.
-  - Which one Curb uses is decided at M2, after reading the Mera bounty text (#4).
+  - Which one Curb uses is decided at M2, after reading the Mera bounty text (#5).
 - **Sessions** (verified: captured "signing-sessions"): a session holds the key in memory until `end()`. After `end()`, the next signature needs a new ceremony and prompt. Session lifetime is "a trade-off between that prompt and the open window."
 - **Mera's live demo** (for checking a real device with zero setup): https://mera.category.xyz/demo/index.html
 
