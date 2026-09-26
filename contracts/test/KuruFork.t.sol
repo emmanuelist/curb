@@ -63,9 +63,11 @@ contract KuruForkTest is Test {
         assertEq(bidPx * 1e18 / pricePrecision, bid, "bestBid maps exactly onto pricePrecision units");
         assertEq(bidPx % tick, 0, "bestBid sits on a tick");
 
-        // Improve the bid by one tick (still below the ask, so a post-only order rests).
-        uint32 myPx = uint32(bidPx + tick);
-        assertLt(uint256(myPx) * 1e18 / pricePrecision, ask, "one tick above bid is still below ask");
+        // Improve the bid by one tick when the spread allows it; with a one-tick spread (seen live in CI),
+        // join the best bid instead. Either way the order rests without crossing.
+        uint256 askPx = ask * pricePrecision / 1e18;
+        uint32 myPx = askPx - bidPx > tick ? uint32(bidPx + tick) : uint32(bidPx);
+        assertLt(uint256(myPx) * 1e18 / pricePrecision, ask, "the order rests below the ask");
 
         // 3. Place: the contract becomes the order owner.
         uint40 idBefore = MON_USDC.s_orderIdCounter();
