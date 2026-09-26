@@ -49,3 +49,17 @@ The resting buy locked exactly price × size: 0.026702 USDC × 200 MON = 5.3404 
   "ceremonies":5,"ceremoniesDuringSigning":0}}
 ```
 
+| E-003 | 2026-09-26 | The Trade screen runs on live Monad and Kuru data: WebSocket block stream, a book read per ~2 blocks, the lane from `bestBidAsk()` ±0.50%. Lane dashes advance exactly once per real block. | Playwright on `next dev` against mainnet: blocks 108,278,665→108,278,670 (5 blocks) gave `--step` 3→8 (5 steps) in 1.5 s; no horizontal overflow at 390/768/1440; no app console errors | branch `6-m1-scaffold` |
+| E-004 | 2026-09-26 | Onboarding and owner key, end to end on a Monad mainnet fork: one passkey creates owner and trading keys; the owner key (biometric) sends MON to the trading key; sign-in recovers the same addresses; the in-app guard blocks Telegram | Playwright + CDP virtual authenticator (`hasPrf`) + anvil fork (chain 143), output below | branch `6-m1-scaffold` |
+
+### E-004 output (fork, not a real mainnet tx; the real one is M1's phone check, D-010)
+
+```json
+{"created":{"owner":"0x55b6b2A327e73b577B52483C56439078a47011de","trading":"0x7edDa0F21801a523Af9231aCbF66cD9138cF3752"},
+ "fund":"ok",
+ "tx":"0xd96ab165f06acd7a75cda82536ce38defa86090bdd5756c5666417705c644f85",
+ "receipt":{"status":"0x1","from":"0x55b6…11de","to":"0x7edd…3752","gasUsed":"21000"},
+ "tradingBalanceWei":"1000000000000000000",
+ "signInSameAddresses":true,"inAppGuard":true,"createButtonHidden":true}
+```
+

@@ -5,8 +5,9 @@ import { useState } from "react";
 import { CurbLane } from "@/components/curb/curb-lane";
 import { OrderTicket, readTicket, type TicketState } from "@/components/trading/order-ticket";
 import { PriceDisplay } from "@/components/trading/price-display";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, shortAddress } from "@/lib/format";
 import { MON_USDC } from "@/lib/markets/registry";
+import { useAccount } from "@/hooks/use-account";
 import { useLiveBlock } from "@/hooks/use-live-block";
 import { useMarket } from "@/hooks/use-market";
 
@@ -107,12 +108,26 @@ function MarketFacts({ snapshot }: { snapshot: ReturnType<typeof useMarket>["sna
 }
 
 function AccountStrip() {
+  const account = useAccount();
   return (
     <div className="mt-6 flex items-center justify-between gap-3 border-t border-rule pt-4">
-      <p className="text-[12px] text-muted">No Curb account on this device yet.</p>
-      <Link href="/start" className="inline-flex min-h-11 items-center text-[13px] font-semibold text-road underline decoration-faint underline-offset-4">
-        Create with a passkey
-      </Link>
+      {account ? (
+        <>
+          <p className="figures text-[11px] text-muted">
+            TRADING KEY <span className="text-road">{shortAddress(account.trading)}</span>
+          </p>
+          <Link href="/keys" className="inline-flex min-h-11 items-center text-[13px] font-semibold text-kerb">
+            Keys &amp; deposit
+          </Link>
+        </>
+      ) : (
+        <>
+          <p className="text-[12px] text-muted">No Curb account on this device yet.</p>
+          <Link href="/start" className="inline-flex min-h-11 items-center text-[13px] font-semibold text-road underline decoration-faint underline-offset-4">
+            Create with a passkey
+          </Link>
+        </>
+      )}
     </div>
   );
 }

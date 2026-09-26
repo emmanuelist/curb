@@ -33,14 +33,16 @@ Latest on npm as of 2026-09-26. Pin exactly in package.json at scaffold (M1) and
 |---|---|
 | Node | ≥ 22 |
 | Package manager | npm (pnpm is not installed; don't add a second lockfile) |
-| Next.js | 16.3.x, App Router only. **The Pages Router must never appear.** |
-| React | 19.3.x |
-| Tailwind CSS | 4.3.x, CSS-first config. **No `tailwind.config.js` in v3 style.** |
-| viem | 2.56.x (Mera's peer range is ^2.28.0) |
+| Next.js | 16.3.6, App Router only. **The Pages Router must never appear.** |
+| React | 19.2.8 (what Next 16.3.6 ships) |
+| Tailwind CSS | 4.3.3, CSS-first config. **No `tailwind.config.js` in v3 style.** |
+| viem | 2.56.9 exact (Mera's peer range is ^2.28.0) |
 | @category-labs/mera | **0.2.0 exact.** New library, pre-1.0; read its `.d.ts` before using anything. |
 | Foundry | forge 1.4.4 |
-| TypeScript | decide at scaffold: use TS 7 only if Next 16.3 typechecks with it; otherwise the newest version it supports |
-| TanStack Query | latest v5 at scaffold. All async and onchain reads go through it (D-011). |
+| TypeScript | 5.9.3 (Next 16.3.6 template), target ES2022 (BigInt) |
+| TanStack Query | 5.104.0. All async and onchain reads go through it (D-011). |
+| Vitest | 3.2.7 (`npm test`) |
+| @scure/bip32 · @scure/bip39 · @noble/hashes | 2.4.0 · 2.4.0 · 2.2.0 exact (Mera's key recipe, D-012) |
 | wagmi | **Not used** (D-011): there's no browser wallet, since passkey → Mera → viem signs. |
 | Motion | Optional, only for gesture and spring interactions CSS can't express (BRIEF §15). Verify the version at scaffold. |
 | ethers | **Never in the web runtime.** `@kuru-labs/kuru-sdk` bundles ethers 5.7.1. Use the SDK only for its ABI JSON files; call Kuru through viem (D-003). |
@@ -67,7 +69,8 @@ Set at M1 via the `premium-product-design` skill. Until then: mobile-first at a 
 ```bash
 npm run lint -- --max-warnings 0   # web
 npm run typecheck                  # web
-npm run build                      # web
+npm test                           # web (vitest)
+npm run build                      # web, must be warning-free
 forge test                         # contracts (fork tests need MONAD_RPC_URL)
 ```
 

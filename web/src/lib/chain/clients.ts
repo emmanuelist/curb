@@ -4,13 +4,14 @@ import { monad } from "viem/chains";
 /** Monad mainnet (chain 143). viem's definition carries RPC, WebSocket, Multicall3 and explorers. */
 export const chain = monad;
 
-const httpUrl = process.env.NEXT_PUBLIC_MONAD_RPC_URL || monad.rpcUrls.default.http[0];
+/** HTTP RPC for reads and writes. Point it at an anvil fork of mainnet for development (D-011). */
+export const rpcHttpUrl = process.env.NEXT_PUBLIC_MONAD_RPC_URL || monad.rpcUrls.default.http[0];
 const wsUrl = process.env.NEXT_PUBLIC_MONAD_WS_URL || monad.rpcUrls.default.webSocket[0];
 
 /** Reads (multicall-batched). */
 export const publicClient: PublicClient = createPublicClient({
   chain: monad,
-  transport: http(httpUrl),
+  transport: http(rpcHttpUrl),
   batch: { multicall: true },
 });
 
@@ -23,6 +24,5 @@ export function getWsClient(): PublicClient {
   return wsClient;
 }
 
-/** Explorer link for a transaction or address (MonadVision, from viem's chain definition). */
-export const explorerUrl = (kind: "tx" | "address", value: string) =>
-  `${monad.blockExplorers.monadvision.url}/${kind}/${value}`;
+/** Explorer link (Monadscan, viem's default explorer for Monad; /tx and /address paths verified 2026-09-26). */
+export const explorerUrl = (kind: "tx" | "address", value: string) => `${monad.blockExplorers.default.url}/${kind}/${value}`;
