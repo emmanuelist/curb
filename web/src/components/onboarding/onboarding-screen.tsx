@@ -125,7 +125,7 @@ function Shell({ title, lede, children }: { title?: ReactNode; lede?: string; ch
   return (
     <main className="mx-auto grid w-full max-w-[1100px] pb-32 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-8 md:px-8 md:pb-16 md:pt-10">
       <section aria-label="Curb" className="relative isolate flex min-h-[300px] flex-col justify-between overflow-hidden px-[22px] pb-7 pt-6 md:min-h-[620px] md:rounded-[16px] md:border md:border-rule md:shadow-[var(--shadow-panel)] md:p-8">
-        <Image src="/plates/curb-photo.png" alt="" fill fetchPriority="high" sizes="(min-width: 768px) 50vw, 100vw" className="pointer-events-none -z-10 object-cover object-[70%_100%]" />
+        <Image src="/plates/curb-photo.png" alt="" fill loading="eager" fetchPriority="high" sizes="(min-width: 768px) 50vw, 100vw" className="pointer-events-none -z-10 object-cover object-[70%_100%]" />
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgb(11_13_15/0.55)_0%,rgb(11_13_15/0.15)_40%,rgb(11_13_15/0.95)_100%)]" aria-hidden="true" />
         <div className="flex items-center justify-between md:hidden">
           <Wordmark />

@@ -51,7 +51,8 @@ export const TradeHero = memo(function TradeHero({ market, lane, bids, asks, dra
         alt=""
         width={1170}
         height={1044}
-        // The phone's LCP. `priority` is deprecated in Next 16; a bare preload fetches at Low, so ask for High directly.
+        // The phone's LCP. Next 16 dropped `priority`, and its images default to lazy: eager + high, or it waits for layout.
+        loading="eager"
         fetchPriority="high"
         // The hero is phone-only (md:hidden); from md up the smallest candidate stands in, so desktop never downloads it.
         sizes="(min-width: 768px) 1px, 100vw"
