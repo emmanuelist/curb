@@ -21,7 +21,8 @@ export function LanePreview() {
         <h2 id="lane-preview-h" className="text-[15px] font-semibold text-road">
           Order lane preview
         </h2>
-        <p className="text-[12px] text-muted">
+        <p className="flex items-center gap-1.5 text-[12px] text-muted">
+          <span className={`size-1.5 rounded-full ${status === "live" ? "bg-live" : "bg-faint"}`} aria-hidden="true" />
           {market.base.symbol} / {market.quote.symbol} · Kuru
         </p>
       </header>

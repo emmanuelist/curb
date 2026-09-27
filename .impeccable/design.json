@@ -13,7 +13,8 @@
       "road-grey": { "role": "neutral", "displayName": "Road Grey", "canonical": "#9aa1a8", "tonalRamp": ["#1c1f22", "#30353a", "#464c52", "#5f666d", "#7b8289", "#9aa1a8", "#bcc1c6", "#e0e3e6"] },
       "road-grey-dim": { "role": "neutral", "displayName": "Dim Road Grey", "canonical": "#5f666d", "tonalRamp": ["#1c1f22", "#30353a", "#464c52", "#5f666d", "#7b8289", "#9aa1a8", "#bcc1c6", "#e0e3e6"] },
       "kerb-yellow": { "role": "secondary", "displayName": "Kerb Yellow", "canonical": "color(display-p3 1 0.85 0.05)", "tonalRamp": ["#2e2600", "#4d4000", "#735f00", "#9c8200", "#c7a600", "#ffd600", "#ffe34d", "#fff3b3"] },
-      "stop-red": { "role": "tertiary", "displayName": "Stop Red", "canonical": "color(display-p3 1 0.24 0.22)", "tonalRamp": ["#330a0a", "#5c1010", "#8a1717", "#b81f1f", "#e62b2b", "#ff3838", "#ff7a7a", "#ffc2c2"] }
+      "stop-red": { "role": "tertiary", "displayName": "Stop Red", "canonical": "color(display-p3 1 0.24 0.22)", "tonalRamp": ["#330a0a", "#5c1010", "#8a1717", "#b81f1f", "#e62b2b", "#ff3838", "#ff7a7a", "#ffc2c2"] },
+      "signal-green": { "role": "tertiary", "displayName": "Signal Green", "canonical": "color(display-p3 0.33 0.82 0.52)", "tonalRamp": ["#07301a", "#0c4d2a", "#12703d", "#1a9652", "#22bd68", "#2bd47d", "#6ee3a5", "#bff3d7"] }
     },
     "typographyMeta": {
       "display": { "displayName": "Stencil Price", "purpose": "The live mid price only; 81px on the phone hero. Stencil 4s render from Big Shoulders." },
@@ -140,7 +141,7 @@
       { "name": "The Face ID Now Rule", "body": "A button is yellow only when pressing it triggers a Face ID (owner key) prompt at that moment. Navigation into owner-key territory is yellow text at most, never a yellow button.", "section": "colors" },
       { "name": "The No Direction Rule", "body": "There is no red/green up/down. Ask and bid are both road white; the best level is full white, depth is road white at reduced alpha.", "section": "colors" },
       { "name": "The Full Precision Rule", "body": "Prices print at the market's full precision from live data (six decimals on MON/USDC), never rounded; a one-tick spread must never read as zero.", "section": "typography" },
-      { "name": "The Borrowed Four Rule", "body": "Inside stencil figures every \"4\" renders from Big Shoulders (the non-stencil cut) because the stencil 4's detached crossbar reads as a second decimal point.", "section": "typography" },
+      { "name": "The Borrowed Four Rule", "body": "Every stencil \"4\" on the site renders from Big Shoulders (the non-stencil cut, loaded for U+0034 only and first in the stencil stack) because the stencil 4's detached crossbar reads as a second decimal point.", "section": "typography" },
       { "name": "The Tabular Figures Rule", "body": "Every compared number is tabular (`tnum`); addresses and hashes are Martian Mono.", "section": "typography" },
       { "name": "The One Lift Rule", "body": "Panels share a single shadow; nothing floats higher. Hierarchy is carried by tone, borders and paint.", "section": "elevation" }
     ],

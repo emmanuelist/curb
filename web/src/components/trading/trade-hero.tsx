@@ -62,7 +62,7 @@ export function TradeHero({ market, lane, bids, asks, block, draft }: Props) {
       </header>
 
       <p className="mt-[9px] flex h-[21px] items-center gap-2 px-[22px] text-[13.5px] text-muted" role="status" aria-live="off">
-        <span key={block.step} className={`size-2 rounded-full ${live ? "block-pulse bg-road" : block.status === "error" ? "border border-muted" : "bg-faint"}`} aria-hidden="true" />
+        <span key={block.step} className={`size-2 rounded-full ${live ? "block-pulse bg-live [--pulse:var(--live)]" : block.status === "error" ? "border border-muted" : "bg-faint"}`} aria-hidden="true" />
         <span className="text-road">Monad</span>
         <span aria-hidden="true">•</span>
         <span className="tnum">Block {block.block === null ? "—" : formatBlock(block.block)}</span>
@@ -90,9 +90,9 @@ export function TradeHero({ market, lane, bids, asks, block, draft }: Props) {
         )}
       </p>
 
-      <p className="mt-[72px] ml-[22px] inline-flex h-[32px] w-[115px] items-center justify-center gap-1.5 rounded-full border border-rule-strong bg-asphalt/70 text-[12px] backdrop-blur-sm">
-        <span className={`size-1.5 rounded-full ${live ? "bg-road" : "bg-faint"}`} aria-hidden="true" />
-        <span className="text-muted">{STATUS[block.status]}</span>
+      <p className={`mt-[72px] ml-[22px] inline-flex h-[32px] w-[115px] items-center justify-center gap-1.5 rounded-full border bg-asphalt/70 transition-colors ${live ? "border-live/35" : "border-rule-strong"} text-[12px] backdrop-blur-sm`}>
+        <span className={`size-1.5 rounded-full ${live ? "bg-live" : "bg-faint"}`} aria-hidden="true" />
+        <span className={live ? "text-live" : "text-muted"}>{STATUS[block.status]}</span>
         <span className="font-display text-[13.5px] font-semibold text-road tnum [font-variation-settings:'wdth'_80]">
           {block.avgIntervalMs ? `≈ ${Math.round(block.avgIntervalMs)}ms` : "≈ —"}
         </span>

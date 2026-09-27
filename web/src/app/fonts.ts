@@ -19,16 +19,16 @@ export const stencil = localFont({
 });
 
 /**
- * Big Shoulders (the stencil's own non-stencil cut), for one glyph: the stencil "4" leaves its crossbar tip as a detached
- * square that reads as a second decimal point inside a price, so stencil figures render "4" from this face instead.
- * Big Shoulders (OFL), latin, served locally.
+ * Big Shoulders (the stencil's own non-stencil cut), for one glyph only: the stencil "4" leaves its crossbar tip as a
+ * detached square that reads as a second decimal point inside a price. Limited to U+0034 and placed ahead of the
+ * stencil in `--font-stencil`, it draws every stencil 4 on the site and nothing else. Big Shoulders (OFL), served locally.
  */
 export const shoulders = localFont({
   src: [{ path: "./fonts/big-shoulders-700.woff2", weight: "700", style: "normal" }],
   variable: "--font-shoulders",
   display: "swap",
-  // It only ever draws one glyph inside an already-sized stencil line, so no fallback metrics are needed.
   adjustFontFallback: false,
+  declarations: [{ prop: "unicode-range", value: "U+0034" }],
 });
 
 /** Interface and body, used quietly. Switzer by Indian Type Foundry via Fontshare (ITF Free Font License). */

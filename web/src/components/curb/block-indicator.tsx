@@ -20,8 +20,8 @@ export function BlockIndicator() {
       aria-label={block === null ? "Connecting to Monad" : `Monad block ${formatBlock(block)}, ${STATUS_LABEL[status].toLowerCase()}`}
       className="inline-flex h-10 items-center gap-2.5 rounded-full border border-rule bg-panel pl-3.5 pr-4 text-[13px]"
     >
-      <span key={step} className={`size-2 rounded-full ${live ? "block-pulse bg-road" : status === "error" ? "border border-muted" : "bg-faint"}`} aria-hidden="true" />
-      <span className="text-muted" aria-hidden="true">
+      <span key={step} className={`size-2 rounded-full ${live ? "block-pulse bg-live [--pulse:var(--live)]" : status === "error" ? "border border-muted" : "bg-faint"}`} aria-hidden="true" />
+      <span className={live ? "text-live" : "text-muted"} aria-hidden="true">
         {STATUS_LABEL[status]}
         {live && avgIntervalMs ? <span className="ml-1.5 font-display font-semibold text-road [font-variation-settings:'wdth'_80]">≈ {Math.round(avgIntervalMs)}ms</span> : null}
       </span>
