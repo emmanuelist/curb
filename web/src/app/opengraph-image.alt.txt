@@ -1,1 +1,1 @@
-Curb: a trading key that can't withdraw, and can't trade off Kuru's live order book. Live on Monad mainnet, Kuru MON/USDC, one passkey for two keys.
+Curb: a trading key that can't withdraw, and can't trade off Kuru's live order book. Built on Monad mainnet, Kuru MON/USDC, one passkey for two keys.

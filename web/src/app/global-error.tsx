@@ -8,7 +8,7 @@ export default function GlobalError({ retry }: { error: Error & { digest?: strin
         <title>Curb</title>
         <main style={{ maxWidth: 420, padding: 24 }}>
           <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0 }}>Curb stopped loading.</h1>
-          <p style={{ color: "#9aa1a8", fontSize: 14, lineHeight: 1.6 }}>Nothing was signed and nothing was sent; your keys and funds are where they were.</p>
+          <p style={{ color: "#9aa1a8", fontSize: 14, lineHeight: 1.6 }}>A loading error can&apos;t sign or send anything by itself; if you had already confirmed a transaction, it stands onchain as sent.</p>
           <button
             type="button"
             onClick={() => retry()}
