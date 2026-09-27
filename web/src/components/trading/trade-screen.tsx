@@ -4,16 +4,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightLeft, ArrowUpFromLine, Ban, ChevronRight } from "lucide-react";
 import { KeyGlyph } from "@/components/keys/signer";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BlockIndicator } from "@/components/curb/block-indicator";
 import { CurbLane } from "@/components/curb/curb-lane";
 import { OrderTicket, readTicket, type TicketState } from "@/components/trading/order-ticket";
 import { PriceDisplay } from "@/components/trading/price-display";
 import { TradeHero } from "@/components/trading/trade-hero";
 import { formatPrice, shortAddress } from "@/lib/format";
+import type { Placement } from "@/lib/lane";
 import { MON_USDC } from "@/lib/markets/registry";
 import { useAccount } from "@/hooks/use-account";
-import { useLiveBlock } from "@/hooks/use-live-block";
 import { useMarket } from "@/hooks/use-market";
 
 const market = MON_USDC;
@@ -21,8 +21,6 @@ const market = MON_USDC;
 /** Trade: market, price, live block, the lane, the ticket, and who signs (BRIEF §7 hierarchy). */
 export function TradeScreen() {
   const { snapshot, lane, error } = useMarket(market);
-  const liveBlock = useLiveBlock();
-  const { step, status } = liveBlock;
   // A null price means "follow the book": the draft joins the best bid (buy) or best ask (sell) until typed over.
   const [draftState, setDraftState] = useState<{ side: TicketState["side"]; priceText: string | null; sizeText: string }>({
     side: "buy",
@@ -34,10 +32,16 @@ export function TradeScreen() {
   const ticket: TicketState = { side: draftState.side, sizeText: draftState.sizeText, priceText: draftState.priceText ?? followed };
 
   const reading = readTicket(market, lane, ticket);
-  const draft =
-    reading.price !== null && reading.placement && reading.placement.kind !== "invalid"
-      ? { side: ticket.side, price: reading.price, placement: reading.placement }
-      : null;
+  // The draft, rebuilt only from the values that define it, so the memoised lane skips renders when nothing moved.
+  const draftPrice = reading.price;
+  const kind = reading.placement?.kind ?? null;
+  const limit = reading.placement?.kind === "off-book" ? reading.placement.limit : null;
+  const side = ticket.side;
+  const draft = useMemo(() => {
+    if (draftPrice === null || kind === null || kind === "invalid") return null;
+    const placement: Placement = kind === "off-book" && limit !== null ? { kind: "off-book", limit } : { kind: "in-lane" };
+    return { side, price: draftPrice, placement };
+  }, [side, draftPrice, kind, limit]);
 
   const onTicket = (next: TicketState) =>
     setDraftState((d) => ({
@@ -67,8 +71,9 @@ export function TradeScreen() {
         lane={lane}
         bids={snapshot?.book.bids ?? []}
         asks={snapshot?.book.asks ?? []}
-        block={liveBlock}
-        draft={{ side: ticket.side, sizeText: ticket.sizeText, priceText: ticket.priceText }}
+        draftSide={ticket.side}
+        draftSize={ticket.sizeText}
+        draftPrice={ticket.priceText}
       />
       <main className="mx-auto grid w-full max-w-[1480px] gap-4 px-4 pb-32 md:grid-cols-2 md:gap-6 md:px-8 md:pb-12 md:pt-8 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.2fr)_minmax(0,0.95fr)]">
         <div className="hidden flex-col gap-6 md:col-span-2 md:flex xl:col-span-1">
@@ -89,10 +94,10 @@ export function TradeScreen() {
           ) : (
             <>
               <div className="md:hidden">
-                <CurbLane market={market} lane={lane} bids={snapshot.book.bids} asks={snapshot.book.asks} depth={4} draft={draft} step={step} blockStatus={status} />
+                <CurbLane market={market} lane={lane} bids={snapshot.book.bids} asks={snapshot.book.asks} depth={4} draft={draft} />
               </div>
               <div className="hidden md:block">
-                <CurbLane market={market} lane={lane} bids={snapshot.book.bids} asks={snapshot.book.asks} depth={9} draft={draft} step={step} blockStatus={status} />
+                <CurbLane market={market} lane={lane} bids={snapshot.book.bids} asks={snapshot.book.asks} depth={9} draft={draft} />
               </div>
             </>
           )}
@@ -125,7 +130,7 @@ function MarketPanel({
   const open = lane?.status === "open" ? lane : null;
   return (
     <section aria-label="Market" className={`panel relative isolate flex min-h-[440px] flex-col justify-between overflow-hidden p-6 ${className ?? ""}`}>
-      <Image src="/plates/curb-photo.png" alt="" fill sizes="(min-width: 1280px) 33vw, 100vw" className="pointer-events-none -z-10 object-cover object-[70%_100%]" priority />
+      <Image src="/plates/curb-photo.png" alt="" fill sizes="(min-width: 1280px) 33vw, 100vw" className="pointer-events-none -z-10 object-cover object-[70%_100%]" fetchPriority="high" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgb(11_13_15/0.94)_0%,rgb(11_13_15/0.88)_50%,rgb(11_13_15/0.12)_76%,rgb(11_13_15/0.6)_100%)]" aria-hidden="true" />
       <div>
         <div className="flex items-start justify-between gap-4">

@@ -185,7 +185,7 @@ The chain's two verdicts.
 
 ## Typography
 
-**Display Font:** Big Shoulders Stencil 700–900 (with Archivo, sans-serif)
+**Display Font:** Big Shoulders Stencil 700 (price) and 800 (wordmark, zone signage) (with Archivo, sans-serif)
 **Body Font:** Switzer 400/500/600 (with system-ui)
 **Figures:** Archivo, width axis 66–80, semibold, tabular
 **Data Mono:** Martian Mono (addresses, hashes)
@@ -235,7 +235,7 @@ Gently rounded panels (16px) holding 12px buttons, fields and wells; nested elem
 
 ### Buttons
 - **Shape:** 12px radius, 56px tall, 20px inline padding, 17px/600 label.
-- **Primary (road white):** trading-key actions and navigation. Hover to pure white; press scales to 0.985 on the spring.
+- **Primary (road white):** trading-key actions and navigation. Hover lifts toward white; press scales to 0.985 on the spring.
 - **Owner (kerb yellow):** only for an action that prompts Face ID now.
 - **Quiet:** high asphalt with a strong hairline; hover lifts the border to road grey. Secondary choices and empty-state actions.
 - **Disabled paint:** never a faded yellow or white. Disabled primary and owner buttons become high asphalt with a dashed strong-hairline border and road-grey text. A refused action (off the lane) is a hatched, dashed-border button.
@@ -276,7 +276,7 @@ A pill: status dot (signal green and pulsing once per block when live, faint whe
 - **Do** reserve the yellow button for an action that triggers Face ID in that tap; mark owner-key text, glyphs and the money-moving panel strip in kerb yellow.
 - **Do** mark anything past a curb, or refused, with 135° hatching; label the zone with stencil signage on the hatch itself.
 - **Do** print prices at full precision from live data with tabular figures, and render stencil 4s from Big Shoulders.
-- **Do** tie motion to the chain: dashes step 34px per real block on the spring, digits settle only when they change, the live dot pulses once per block; pair every animation with its reduced-motion replacement.
+- **Do** tie motion to the chain: dashes step 34px per real block, decelerating (ease-out, never overshooting: road markings don't wobble), moved by transform, digits settle only when they change, the live dot pulses once per block; pair every animation with its reduced-motion replacement.
 - **Do** put a stretch of lane dashes under every screen title so the road runs through every screen.
 - **Do** show the signer before every action.
 - **Do** light signal green only from the chain: a block arriving, a transaction confirmed, an action the account allows.

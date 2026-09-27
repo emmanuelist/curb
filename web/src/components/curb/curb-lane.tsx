@@ -1,9 +1,9 @@
-import type { CSSProperties, ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import type { Level } from "@/lib/kuru/book";
 import type { Lane, Placement, Side } from "@/lib/lane";
 import type { Market } from "@/lib/markets/registry";
 import { formatPrice, formatSize } from "@/lib/format";
-import type { BlockStatus } from "@/hooks/use-live-block";
+import { LaneDashes } from "@/components/curb/lane-dashes";
 
 export type DraftOrder = { side: Side; price: bigint; placement: Placement };
 
@@ -15,9 +15,6 @@ type Props = {
   /** Levels drawn per side. */
   depth: number;
   draft?: DraftOrder | null;
-  /** From the live block stream: dashes advance only when blocks arrive. */
-  step: number;
-  blockStatus: BlockStatus;
   title?: string;
 };
 
@@ -28,7 +25,7 @@ const bandLabel = (bps: bigint) => `${(Number(bps) / 100).toFixed(2)}%`;
  * comes from `lane`, the same numbers CurbAccount enforces (docs/BRIEF.md §6). Levels past a curb are drawn
  * inside the hatched off-book zone, where the trading key can't reach them.
  */
-export function CurbLane({ market, lane, bids, asks, depth, draft, step, blockStatus, title = "Order lane" }: Props) {
+export const CurbLane = memo(function CurbLane({ market, lane, bids, asks, depth, draft, title = "Order lane" }: Props) {
   const shownAsks = asks.slice(0, depth);
   const shownBids = bids.slice(0, depth);
   const maxSize = [...shownAsks, ...shownBids].reduce((m, l) => (l.size > m ? l.size : m), 1n);
@@ -70,7 +67,7 @@ export function CurbLane({ market, lane, bids, asks, depth, draft, step, blockSt
 
       <div className="flex h-8 items-center gap-2.5 px-5">
         {draftInLane && draft ? <DraftChip draft={draft} market={market} /> : <span className="size-2.5 shrink-0 rounded-full bg-road" aria-hidden="true" />}
-        <div className="lane-dashes grow opacity-90" data-status={blockStatus} style={{ "--step": step } as CSSProperties} aria-hidden="true" />
+        <LaneDashes className="grow opacity-90" />
       </div>
 
       <ol aria-label="Bids inside the lane" className="flex flex-col px-5 py-1">
@@ -89,7 +86,7 @@ export function CurbLane({ market, lane, bids, asks, depth, draft, step, blockSt
       </OffBook>
     </section>
   );
-}
+});
 
 function CurbEdge({ label, value, note, bottom = false }: { label: string; value: string; note: string; bottom?: boolean }) {
   return (

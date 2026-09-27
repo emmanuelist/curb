@@ -5,14 +5,14 @@ import localFont from "next/font/local";
 export const archivo = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--font-archivo", display: "swap" });
 
 /** Addresses, hashes, block numbers, order-book figures. */
-export const martian = Martian_Mono({ subsets: ["latin"], axes: ["wdth"], variable: "--font-martian", display: "swap" });
+// Not preloaded: addresses and hashes appear on Keys only, so the home page never pays for it up front.
+export const martian = Martian_Mono({ subsets: ["latin"], axes: ["wdth"], variable: "--font-martian", display: "swap", preload: false });
 
-/** The board's street lettering: the hero price (700, measured against the approved comp) and signage (800/900). Big Shoulders Stencil (OFL), latin, served locally. */
+/** The board's street lettering: the hero price (700, measured against the approved comp) and signage (800). Big Shoulders Stencil (OFL), latin, served locally. */
 export const stencil = localFont({
   src: [
     { path: "./fonts/big-shoulders-stencil-700.woff2", weight: "700", style: "normal" },
     { path: "./fonts/big-shoulders-stencil-800.woff2", weight: "800", style: "normal" },
-    { path: "./fonts/big-shoulders-stencil-900.woff2", weight: "900", style: "normal" },
   ],
   variable: "--font-stencil-face",
   display: "swap",

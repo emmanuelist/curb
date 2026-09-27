@@ -6,12 +6,12 @@ import { ArrowRightLeft, ClipboardList, Clock3, Ellipsis, KeyRound, Menu, type L
 import { Wordmark } from "@/components/curb/wordmark";
 import { BlockIndicator } from "@/components/curb/block-indicator";
 
-const ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
+const ITEMS: { href: string; label: string; icon: LucideIcon; /** Read with the label: "More" alone isn't a link name. */ more?: string }[] = [
   { href: "/", label: "Trade", icon: ArrowRightLeft },
   { href: "/orders", label: "Orders", icon: ClipboardList },
   { href: "/history", label: "History", icon: Clock3 },
   { href: "/keys", label: "Keys", icon: KeyRound },
-  { href: "/more", label: "More", icon: Ellipsis },
+  { href: "/more", label: "More", icon: Ellipsis, more: "settings and about" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -27,7 +27,7 @@ export function DesktopNav() {
         <Wordmark />
         <nav aria-label="Primary">
           <ul className="flex gap-1">
-            {ITEMS.map(({ href, label, icon: Icon }) => {
+            {ITEMS.map(({ href, label, icon: Icon, more }) => {
               const active = isActive(pathname, href);
               return (
                 <li key={href}>
@@ -40,6 +40,7 @@ export function DesktopNav() {
                   >
                     <Icon size={17} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
                     {label}
+                    {more ? <span className="sr-only"> {more}</span> : null}
                   </Link>
                 </li>
               );
@@ -60,7 +61,7 @@ export function MobileNav() {
   return (
     <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 border-t border-rule bg-asphalt/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
       <ul className="grid h-[72px] grid-cols-5">
-        {ITEMS.map(({ href, label, icon: Icon }) => {
+        {ITEMS.map(({ href, label, icon: Icon, more }) => {
           const active = isActive(pathname, href);
           return (
             <li key={href}>
@@ -71,6 +72,7 @@ export function MobileNav() {
               >
                 <Icon size={22} strokeWidth={active ? 2.2 : 1.7} aria-hidden="true" />
                 {label}
+                {more ? <span className="sr-only"> {more}</span> : null}
               </Link>
             </li>
           );

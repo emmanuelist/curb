@@ -158,20 +158,39 @@
     border-block: 2px solid var(--trading-key);
   }
 
-  /* Lane dashes: they advance one period per real Monad block (--step), and only then. */
+  /* Lane dashes, static: a stretch of road marking (titles, the 404, the error page). */
   .lane-dashes {
     block-size: 3px;
+    background-image: linear-gradient(90deg, var(--trading-key) 0 20px, transparent 20px);
+    background-size: var(--dash-period) 100%;
+    background-repeat: repeat-x;
+  }
+
+  .lane-dashes[data-status="stalled"],
+  .lane-dashes[data-status="error"],
+  .lane-dashes-live[data-status="stalled"],
+  .lane-dashes-live[data-status="error"] {
+    opacity: 0.35;
+  }
+
+  /* Lane dashes, live: one period per real Monad block (see LaneDashes), moved by transform so nothing repaints. */
+  .lane-dashes-live {
+    position: relative;
+    block-size: 3px;
+    overflow: hidden;
+  }
+
+  .lane-dashes-run {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(-1 * var(--dash-period));
+    inline-size: calc(100% + var(--dash-period));
     /* One dash per tile, repeated: exact at every pixel density (a repeating gradient seams at 2x). */
     background-image: linear-gradient(90deg, var(--trading-key) 0 20px, transparent 20px);
     background-size: var(--dash-period) 100%;
     background-repeat: repeat-x;
-    background-position-x: calc(var(--step, 0) * var(--dash-period));
-    transition: background-position-x 300ms var(--spring);
-  }
-
-  .lane-dashes[data-status="stalled"],
-  .lane-dashes[data-status="error"] {
-    opacity: 0.35;
+    animation: dash-step 300ms var(--ease-out) both;
+    --animation-reduced: none;
   }
 
   /* Painted kerb: owner-key territory, where money moves in and out. */
@@ -267,8 +286,24 @@
     --animation-reduced: none;
   }
 
-  /* The live dot breathes once per block. */
+  /*
+   * The live dot breathes once per block: a ring in the dot's own paint (--pulse) that scales out and fades. Transform
+   * and opacity run on the compositor; the earlier box-shadow version restyled the page every frame.
+   */
   .block-pulse {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .block-pulse::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--pulse, var(--text));
+    opacity: 0;
+    pointer-events: none;
     animation: block-pulse 600ms var(--ease-out);
     --animation-reduced: none;
   }
@@ -281,6 +316,15 @@
   }
 }
 
+@keyframes dash-step {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(var(--dash-period));
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -290,21 +334,20 @@
 
 @keyframes block-pulse {
   from {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--pulse, var(--text)) 55%, transparent);
+    opacity: 0.55;
+    transform: scale(1);
   }
   to {
-    box-shadow: 0 0 0 7px transparent;
+    opacity: 0;
+    transform: scale(2.75);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .digit-settle,
-  .block-pulse,
-  .rise {
+  .block-pulse::after,
+  .rise,
+  .lane-dashes-run {
     animation: var(--animation-reduced) !important;
-  }
-
-  .lane-dashes {
-    transition: none;
   }
 }

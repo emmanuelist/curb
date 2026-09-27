@@ -150,7 +150,7 @@
       "Do reserve the yellow button for an action that triggers Face ID in that tap; mark owner-key text, glyphs and the money-moving panel strip in kerb yellow.",
       "Do mark anything past a curb, or refused, with 135° hatching; label the zone with stencil signage on the hatch itself.",
       "Do print prices at full precision from live data with tabular figures, and render stencil 4s from Big Shoulders.",
-      "Do tie motion to the chain: dashes step 34px per real block on the spring, digits settle only when they change, the live dot pulses once per block; pair every animation with its reduced-motion replacement.",
+      "Do tie motion to the chain: dashes step 34px per real block, decelerating (ease-out, never overshooting: road markings don't wobble), moved by transform, digits settle only when they change, the live dot pulses once per block; pair every animation with its reduced-motion replacement.",
       "Do put a stretch of lane dashes under every screen title so the road runs through every screen.",
       "Do show the signer before every action."
     ],

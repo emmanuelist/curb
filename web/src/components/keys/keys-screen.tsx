@@ -10,7 +10,8 @@ import { ScreenHeader } from "@/components/navigation/app-nav";
 import { chain, explorerUrl, publicClient, rpcHttpUrl } from "@/lib/chain/clients";
 import { formatToken, parseDecimal } from "@/lib/format";
 import { explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
-import { withOwnerKey, type CurbAccountRecord } from "@/lib/passkey/keys";
+import type { CurbAccountRecord } from "@/lib/passkey/keys";
+import { usePasskeyKeys } from "@/hooks/use-passkey-keys";
 import { forgetAccount } from "@/lib/passkey/store";
 import { useAccount } from "@/hooks/use-account";
 import { useBalances } from "@/hooks/use-balances";
@@ -153,12 +154,14 @@ function GasTopUp({ account, ownerMon }: { account: CurbAccountRecord; ownerMon:
   const amount = parseDecimal(amountText, MON);
   const insufficient = ownerMon !== null && amount !== null && amount > ownerMon;
   const busy = state.kind === "signing" || state.kind === "sent";
+  // Loaded when Keys opens; the Face ID button waits for it, so a tap goes straight to the prompt.
+  const keys = usePasskeyKeys();
 
   const send = async () => {
-    if (amount === null || amount === 0n) return;
+    if (!keys || amount === null || amount === 0n) return;
     setState({ kind: "signing" });
     try {
-      const hash = await withOwnerKey(window.location.hostname, account, async (signer) => {
+      const hash = await keys.withOwnerKey(window.location.hostname, account, async (signer) => {
         const wallet = createWalletClient({ account: signer, chain, transport: http(rpcHttpUrl) });
         return wallet.sendTransaction({ to: account.trading, value: amount, gas: TRANSFER_GAS });
       });
@@ -198,7 +201,7 @@ function GasTopUp({ account, ownerMon }: { account: CurbAccountRecord; ownerMon:
       <button
         type="button"
         onClick={send}
-        disabled={busy || amount === null || amount === 0n || insufficient || ownerMon === null || ownerMon === 0n}
+        disabled={busy || !keys || amount === null || amount === 0n || insufficient || ownerMon === null || ownerMon === 0n}
         className="btn btn-owner w-full"
       >
         <KeyGlyph role="owner" size={20} />

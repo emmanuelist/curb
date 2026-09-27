@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import { memo } from "react";
 import { ArrowRightLeft, ChevronDown, Menu } from "lucide-react";
 import { SettlingNumber } from "@/components/curb/settling-number";
 import { Wordmark } from "@/components/curb/wordmark";
@@ -10,16 +10,18 @@ import { formatBlock, formatPrice, formatSize } from "@/lib/format";
 import type { Level } from "@/lib/kuru/book";
 import type { Lane } from "@/lib/lane";
 import type { Market } from "@/lib/markets/registry";
-import type { BlockState } from "@/hooks/use-live-block";
+import { useBlockSelector, type BlockState } from "@/hooks/use-live-block";
+import { LaneDashes } from "@/components/curb/lane-dashes";
 
 type Props = {
   market: Market;
   lane: Lane | null;
   bids: Level[];
   asks: Level[];
-  block: BlockState;
   /** The draft the BUY bar would send: follows the best bid until the ticket changes it. */
-  draft: { side: "buy" | "sell"; sizeText: string; priceText: string };
+  draftSide: "buy" | "sell";
+  draftSize: string;
+  draftPrice: string;
 };
 
 const STATUS: Record<BlockState["status"], string> = { connecting: "Connecting", live: "Live", stalled: "Stalled", error: "Offline" };
@@ -28,7 +30,8 @@ const STATUS: Record<BlockState["status"], string> = { connecting: "Connecting",
  * The phone's first viewport, built against the approved comp (the user's concept board): the price stands
  * over a photograph of a real curb, and Kuru's best ask and bid sit either side of the lane's centre line.
  */
-export function TradeHero({ market, lane, bids, asks, block, draft }: Props) {
+export const TradeHero = memo(function TradeHero({ market, lane, bids, asks, draftSide, draftSize, draftPrice }: Props) {
+  const draft = { side: draftSide, sizeText: draftSize, priceText: draftPrice };
   const open = lane?.status === "open" ? lane : null;
   const p = (x: bigint) => formatPrice(x, market.pricePrecision);
   const bestAsk = asks[0];
@@ -40,7 +43,6 @@ export function TradeHero({ market, lane, bids, asks, block, draft }: Props) {
   const pct = (v: bigint) => `${Math.max(3, Number((v * 1000n) / topMax) / 10)}%`;
 
   const spread = open ? open.ask - open.bid : null;
-  const live = block.status === "live";
 
   return (
     <section aria-label="Market" className="relative isolate overflow-hidden md:hidden">
@@ -49,8 +51,10 @@ export function TradeHero({ market, lane, bids, asks, block, draft }: Props) {
         alt=""
         width={1170}
         height={1044}
-        priority
-        sizes="100vw"
+        // The phone's LCP. `priority` is deprecated in Next 16; a bare preload fetches at Low, so ask for High directly.
+        fetchPriority="high"
+        // The hero is phone-only (md:hidden); from md up the smallest candidate stands in, so desktop never downloads it.
+        sizes="(min-width: 768px) 1px, 100vw"
         className="pointer-events-none absolute left-0 top-[55px] -z-10 h-[348px] w-full object-cover"
       />
 
@@ -61,12 +65,7 @@ export function TradeHero({ market, lane, bids, asks, block, draft }: Props) {
         </Link>
       </header>
 
-      <p className="mt-[9px] flex h-[21px] items-center gap-2 px-[22px] text-[13.5px] text-muted" role="status" aria-live="off">
-        <span key={block.step} className={`size-2 rounded-full ${live ? "block-pulse bg-live [--pulse:var(--live)]" : block.status === "error" ? "border border-muted" : "bg-faint"}`} aria-hidden="true" />
-        <span className="text-road">Monad</span>
-        <span aria-hidden="true">•</span>
-        <span className="tnum">Block {block.block === null ? "—" : formatBlock(block.block)}</span>
-      </p>
+      <NetworkRow />
 
       <button type="button" className="mt-[36px] flex h-[32px] items-center gap-1.5 px-[22px] text-[23px] font-medium tracking-[0.01em] text-road" aria-label={`Market ${market.base.symbol} / ${market.quote.symbol}`}>
         {market.base.symbol} / {market.quote.symbol}
@@ -90,16 +89,10 @@ export function TradeHero({ market, lane, bids, asks, block, draft }: Props) {
         )}
       </p>
 
-      <p className={`mt-[72px] ml-[22px] inline-flex h-[32px] w-[115px] items-center justify-center gap-1.5 rounded-full border bg-asphalt/70 transition-colors ${live ? "border-live/35" : "border-rule-strong"} text-[12px] backdrop-blur-sm`}>
-        <span className={`size-1.5 rounded-full ${live ? "bg-live" : "bg-faint"}`} aria-hidden="true" />
-        <span className={live ? "text-live" : "text-muted"}>{STATUS[block.status]}</span>
-        <span className="font-display text-[13.5px] font-semibold text-road tnum [font-variation-settings:'wdth'_80]">
-          {block.avgIntervalMs ? `≈ ${Math.round(block.avgIntervalMs)}ms` : "≈ —"}
-        </span>
-      </p>
+      <LivePill />
 
       <div className="mt-[43px] px-[22px]" aria-hidden="true">
-        <div className="lane-dashes my-1 opacity-90" data-status={block.status} style={{ "--step": block.step } as CSSProperties} />
+        <LaneDashes className="my-1 opacity-90" />
       </div>
 
       <BookSide
@@ -116,7 +109,7 @@ export function TradeHero({ market, lane, bids, asks, block, draft }: Props) {
 
       <div className="mt-[10px] flex h-[22px] items-center gap-0 px-[18px]" aria-hidden="true">
         <span className="size-2.5 shrink-0 rounded-full bg-road" />
-        <div className="lane-dashes grow opacity-90" data-status={block.status} style={{ "--step": block.step } as CSSProperties} />
+        <LaneDashes className="grow opacity-90" />
       </div>
 
       <BookSide
@@ -146,6 +139,36 @@ export function TradeHero({ market, lane, bids, asks, block, draft }: Props) {
         </a>
       </div>
     </section>
+  );
+});
+
+/** Monad and the block height: re-renders per block on its own, never the hero around it. */
+function NetworkRow() {
+  const block = useBlockSelector((s) => s.block);
+  const status = useBlockSelector((s) => s.status);
+  const step = useBlockSelector((s) => s.step);
+  const live = status === "live";
+  return (
+    <p className="mt-[9px] flex h-[21px] items-center gap-2 px-[22px] text-[13.5px] text-muted" role="status" aria-live="off">
+      <span key={step} className={`size-2 rounded-full ${live ? "block-pulse bg-live [--pulse:var(--live)]" : status === "error" ? "border border-muted" : "bg-faint"}`} aria-hidden="true" />
+      <span className="text-road">Monad</span>
+      <span aria-hidden="true">•</span>
+      <span className="tnum">Block {block === null ? "—" : formatBlock(block)}</span>
+    </p>
+  );
+}
+
+/** Live status and the measured block cadence, as the board's pill. */
+function LivePill() {
+  const status = useBlockSelector((s) => s.status);
+  const avg = useBlockSelector((s) => (s.avgIntervalMs === null ? null : Math.round(s.avgIntervalMs)));
+  const live = status === "live";
+  return (
+    <p className={`mt-[72px] ml-[22px] inline-flex h-[32px] w-[115px] items-center justify-center gap-1.5 rounded-full border bg-asphalt/70 transition-colors ${live ? "border-live/35" : "border-rule-strong"} text-[12px] backdrop-blur-sm`}>
+      <span className={`size-1.5 rounded-full ${live ? "bg-live" : "bg-faint"}`} aria-hidden="true" />
+      <span className={live ? "text-live" : "text-muted"}>{STATUS[status]}</span>
+      <span className="font-display text-[13.5px] font-semibold text-road tnum [font-variation-settings:'wdth'_80]">{avg === null ? "≈ —" : `≈ ${avg}ms`}</span>
+    </p>
   );
 }
 
