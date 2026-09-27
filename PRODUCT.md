@@ -39,6 +39,7 @@ A contract account enforces both limits onchain. Success is fast, prompt-free tr
   - white is the trading key
   - kerb yellow is the owner key and money moving
   - red is an onchain refusal only, never price direction
+  - green is live and confirmed onchain only (the block stream, a confirmed transaction, an allowed action), never price direction (D-015)
 - Lane boundaries always come from the same numbers the contract enforces.
 - Hackathon deadline: 2026-10-13 23:59 ET. The code is public on GitHub.
 
@@ -53,7 +54,7 @@ A contract account enforces both limits onchain. Success is fast, prompt-free tr
 - Live, verifiable data: Kuru MON-USDC book, Monad blocks, contract addresses (`docs/CONTEXT.md`).
 - Evidence log: `docs/EVIDENCE.md` (fork tests, the passkey spike, end-to-end onboarding).
 - No customers, testimonials or usage numbers exist. None may be invented.
-- Photography comes from licensed stock and is credited; the board's concept art is never shown as the product.
+- The hero photograph is a Higgsfield generation from the board's photo region, approved by the user, with its provenance embedded in the file (D-013). The board's concept art itself is never shown as the product.
 
 ## Product Principles
 

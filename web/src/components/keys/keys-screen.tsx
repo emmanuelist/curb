@@ -209,8 +209,8 @@ function GasTopUp({ account, ownerMon }: { account: CurbAccountRecord; ownerMon:
         {insufficient && ownerMon !== 0n ? <p className="text-muted">That&apos;s more than your owner key holds.</p> : null}
         {state.kind === "sent" || state.kind === "confirmed" ? (
           <a className="pill min-h-9 px-3 text-road" href={explorerUrl("tx", state.hash)} target="_blank" rel="noreferrer">
-            <span className={`size-1.5 rounded-full ${state.kind === "confirmed" ? "bg-kerb" : "bg-muted"}`} aria-hidden="true" />
-            {state.kind === "confirmed" ? "Confirmed" : "Sent"} · <span className="figures text-[11px]">{state.hash.slice(0, 10)}…{state.hash.slice(-6)}</span>
+            <span className={`size-1.5 rounded-full ${state.kind === "confirmed" ? "bg-live" : "bg-muted"}`} aria-hidden="true" />
+            <span className={state.kind === "confirmed" ? "text-live" : ""}>{state.kind === "confirmed" ? "Confirmed" : "Sent"}</span> · <span className="figures text-[11px]">{state.hash.slice(0, 10)}…{state.hash.slice(-6)}</span>
             <ExternalLink size={13} aria-hidden="true" />
           </a>
         ) : null}

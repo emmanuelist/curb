@@ -5,11 +5,19 @@ import { Providers } from "./providers";
 import { DesktopNav, MobileNav } from "@/components/navigation/app-nav";
 import "./globals.css";
 
+const thesis = "A trading key that can't withdraw, and can't trade off Kuru's live order book.";
+
 export const metadata: Metadata = {
-  title: "Curb",
-  description: "A trading key that can't withdraw, and can't trade off Kuru's live order book.",
+  // The one permanent domain: passkeys bind to it (D-014). Resolves the share images to absolute URLs.
+  metadataBase: new URL("https://curb-jet.vercel.app"),
+  title: { default: "Curb", template: "%s · Curb" },
+  description: thesis,
   applicationName: "Curb",
   appleWebApp: { capable: true, title: "Curb", statusBarStyle: "black-translucent" },
+  // Block heights and prices are long digit runs; iOS would otherwise turn them into phone links.
+  formatDetection: { telephone: false, address: false, email: false },
+  openGraph: { type: "website", siteName: "Curb", title: "Curb", description: thesis, url: "/" },
+  twitter: { card: "summary_large_image", title: "Curb", description: thesis },
 };
 
 export const viewport: Viewport = {

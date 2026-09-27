@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightLeft, ArrowUpFromLine, Ban, ChevronRight } from "lucide-react";
 import { KeyGlyph } from "@/components/keys/signer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BlockIndicator } from "@/components/curb/block-indicator";
 import { CurbLane } from "@/components/curb/curb-lane";
 import { OrderTicket, readTicket, type TicketState } from "@/components/trading/order-ticket";
@@ -47,6 +47,18 @@ export function TradeScreen() {
     }));
 
   const mid = lane?.status === "open" ? lane.mid : null;
+
+  // The tab carries the live mid, as a trading terminal's does; it only changes when Kuru's book does.
+  useEffect(() => {
+    if (mid === null) return;
+    document.title = `${formatPrice(mid, market.pricePrecision)} ${market.base.symbol}/${market.quote.symbol} · Curb`;
+  }, [mid]);
+  useEffect(
+    () => () => {
+      document.title = "Curb";
+    },
+    [],
+  );
 
   return (
     <>
@@ -163,7 +175,7 @@ function AccountStrip() {
 /** The thesis, stated where the trading happens: what the trading key can and can't do. */
 function KeyLimits({ className = "" }: { className?: string }) {
   const rows = [
-    { icon: ArrowRightLeft, title: "Trade inside the lane", body: "Kuru's live best price ±0.50%", verdict: "Allowed", tone: "text-road" },
+    { icon: ArrowRightLeft, title: "Trade inside the lane", body: "Kuru's live best price ±0.50%", verdict: "Allowed", tone: "text-live" },
     { icon: Ban, title: "Trade off the lane", body: "Past either curb line", verdict: "Refused", tone: "text-muted" },
     { icon: ArrowUpFromLine, title: "Withdraw funds", body: "Needs Face ID", verdict: "Owner key", tone: "text-kerb" },
   ] as const;

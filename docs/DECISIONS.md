@@ -174,3 +174,10 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** A custom domain (costs money and needs the user's go-ahead); preview URLs (each one orphans every passkey made on it).
 **Consequences:** Renaming the project or moving domains orphans every passkey created on this one, so a change needs a new decision and a sign-in plan. The deploy is run by the user (production deploys need their explicit permission here).
 **Evidence:** E-007.
+
+## D-015 · Signal green: live and confirmed onchain · 2026-09-27 · accepted
+**Context:** After seeing the build, the user asked why it isn't as colourful as the board. Options offered: add a live green, board colours in full, or keep as is. The user chose the recommended live green. This amends D-013 (the live dot was road white) and D-011 amendment 6 (four canonical colours).
+**Decision:** A fourth paint, signal green `#2bd47d` (P3 `color(display-p3 0.33 0.82 0.52)`), token `--live`. It marks only what the chain says is live or done: the block-stream dot and its "Live" word, the live pill's border while blocks arrive, a confirmed transaction, the "Allowed" verdict, the lane preview's live dot. Never prices, gains, selection or local success. Yellow and red keep their single jobs, so the owner-key and refusal moments stay loud and rare.
+**Alternatives:** Board colours in full (yellow prices and BUY, red/green book) would blur "yellow = owner key" and make the refusal red ordinary, and the board's green change figure needs a 24h price source that doesn't exist yet. Keeping it as is did not answer the user's question of why the build is less colourful than the board.
+**Consequences:** DESIGN.md, `.impeccable/design.json` and PRODUCT.md carry the new rule. Offline is a hollow grey ring, never red.
+**Evidence:** E-008.

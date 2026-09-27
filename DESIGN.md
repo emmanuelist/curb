@@ -12,6 +12,7 @@ colors:
   road-grey-dim: "#5f666d"
   kerb-yellow: "#ffd600"
   stop-red: "#ff3838"
+  signal-green: "#2bd47d"
 typography:
   display:
     fontFamily: "Big Shoulders Stencil, Archivo, sans-serif"
@@ -153,16 +154,18 @@ It rejects the category default: no exchange table plus candle chart, no red/gre
 
 ## Colors
 
-A monochrome asphalt palette with three road paints, each bound to one meaning.
+A monochrome asphalt palette with three road paints and one signal, each bound to one meaning.
 
 ### Primary
-- **Road White** (road-white): the trading key and everything inside the lane. Primary buttons, the hero price, best bid/ask, lane dashes, curb lines, the selected tab and filter, focus rings, the draft-order chip. Hover on a white button goes to pure white.
+- **Road White** (road-white): the trading key and everything inside the lane. Primary buttons, the hero price, best bid/ask, lane dashes, curb lines, the selected tab and filter, focus rings, the draft-order chip. Hover on a white button lifts toward white.
 
 ### Secondary
 - **Kerb Yellow** (kerb-yellow; `color(display-p3 1 0.85 0.05)` on wide-gamut screens): the owner key and money moving in or out, only. The wordmark's two slashes, owner-key names and glyphs, the owner key card border (45% alpha), the painted-kerb strip atop a money-moving panel, the Deposit glyph, focus border on an owner-key amount field, and the yellow button.
 
 ### Tertiary
+The chain's two verdicts.
 - **Stop Red** (stop-red; `color(display-p3 1 0.24 0.22)` on wide-gamut screens): a refusal made onchain by the Curb account. White on red is about 3.5:1, so red carries large stencil signage or marks, never small text.
+- **Signal Green** (signal-green; `color(display-p3 0.33 0.82 0.52)` on wide-gamut screens): live and confirmed onchain. The block-stream dot (pulsing once per block) and its "Live" word, the live pill's border at 35% while blocks arrive, a confirmed transaction's dot and word, the "Allowed" verdict for trading inside the lane, the live dot on the lane preview. Never a price, a gain, a selection or a local success (a key derived on this device is road white, not green).
 
 ### Neutral
 - **Asphalt** (asphalt): the page ground and field wells.
@@ -174,11 +177,11 @@ A monochrome asphalt palette with three road paints, each bound to one meaning.
 - **Dim Road Grey** (road-grey-dim): faint marks: stalled/connecting dots, the dashed border of the refused button.
 
 ### Named Rules
-**The Paint Means Something Rule.** Road white is the trading key; kerb yellow is the owner key and money; stop red is an onchain refusal. No paint is ever used for emphasis, selection, brand flourish or price direction.
+**The Paint Means Something Rule.** Road white is the trading key; kerb yellow is the owner key and money; stop red is an onchain refusal; signal green is live and confirmed onchain. No paint is ever used for emphasis, selection, brand flourish or price direction.
 
 **The Face ID Now Rule.** A button is yellow only when pressing it triggers a Face ID (owner key) prompt at that moment. Navigation into owner-key territory is yellow text at most, never a yellow button.
 
-**The No Direction Rule.** There is no red/green up/down. Ask and bid are both road white; the best level is full white, depth is road white at reduced alpha.
+**The No Direction Rule.** There is no red/green up/down: green means live, never up. Ask and bid are both road white; the best level is full white, depth is road white at reduced alpha.
 
 ## Typography
 
@@ -202,7 +205,7 @@ A monochrome asphalt palette with three road paints, each bound to one meaning.
 ### Named Rules
 **The Full Precision Rule.** Prices print at the market's full precision from live data (six decimals on MON/USDC), never rounded; a one-tick spread must never read as zero.
 
-**The Borrowed Four Rule.** Inside stencil figures every "4" renders from Big Shoulders (the non-stencil cut) because the stencil 4's detached crossbar reads as a second decimal point.
+**The Borrowed Four Rule.** Every stencil "4" on the site renders from Big Shoulders (the non-stencil cut, loaded for U+0034 only and first in the stencil stack) because the stencil 4's detached crossbar reads as a second decimal point.
 
 **The Tabular Figures Rule.** Every compared number is tabular (`tnum`); addresses and hashes are Martian Mono.
 
@@ -264,7 +267,7 @@ Before every action, a 12px line names the key that signs it: the key glyph and 
 Kuru's live book between two curb lines. From top: a hatched off-book zone with its stencil sign, the max-buy curb line and its value, asks inside the lane, the centre line (a road-white dot or the draft chip, then lane dashes stepping per block), bids inside the lane, the min-sell curb line, a hatched off-book zone below. Levels past a curb are drawn inside the hatching at 55% opacity. Depth bars are square-root scaled, road white at 30–100% alpha.
 
 ### Block Indicator
-A pill: status dot (road white and pulsing once per block when live, faint when connecting or stalled), status word, average block interval in condensed Archivo, a hairline divider, and the block number. Dashes dim to 35% when the stream stalls.
+A pill: status dot (signal green and pulsing once per block when live, faint when connecting or stalled, a hollow ring when offline), status word (signal green when live), average block interval in condensed Archivo, a hairline divider, and the block number. Dashes dim to 35% when the stream stalls.
 
 ## Do's and Don'ts
 
@@ -276,11 +279,13 @@ A pill: status dot (road white and pulsing once per block when live, faint when 
 - **Do** tie motion to the chain: dashes step 34px per real block on the spring, digits settle only when they change, the live dot pulses once per block; pair every animation with its reduced-motion replacement.
 - **Do** put a stretch of lane dashes under every screen title so the road runs through every screen.
 - **Do** show the signer before every action.
+- **Do** light signal green only from the chain: a block arriving, a transaction confirmed, an action the account allows.
 
 ### Don't:
 - **Don't** colour prices or depth red or green by direction.
 - **Don't** use kerb yellow for selection, hover, emphasis, charts or brand accents beyond the wordmark slashes.
 - **Don't** use stop red for anything but an onchain refusal, and never for small text.
+- **Don't** use signal green for prices, gains, selection, or success that never touched the chain; offline is a hollow grey ring, not red.
 - **Don't** fade a paint button when disabled; switch it to dashed high asphalt.
 - **Don't** add a second shadow level, glow or gradient surface; the only gradient is the scrim over the photographic plate.
 - **Don't** use stencil signage as a label above a heading or outside a hatched zone.

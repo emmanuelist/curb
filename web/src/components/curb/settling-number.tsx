@@ -8,7 +8,7 @@ export function SettlingNumber({ text, label }: { text: string; /** What a scree
       <span className="sr-only">{label ?? text}</span>
       <span aria-hidden="true">
         {text.split("").map((ch, i) => (
-          <span key={`${i}-${ch}`} className={`digit-settle inline-block ${ch === "4" ? "stencil-four" : ""}`}>
+          <span key={`${i}-${ch}`} className="digit-settle inline-block">
             {ch}
           </span>
         ))}
