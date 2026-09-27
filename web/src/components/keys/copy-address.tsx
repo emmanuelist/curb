@@ -1,21 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Copy, ExternalLink } from "lucide-react";
 import { explorerUrl } from "@/lib/chain/clients";
 
-/** A full address, grouped for reading aloud, with copy and explorer links. */
-export function CopyAddress({ address, tone }: { address: string; tone: "owner" | "trading" }) {
+/** A full address, grouped for reading aloud, with copy and explorer actions. */
+export function CopyAddress({ address }: { address: string }) {
   const [copied, setCopied] = useState(false);
   const groups = address.slice(2).match(/.{1,4}/g) ?? [];
   return (
-    <span className="flex flex-col gap-1.5">
-      <span className={`figures break-all text-[12px] leading-relaxed ${tone === "owner" ? "text-kerb" : "text-road"}`}>
-        0x{groups.join(" ")}
-      </span>
-      <span className="flex gap-4 text-[12px]">
+    <div className="flex flex-col gap-2.5">
+      <p className="figures text-[12.5px] leading-[1.7] text-road">
+        <span className="text-muted">0x</span>
+        {groups.join(" ")}
+      </p>
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className="min-h-8 text-road underline decoration-faint underline-offset-4"
+          className="pill min-h-9 border-rule-strong bg-high px-3 text-road transition-colors hover:border-muted"
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(address);
@@ -26,12 +28,13 @@ export function CopyAddress({ address, tone }: { address: string; tone: "owner" 
             }
           }}
         >
-          {copied ? "Copied" : "Copy address"}
+          {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
+          {copied ? "Copied" : "Copy"}
         </button>
-        <a className="min-h-8 text-muted underline decoration-faint underline-offset-4" href={explorerUrl("address", address)} target="_blank" rel="noreferrer">
-          View on Monadscan ↗
+        <a className="pill min-h-9 px-3 text-muted transition-colors hover:text-road" href={explorerUrl("address", address)} target="_blank" rel="noreferrer">
+          Monadscan <ExternalLink size={13} aria-hidden="true" />
         </a>
-      </span>
-    </span>
+      </div>
+    </div>
   );
 }

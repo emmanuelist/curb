@@ -43,6 +43,7 @@ Latest on npm as of 2026-09-26. Pin exactly in package.json at scaffold (M1) and
 | TanStack Query | 5.104.0. All async and onchain reads go through it (D-011). |
 | Vitest | 3.2.7 (`npm test`) |
 | @scure/bip32 · @scure/bip39 · @noble/hashes | 2.4.0 · 2.4.0 · 2.2.0 exact (Mera's key recipe, D-012) |
+| lucide-react | 1.48.0 exact. The only icon set; line icons at 1.7–2.4 stroke (D-013). |
 | wagmi | **Not used** (D-011): there's no browser wallet, since passkey → Mera → viem signs. |
 | Motion | Optional, only for gesture and spring interactions CSS can't express (BRIEF §15). Verify the version at scaffold. |
 | ethers | **Never in the web runtime.** `@kuru-labs/kuru-sdk` bundles ethers 5.7.1. Use the SDK only for its ABI JSON files; call Kuru through viem (D-003). |
