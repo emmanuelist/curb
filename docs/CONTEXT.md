@@ -131,6 +131,8 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 - **`box-shadow` animations restyle every frame.** The per-block live-dot pulse cost ~7 points of main-thread time at 4x CPU; the same pulse as a transform/opacity ring is compositor-only. (verified 2026-09-27, CDP Performance metrics)
 - **Local `vercel build` writes `web/.vercel/output`**, which ESLint then scans (thousands of findings). It is ignored in `eslint.config.mjs`. (verified 2026-09-27)
 
+- **Vercel deploys come from GitHub now (D-016).** The project's root directory is `web`, so a manual `vercel deploy` must run from the repo root (running it inside `web/` would look for `web/web`). Local `vercel build` output still lands in `web/.vercel/output` and is lint-ignored.
+
 ## Environment (names and purpose only, never values)
 
 | Var | Purpose |
