@@ -130,7 +130,7 @@ function MarketPanel({
   const open = lane?.status === "open" ? lane : null;
   return (
     <section aria-label="Market" className={`panel relative isolate flex min-h-[440px] flex-col justify-between overflow-hidden p-6 ${className ?? ""}`}>
-      <Image src="/plates/curb-photo.png" alt="" fill sizes="(min-width: 1280px) 33vw, 100vw" className="pointer-events-none -z-10 object-cover object-[70%_100%]" fetchPriority="high" />
+      <Image src="/plates/curb-photo.png" alt="" fill sizes="(min-width: 1280px) 33vw, 100vw" className="pointer-events-none -z-10 object-cover object-[70%_100%]" loading="eager" fetchPriority="high" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgb(11_13_15/0.94)_0%,rgb(11_13_15/0.88)_50%,rgb(11_13_15/0.12)_76%,rgb(11_13_15/0.6)_100%)]" aria-hidden="true" />
       <div>
         <div className="flex items-start justify-between gap-4">
