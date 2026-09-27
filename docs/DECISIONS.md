@@ -181,3 +181,10 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** Board colours in full (yellow prices and BUY, red/green book) would blur "yellow = owner key" and make the refusal red ordinary, and the board's green change figure needs a 24h price source that doesn't exist yet. Keeping it as is did not answer the user's question of why the build is less colourful than the board.
 **Consequences:** DESIGN.md, `.impeccable/design.json` and PRODUCT.md carry the new rule. Offline is a hollow grey ring, never red.
 **Evidence:** E-008.
+
+## D-016 · Production deploys from GitHub on merge to main · 2026-09-27 · accepted
+**Context:** Each production deploy needed the user to run `vercel deploy --prod` by hand; the user asked for deploys to follow the repo instead.
+**Decision:** The Vercel project `curb` is connected to github.com/emmanuelist/curb (root directory `web`, framework Next.js, production branch `main`). Every merge to `main` deploys https://curb-jet.vercel.app; every PR branch gets a preview deployment. `web/vercel.json` skips a build when a commit leaves `web/` untouched (`ignoreCommand: git diff --quiet HEAD^ HEAD -- .`).
+**Alternatives:** A GitHub Actions deploy with a Vercel token (a secret to create and rotate, more moving parts); keep manual CLI deploys (the user's time, and production drifts behind `main`).
+**Consequences:** "Merge only on green CI" now also gates production. Preview URLs are never used for passkeys (D-014). A manual CLI deploy, if ever needed, must run from the repo root, because the project's root directory is `web`.
+**Evidence:** E-012.
