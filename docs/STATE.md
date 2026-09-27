@@ -1,13 +1,13 @@
 # State
 
-_Last verified: 2026-09-27, branch `16-board-redesign`; repo: https://github.com/emmanuelist/curb (public)_
+_Last verified: 2026-09-27, branch `6-vercel-deploy`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M1 · Walking skeleton (due 2026-10-02) · **Deadline:** 2026-10-13 23:59 ET · 16 days left
-**Next action:** Ask the user before the first Vercel deploy (#6), then run the real-phone check: the user funds the owner key with ~50 MON and sends gas to the trading key with Face ID (D-010).
-**Blocked on:** the user's go-ahead to deploy; ~50 MON from the user for the phone check; the bounty texts (#5).
+**Next action:** The real-phone check on https://curb-jet.vercel.app (D-010, #6): the user creates an account in Safari, funds the owner key with ~50 MON, and sends gas to the trading key with Face ID.
+**Blocked on:** ~50 MON from the user for the phone check; the bounty texts (#5).
 
-## Works (E-006 and the web gate re-verified 2026-09-27; E-001 to E-005 verified 2026-09-26)
+## Works (E-006, E-007 and the web gate verified 2026-09-27; E-001 to E-005 verified 2026-09-26)
 
 | Capability | Verified by | Evidence |
 |---|---|---|
@@ -18,12 +18,13 @@ _Last verified: 2026-09-27, branch `16-board-redesign`; repo: https://github.com
 | Onboarding, owner-key tx, sign-in recovery, in-app guard | Playwright + virtual authenticator + anvil fork | E-004 |
 | Gate: lint (0 warnings), typecheck, 17 tests, warning-free build; contracts fork test | CI on GitHub | E-005 |
 | Board redesign (D-013) on every screen, live data, 390–1440 with no overflow; finish review `ship` | Playwright + Impeccable comp-diff, detector, reviewer | E-006 |
+| Production deploy on live mainnet data, blocks streaming, zero console errors | curl + Playwright on https://curb-jet.vercel.app | E-007 |
 
 ## Deployed
 
 | What | Network | Address / URL | Last checked |
 |---|---|---|---|
-| — | — | not deployed yet (needs the user's go-ahead) | — |
+| Web app (Vercel project `curb`, root `web/`) | Monad mainnet (reads) | https://curb-jet.vercel.app (D-014) | 2026-09-27 (E-007) |
 
 ## Broken or unverified
 

@@ -167,3 +167,10 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** Keep the board as mood only (the user rejected the result); copy it literally (breaks the brief's key colours and would show fake numbers).
 **Consequences:** The Impeccable hero gate stays formally open at 81%: the only controls below its bar (live pill, Buy bar) differ by the waived colours, and `--force` refuses a colour-only waiver. Disclosed in the PR.
 **Evidence:** E-006; `.impeccable/surfaces/web-src-app-page-tsx.md`.
+
+## D-014 · Production domain is curb-jet.vercel.app, permanently · 2026-09-27 · accepted
+**Context:** Passkeys bind to the serving hostname (`rp.id = location.hostname`, docs/CONTEXT.md). The user approved the first deploy (#6).
+**Decision:** Vercel project `curb` (team emmanuel-pauls-projects), root `web/`, framework pinned in `web/vercel.json`. Its production alias https://curb-jet.vercel.app is the one domain for the phone check (D-010), the demo and judging. Preview URLs are never used for passkeys.
+**Alternatives:** A custom domain (costs money and needs the user's go-ahead); preview URLs (each one orphans every passkey made on it).
+**Consequences:** Renaming the project or moving domains orphans every passkey created on this one, so a change needs a new decision and a sign-in plan. The deploy is run by the user (production deploys need their explicit permission here).
+**Evidence:** E-007.

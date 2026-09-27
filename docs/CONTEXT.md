@@ -124,6 +124,8 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
   - Judges often open links from X, Telegram or Discord, so Curb must detect in-app browsers and show "Open in Safari/Chrome" **before** starting the passkey ceremony, and map Mera's `PASSKEY_OPERATION_FAILED` to that same guidance.
 - WebAuthn `rp.id` must equal the serving hostname. The recipe uses `location.hostname`. A passkey created on one domain (e.g. a Vercel preview URL) won't work on another, so demo and judging should use one stable production domain.
 
+- **A Vercel project created by name (`vercel project add`) gets Framework Preset "Other"**: the build serves only `public/`, so every page is a 404 while images load. `web/vercel.json` pins `"framework": "nextjs"`; keep it. (verified 2026-09-27: first production deploy 404s; after the pin, `vercel build` reports nextjs 16.3.6 with 28 routes and every route returns 200)
+
 ## Environment (names and purpose only, never values)
 
 | Var | Purpose |
