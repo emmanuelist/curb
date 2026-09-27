@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { archivo, martian, stencil, switzer } from "./fonts";
+import { archivo, martian, shoulders, stencil, switzer } from "./fonts";
 import { Providers } from "./providers";
-import { DesktopNav, MobileNav, MobileTopBar } from "@/components/navigation/app-nav";
+import { DesktopNav, MobileNav } from "@/components/navigation/app-nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,11 +22,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className={`${archivo.variable} ${martian.variable} ${stencil.variable} ${switzer.variable}`}>
+    <html lang="en" className={`${archivo.variable} ${martian.variable} ${stencil.variable} ${shoulders.variable} ${switzer.variable}`}>
       <body className="antialiased">
         <Providers>
           <DesktopNav />
-          <MobileTopBar />
           {children}
           <MobileNav />
         </Providers>

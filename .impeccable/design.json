@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-27T00:00:00Z",
+  "title": "Design System: Curb",
+  "extensions": {
+    "colorMeta": {
+      "asphalt": { "role": "neutral", "displayName": "Asphalt", "canonical": "#0b0d0f", "tonalRamp": ["#0b0d0f", "#111417", "#171b1f", "#242a30", "#343b42", "#5f666d", "#9aa1a8", "#ededed"] },
+      "asphalt-raised": { "role": "neutral", "displayName": "Raised Asphalt", "canonical": "#111417", "tonalRamp": ["#0b0d0f", "#111417", "#171b1f", "#242a30", "#343b42", "#5f666d", "#9aa1a8", "#ededed"] },
+      "asphalt-high": { "role": "neutral", "displayName": "High Asphalt", "canonical": "#171b1f", "tonalRamp": ["#0b0d0f", "#111417", "#171b1f", "#242a30", "#343b42", "#5f666d", "#9aa1a8", "#ededed"] },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "#242a30", "tonalRamp": ["#0b0d0f", "#111417", "#171b1f", "#242a30", "#343b42", "#5f666d", "#9aa1a8", "#ededed"] },
+      "hairline-strong": { "role": "neutral", "displayName": "Strong Hairline", "canonical": "#343b42", "tonalRamp": ["#0b0d0f", "#111417", "#171b1f", "#242a30", "#343b42", "#5f666d", "#9aa1a8", "#ededed"] },
+      "road-white": { "role": "primary", "displayName": "Road White", "canonical": "#ededed", "tonalRamp": ["#1f1f1f", "#383838", "#525252", "#6e6e6e", "#8c8c8c", "#ababab", "#cccccc", "#ededed"] },
+      "road-grey": { "role": "neutral", "displayName": "Road Grey", "canonical": "#9aa1a8", "tonalRamp": ["#1c1f22", "#30353a", "#464c52", "#5f666d", "#7b8289", "#9aa1a8", "#bcc1c6", "#e0e3e6"] },
+      "road-grey-dim": { "role": "neutral", "displayName": "Dim Road Grey", "canonical": "#5f666d", "tonalRamp": ["#1c1f22", "#30353a", "#464c52", "#5f666d", "#7b8289", "#9aa1a8", "#bcc1c6", "#e0e3e6"] },
+      "kerb-yellow": { "role": "secondary", "displayName": "Kerb Yellow", "canonical": "color(display-p3 1 0.85 0.05)", "tonalRamp": ["#2e2600", "#4d4000", "#735f00", "#9c8200", "#c7a600", "#ffd600", "#ffe34d", "#fff3b3"] },
+      "stop-red": { "role": "tertiary", "displayName": "Stop Red", "canonical": "color(display-p3 1 0.24 0.22)", "tonalRamp": ["#330a0a", "#5c1010", "#8a1717", "#b81f1f", "#e62b2b", "#ff3838", "#ff7a7a", "#ffc2c2"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Stencil Price", "purpose": "The live mid price only; 81px on the phone hero. Stencil 4s render from Big Shoulders." },
+      "headline": { "displayName": "Screen Title", "purpose": "One per screen, 30px mobile / 44px desktop, followed by a stretch of lane dashes." },
+      "title": { "displayName": "Panel Title", "purpose": "Panel and card headings." },
+      "figure": { "displayName": "Condensed Figure", "purpose": "Every compared number: book prices and sizes, balances, the BUY bar. Archivo width 66-80, tabular." },
+      "body": { "displayName": "Body", "purpose": "Explanations in road grey, 44-52ch." },
+      "label": { "displayName": "Label", "purpose": "Field labels, pills, curb-edge notes, tab labels." },
+      "data-mono": { "displayName": "Data Mono", "purpose": "Addresses and transaction hashes." },
+      "signage": { "displayName": "Zone Signage", "purpose": "Stencil uppercase sign painted on a hatched plate, naming that zone. Nowhere else." }
+    },
+    "shadows": [
+      { "name": "panel", "value": "0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -12px rgb(0 0 0 / 0.7)", "purpose": "The single lift shared by every panel." },
+      { "name": "owner-halo", "value": "0 0 0 1px rgb(255 214 0 / 0.06), 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -12px rgb(0 0 0 / 0.7)", "purpose": "Owner key card only." },
+      { "name": "block-pulse", "value": "0 0 0 0 color-mix(in oklab, #ededed 55%, transparent) -> 0 0 0 7px transparent", "purpose": "Live dot ring, once per real block, 600ms." }
+    ],
+    "motion": [
+      { "name": "spring", "value": "linear(0, 0.06, 0.202, 0.38, 0.561, 0.723, 0.856, 0.955, 1.023, 1.062, 1.081, 1.083, 1.075, 1.062, 1.047, 1.032, 1.019, 1.009, 1.002, 0.997, 0.994, 0.993, 0.993, 0.994, 0.995, 0.996, 0.998, 0.999, 1)", "purpose": "Lane dashes stepping per block (300ms) and button press (180ms)." },
+      { "name": "ease-out", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Screen entrance (rise 520ms, 55ms stagger), digit settle (320ms), block pulse (600ms)." },
+      { "name": "dash-period", "value": "34px", "purpose": "One lane-dash period; dashes advance exactly one period per real Monad block." },
+      { "name": "reduced-motion", "value": "--animation-reduced per element", "purpose": "Every animation declares its reduced-motion replacement; dashes stop transitioning." }
+    ],
+    "breakpoints": [
+      { "name": "base", "value": "375px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Road white: trading-key actions and navigation.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Create your account to trade</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; padding: 0 20px; border: 0; border-radius: 12px; font: 600 17px Switzer, system-ui, sans-serif; cursor: pointer; transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease; } .ds-btn:active { transform: scale(0.985); } .ds-btn:focus-visible { outline: 2px solid #ededed; outline-offset: 3px; } .ds-btn-primary { background: #ededed; color: #0b0d0f; } .ds-btn-primary:hover { background: #f7f7f7; }"
+    },
+    {
+      "name": "Owner Button",
+      "kind": "button",
+      "refersTo": "button-owner",
+      "description": "Kerb yellow: only when this tap triggers a Face ID (owner key) prompt.",
+      "html": "<button class=\"ds-btn-owner\">Create with Face ID</button>",
+      "css": ".ds-btn-owner { display: inline-flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 20px; border: 0; border-radius: 12px; background: #ffd600; color: #0b0d0f; font: 600 17px Switzer, system-ui, sans-serif; cursor: pointer; transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-owner:active { transform: scale(0.985); } .ds-btn-owner:focus-visible { outline: 2px solid #ededed; outline-offset: 3px; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Secondary choices and empty-state actions.",
+      "html": "<button class=\"ds-btn-quiet\">Sign in</button>",
+      "css": ".ds-btn-quiet { min-height: 56px; padding: 0 20px; border: 1px solid #343b42; border-radius: 12px; background: #171b1f; color: #ededed; font: 600 17px Switzer, system-ui, sans-serif; cursor: pointer; transition: border-color 150ms ease; } .ds-btn-quiet:hover { border-color: #9aa1a8; } .ds-btn-quiet:focus-visible { outline: 2px solid #ededed; outline-offset: 3px; }"
+    },
+    {
+      "name": "Disabled Paint Button",
+      "kind": "button",
+      "refersTo": "button-disabled",
+      "description": "A disabled white or yellow button: dashed high asphalt, never faded paint.",
+      "html": "<button class=\"ds-btn-disabled\" disabled>Buy 200 MON</button>",
+      "css": ".ds-btn-disabled { min-height: 56px; width: 100%; padding: 0 20px; border: 1px dashed #343b42; border-radius: 12px; background: #171b1f; color: #9aa1a8; font: 600 17px Switzer, system-ui, sans-serif; cursor: not-allowed; }"
+    },
+    {
+      "name": "Order Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Asphalt well with label, unit and a large condensed figure.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-row\">Price<b>USDC</b></span><input value=\"0.026367\" inputmode=\"decimal\"><span class=\"ds-field-help\">joins the best bid</span></label>",
+      "css": ".ds-field { display: block; padding: 12px 16px 10px; border: 1px solid #242a30; border-radius: 12px; background: #0b0d0f; transition: border-color 150ms ease; } .ds-field:focus-within { border-color: #ededed; } .ds-field-row { display: flex; justify-content: space-between; font: 400 12px Switzer, system-ui, sans-serif; color: #9aa1a8; } .ds-field-row b { font-weight: 500; color: #ededed; } .ds-field input { width: 100%; margin-top: 4px; border: 0; background: transparent; color: #ededed; font: 600 26px Archivo, sans-serif; font-variation-settings: 'wdth' 75; font-variant-numeric: tabular-nums; outline: none; } .ds-field-help { font: 400 12px Switzer, system-ui, sans-serif; color: #9aa1a8; }"
+    },
+    {
+      "name": "Mobile Tab Bar",
+      "kind": "nav",
+      "refersTo": "nav-tab-bar",
+      "description": "Five line-icon tabs; the active tab is road white, never yellow.",
+      "html": "<nav class=\"ds-tabbar\"><a aria-current=\"page\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\"><path d=\"M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4\"/></svg>Trade</a><a><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg>History</a><a><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\"><circle cx=\"7.5\" cy=\"15.5\" r=\"4.5\"/><path d=\"M10.7 12.3 20 3M16 7l3 3\"/></svg>Keys</a></nav>",
+      "css": ".ds-tabbar { display: grid; grid-template-columns: repeat(3, 1fr); height: 72px; border-top: 1px solid #242a30; background: rgb(11 13 15 / 0.95); } .ds-tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font: 500 12px Switzer, system-ui, sans-serif; color: #9aa1a8; text-decoration: none; cursor: pointer; } .ds-tabbar a:hover { color: #ededed; } .ds-tabbar a[aria-current] { color: #ededed; } .ds-tabbar a:focus-visible { outline: 2px solid #ededed; outline-offset: -4px; border-radius: 4px; }"
+    },
+    {
+      "name": "Filter Tabs",
+      "kind": "chip",
+      "refersTo": "filter-tab",
+      "description": "Pill filters; the selected pill is a road-white outline.",
+      "html": "<div class=\"ds-filters\"><button aria-selected=\"true\">All</button><button>Trades</button><button>Refusals</button></div>",
+      "css": ".ds-filters { display: flex; gap: 8px; } .ds-filters button { height: 40px; padding: 0 14px; border: 1px solid #242a30; border-radius: 999px; background: #111417; color: #9aa1a8; font: 500 14px Switzer, system-ui, sans-serif; cursor: pointer; transition: color 150ms ease; } .ds-filters button:hover { color: #ededed; } .ds-filters button[aria-selected=true] { border-color: #ededed; background: #171b1f; color: #ededed; } .ds-filters button:focus-visible { outline: 2px solid #ededed; outline-offset: 3px; }"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Raised asphalt, hairline border, one soft lift.",
+      "html": "<section class=\"ds-panel\"><h2>What the trading key can do</h2><p>Trade inside the lane. Withdrawals need the owner key.</p></section>",
+      "css": ".ds-panel { padding: 20px; background: #111417; border: 1px solid #242a30; border-radius: 16px; box-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -12px rgb(0 0 0 / 0.7); } .ds-panel h2 { margin: 0; font: 600 15px Switzer, system-ui, sans-serif; color: #ededed; } .ds-panel p { margin: 6px 0 0; font: 400 13.5px/1.6 Switzer, system-ui, sans-serif; color: #9aa1a8; }"
+    },
+    {
+      "name": "Order Lane",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "The signature: the book between two curb lines, hatched off-book zones outside, lane dashes on the centre line.",
+      "html": "<section class=\"ds-lane\"><div class=\"ds-offbook\"><span>Off-book · refused onchain</span></div><div class=\"ds-curb\"></div><p class=\"ds-edge\"><b>Max buy 0.026507</b><span>best ask +0.50%</span></p><p class=\"ds-row\"><b>0.026376</b><i style=\"width:40%\"></i><em>18,800</em></p><div class=\"ds-centre\"><span class=\"ds-chip\">Your buy 0.026367</span><div class=\"ds-dashes\"></div></div><p class=\"ds-row\"><b>0.026367</b><i style=\"width:40%\"></i><em>18,800</em></p><p class=\"ds-edge\"><b>Min sell 0.026236</b><span>best bid −0.50%</span></p><div class=\"ds-curb\"></div><div class=\"ds-offbook ds-offbook-low\"></div></section>",
+      "css": ".ds-lane { padding: 12px 0; background: #111417; border: 1px solid #242a30; border-radius: 16px; box-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -12px rgb(0 0 0 / 0.7); color: #ededed; font-family: Switzer, system-ui, sans-serif; } .ds-offbook { margin: 4px 12px; padding: 6px 8px; display: flex; justify-content: flex-end; border: 1px solid #242a30; border-radius: 10px; background-image: repeating-linear-gradient(135deg, rgb(237 237 237 / 0.16) 0 6px, transparent 0 14px); } .ds-offbook-low { height: 20px; } .ds-offbook span { padding: 2px 8px; border-radius: 999px; background: #111417; font: 800 11px 'Big Shoulders Stencil', Archivo, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa1a8; } .ds-curb { margin: 0 20px; height: 7px; border-top: 2px solid #ededed; border-bottom: 2px solid #ededed; } .ds-edge { display: flex; justify-content: space-between; margin: 0; padding: 6px 20px; font-size: 12px; } .ds-edge b { font-weight: 500; } .ds-edge span { color: #9aa1a8; } .ds-row { display: grid; grid-template-columns: 6.4rem 1fr 5.6rem; gap: 12px; align-items: center; height: 26px; margin: 0; padding: 0 20px; } .ds-row b { font: 600 15px Archivo, sans-serif; font-variation-settings: 'wdth' 72; font-variant-numeric: tabular-nums; } .ds-row i { display: block; height: 5px; border-radius: 999px; background: #ededed; } .ds-row em { font: normal 13px Archivo, sans-serif; font-variation-settings: 'wdth' 80; text-align: right; font-variant-numeric: tabular-nums; } .ds-centre { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 20px; } .ds-chip { flex-shrink: 0; padding: 2px 10px; border: 1px dashed #ededed; border-radius: 999px; font-size: 11.5px; font-weight: 600; } .ds-dashes { flex: 1; height: 3px; background-image: linear-gradient(90deg, #ededed 0 20px, transparent 20px); background-size: 34px 100%; background-repeat: repeat-x; opacity: 0.9; transition: background-position-x 300ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-lane:hover .ds-dashes { background-position-x: 34px; } @media (prefers-reduced-motion: reduce) { .ds-dashes { transition: none; } }"
+    },
+    {
+      "name": "Owner Money Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "A money-moving panel: painted kerb strip on top, yellow focus, the yellow Face ID button.",
+      "html": "<section class=\"ds-money\"><div class=\"ds-kerb\"></div><h2>Send gas to the trading key</h2><p class=\"ds-signer\"><b>Owner key</b> · Face ID required</p><button>Send with Face ID</button></section>",
+      "css": ".ds-money { display: flex; flex-direction: column; gap: 16px; padding: 20px; background: #111417; border: 1px solid #242a30; border-radius: 16px; box-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -12px rgb(0 0 0 / 0.7); font-family: Switzer, system-ui, sans-serif; } .ds-kerb { margin: -20px -20px 0; height: 6px; border-radius: 15px 15px 0 0; background-image: repeating-linear-gradient(90deg, #ffd600 0 77px, rgb(0 0 0 / 0.45) 0 78px); } .ds-money h2 { margin: 0; font-size: 17px; font-weight: 600; color: #ededed; } .ds-signer { margin: 0; font-size: 12px; color: #9aa1a8; } .ds-signer b { color: #ffd600; } .ds-money button { min-height: 56px; border: 0; border-radius: 12px; background: #ffd600; color: #0b0d0f; font: 600 17px Switzer, system-ui, sans-serif; cursor: pointer; } .ds-money button:active { transform: scale(0.985); } .ds-money button:focus-visible { outline: 2px solid #ededed; outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Painted Road at Night",
+    "overview": "Curb is a trading app whose information architecture is road markings. The ground is near-black asphalt; the book lives in a lane bounded by two solid double curb lines; dashed lane markings advance one period per real Monad block and only then; whatever lies past a curb is hatched, the way a road marks space you may not drive into. Paint colours carry meaning, not decoration: road white is everything the trading key does, kerb yellow is the owner key and money moving, stop red is an onchain refusal. The price stands in stencilled street lettering over a photographic plate of a night curb.\n\nThe surfaces are layered and restrained: hairline-bordered rounded panels lifted by one soft shadow, a quiet sans for the interface, condensed engineered figures for every number that is compared. Density is that of a trading terminal on desktop (three columns) and a single thumb-reachable column on a 375–430px phone. Every figure on screen is live chain data, printed at the market's full precision.\n\nIt rejects the category default: no exchange table plus candle chart, no red/green price direction, no yellow as a generic accent or selection colour.",
+    "keyCharacteristics": [
+      "Asphalt ground, hairline panels, one soft lift.",
+      "Three paint colours with fixed meanings; white carries almost everything.",
+      "Curb lines, lane dashes and hatching are the structural vocabulary, reused on every screen.",
+      "Stencil street lettering for the hero price and wordmark; condensed Archivo for figures; Switzer for everything read.",
+      "Motion is caused by the chain: dashes step, the live dot pulses and digits settle only when a real block or price change arrives."
+    ],
+    "rules": [
+      { "name": "The Paint Means Something Rule", "body": "Road white is the trading key; kerb yellow is the owner key and money; stop red is an onchain refusal. No paint is ever used for emphasis, selection, brand flourish or price direction.", "section": "colors" },
+      { "name": "The Face ID Now Rule", "body": "A button is yellow only when pressing it triggers a Face ID (owner key) prompt at that moment. Navigation into owner-key territory is yellow text at most, never a yellow button.", "section": "colors" },
+      { "name": "The No Direction Rule", "body": "There is no red/green up/down. Ask and bid are both road white; the best level is full white, depth is road white at reduced alpha.", "section": "colors" },
+      { "name": "The Full Precision Rule", "body": "Prices print at the market's full precision from live data (six decimals on MON/USDC), never rounded; a one-tick spread must never read as zero.", "section": "typography" },
+      { "name": "The Borrowed Four Rule", "body": "Inside stencil figures every \"4\" renders from Big Shoulders (the non-stencil cut) because the stencil 4's detached crossbar reads as a second decimal point.", "section": "typography" },
+      { "name": "The Tabular Figures Rule", "body": "Every compared number is tabular (`tnum`); addresses and hashes are Martian Mono.", "section": "typography" },
+      { "name": "The One Lift Rule", "body": "Panels share a single shadow; nothing floats higher. Hierarchy is carried by tone, borders and paint.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use road white for every trading-key action, the selected tab and filter, focus, and both sides of the book.",
+      "Do reserve the yellow button for an action that triggers Face ID in that tap; mark owner-key text, glyphs and the money-moving panel strip in kerb yellow.",
+      "Do mark anything past a curb, or refused, with 135° hatching; label the zone with stencil signage on the hatch itself.",
+      "Do print prices at full precision from live data with tabular figures, and render stencil 4s from Big Shoulders.",
+      "Do tie motion to the chain: dashes step 34px per real block on the spring, digits settle only when they change, the live dot pulses once per block; pair every animation with its reduced-motion replacement.",
+      "Do put a stretch of lane dashes under every screen title so the road runs through every screen.",
+      "Do show the signer before every action."
+    ],
+    "donts": [
+      "Don't colour prices or depth red or green by direction.",
+      "Don't use kerb yellow for selection, hover, emphasis, charts or brand accents beyond the wordmark slashes.",
+      "Don't use stop red for anything but an onchain refusal, and never for small text.",
+      "Don't fade a paint button when disabled; switch it to dashed high asphalt.",
+      "Don't add a second shadow level, glow or gradient surface; the only gradient is the scrim over the photographic plate.",
+      "Don't use stencil signage as a label above a heading or outside a hatched zone.",
+      "Don't show mock, placeholder or rounded figures; an absent value is an em dash."
+    ]
+  }
+}

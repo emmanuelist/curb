@@ -11,12 +11,16 @@ export type BlockState = {
   status: BlockStatus;
   /** Advances by one per block notification. Drives the lane dashes, so motion stops when blocks stop. */
   step: number;
+  /** Rolling mean of the gaps between the last blocks seen, in ms; null until two have arrived. */
+  avgIntervalMs: number | null;
 };
 
 /** No block for this long means the stream has stalled: the lane stops moving and says so. */
 const STALL_MS = 2_500;
 
-const INITIAL: BlockState = { block: null, receivedAt: null, status: "connecting", step: 0 };
+const INITIAL: BlockState = { block: null, receivedAt: null, status: "connecting", step: 0, avgIntervalMs: null };
+const WINDOW = 12;
+let gaps: number[] = [];
 
 let state: BlockState = INITIAL;
 const listeners = new Set<() => void>();
@@ -39,7 +43,14 @@ function start() {
     emitOnBegin: true,
     onBlockNumber: (block) => {
       if (state.block !== null && block <= state.block) return;
-      emit({ block, receivedAt: Date.now(), status: "live", step: state.step + 1 });
+      const now = Date.now();
+      if (state.receivedAt !== null && state.block !== null) {
+        // Spread the gap over every block that arrived, so a skipped notification doesn't read as a slow block.
+        const per = (now - state.receivedAt) / Number(block - state.block);
+        gaps = [...gaps, per].slice(-WINDOW);
+      }
+      const avgIntervalMs = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null;
+      emit({ block, receivedAt: now, status: "live", step: state.step + 1, avgIntervalMs });
       armStall();
     },
     onError: () => emit({ ...state, status: "error" }),

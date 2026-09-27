@@ -153,3 +153,17 @@ Append-only. To change a decision, add a new entry that supersedes it.
 
 **Evidence:** E-002, E-004; web/src/lib/passkey/keys.ts.
 
+
+## D-013 · The board is the approved comp for the look; the brief keeps the meanings · 2026-09-27 · accepted
+**Context:** The user judged the first UI "terribly bad" and asked for a redesign that leverages the concept board and the Impeccable pipeline. This supersedes D-011 amendment 7 ("mood reference only") for visual polish only; the board is still never published.
+**Decision:**
+
+- The board's first Trade phone (`.impeccable/mocks/trade-comp.png`, gitignored) is the approved comp: layered panels, curb photograph behind a stencil price, pills, line icons, tab bar. User's words: "Comp-first from my board" and "Board's look, brief's meanings".
+- The board's numbers and colours don't bind. User's words: "The board's placeholder numbers don't bind: always show real live data at full precision. Its yellow and green on prices, the live dot and the Buy button don't bind either: my brief's colour meanings win." So prices show 6 decimals from Kuru; ask, bid, Buy and the live dot are road white.
+- Button colour rule: yellow only when a Face ID (owner-key) prompt happens now; white for trading-key actions and navigation. Selection (active tab, filter pill) is road white.
+- The hero plate is a Higgsfield (nano_banana_pro) generation from the board's photo region, approved by the user; provenance is embedded in `web/public/plates/curb-photo.png`.
+- In the hero, the book side the draft joins is drawn larger (26px vs 21px): the price the BUY/SELL bar quotes.
+
+**Alternatives:** Keep the board as mood only (the user rejected the result); copy it literally (breaks the brief's key colours and would show fake numbers).
+**Consequences:** The Impeccable hero gate stays formally open at 81%: the only controls below its bar (live pill, Buy bar) differ by the waived colours, and `--force` refuses a colour-only waiver. Disclosed in the PR.
+**Evidence:** E-006; `.impeccable/surfaces/web-src-app-page-tsx.md`.

@@ -1,12 +1,14 @@
 import Link from "next/link";
 
-/** CURB, stencilled like road lettering, with two lane slashes. */
-export function Wordmark() {
+/** CURB in street lettering, with two painted kerb slashes (the brand's one fixed use of kerb yellow). */
+export function Wordmark({ size = "md" }: { size?: "md" | "lg" }) {
+  const text = size === "lg" ? "text-[36px]" : "text-[33px]";
   return (
-    <Link href="/" aria-label="Curb, trade" className="flex items-center gap-2 leading-none">
-      <span className="font-stencil text-[27px] font-extrabold tracking-[0.08em] [font-variation-settings:'opsz'_72]">CURB</span>
-      <svg width="22" height="18" viewBox="0 0 22 18" aria-hidden="true" className="text-road">
-        <path d="M6 1 1 17M14 1 9 17" stroke="currentColor" strokeWidth="3.2" strokeLinecap="square" />
+    <Link href="/" aria-label="Curb, trade" className="flex items-center gap-2 leading-none text-road">
+      <span className={`font-stencil ${text} font-extrabold tracking-[0.02em]`}>CURB</span>
+      {/* Filled parallelograms, as thick as the letter stems: painted road marks, not strokes. */}
+      <svg width="34" height="24" viewBox="0 0 34 24" aria-hidden="true" className="text-kerb">
+        <path d="M9.5 0H17L8 24H0.5Z M26 0H33.5L24.5 24H17Z" fill="currentColor" />
       </svg>
     </Link>
   );

@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useId, useState, type CSSProperties, type ReactNode } from "react";
+import { ArrowDownToLine, ArrowRight, ChevronRight, ExternalLink, LogOut } from "lucide-react";
 import { createWalletClient, http, type Hash } from "viem";
 import { CopyAddress } from "@/components/keys/copy-address";
-import { KeyGlyph } from "@/components/keys/signer";
+import { KeyGlyph, Signer, type KeyRole } from "@/components/keys/signer";
+import { ScreenHeader } from "@/components/navigation/app-nav";
 import { chain, explorerUrl, publicClient, rpcHttpUrl } from "@/lib/chain/clients";
 import { formatToken, parseDecimal } from "@/lib/format";
 import { explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
@@ -21,19 +23,50 @@ export function KeysScreen() {
   const account = useAccount();
   if (!account) {
     return (
-      <main className="mx-auto w-full max-w-[720px] px-5 pb-28 pt-4 md:pt-14">
-        <p className="text-[12px] font-semibold tracking-[0.14em] text-muted">KEYS</p>
-        <h1 className="mt-2 font-display text-[44px] font-extrabold leading-none [font-variation-settings:'wdth'_62] md:text-[64px]">No keys on this device.</h1>
-        <p className="mt-4 max-w-[48ch] text-[14px] leading-relaxed text-muted">
-          Create a Curb account with a passkey. It makes two keys: an owner key that moves money, and a trading key that can only trade inside the lane.
-        </p>
-        <Link href="/start" className="mt-8 inline-flex h-14 items-center rounded-[2px] bg-kerb px-6 font-display text-[18px] font-extrabold tracking-[0.05em] text-asphalt [font-variation-settings:'wdth'_75]">
-          CREATE WITH A PASSKEY
-        </Link>
+      <main className="mx-auto w-full max-w-[1100px] pb-32 md:px-8">
+        <ScreenHeader title="Keys" lede="One passkey makes two keys. Neither is stored on this device." />
+        <div className="mt-6 grid gap-4 px-4 md:mt-10 md:grid-cols-2 md:gap-6 md:px-0">
+          <KeyCard role="owner" i={1}>
+            <p className="text-[13px] leading-relaxed text-muted">The only key that can move money out. Made with Face ID each time, then gone.</p>
+          </KeyCard>
+          <KeyCard role="trading" i={2}>
+            <p className="text-[13px] leading-relaxed text-muted">Places and cancels orders inside the lane without a prompt. It can&apos;t withdraw.</p>
+          </KeyCard>
+        </div>
+        <div className="rise mt-6 px-4 md:px-0" style={{ "--i": 3 } as CSSProperties}>
+          <Link href="/start" className="btn btn-primary w-full md:w-auto md:px-8">
+            Create your Curb account <ArrowRight size={18} strokeWidth={2.2} aria-hidden="true" />
+          </Link>
+        </div>
       </main>
     );
   }
   return <Keys account={account} />;
+}
+
+function KeyCard({ role, i, children, badge }: { role: KeyRole; i: number; children: ReactNode; badge?: ReactNode }) {
+  const owner = role === "owner";
+  return (
+    <section
+      aria-labelledby={`${role}-h`}
+      style={{ "--i": i } as CSSProperties}
+      className={`panel rise flex flex-col gap-5 p-5 ${owner ? "border-kerb/45 shadow-[0_0_0_1px_rgb(255_214_0/0.06),var(--shadow-panel)]" : ""}`}
+    >
+      <header className="flex items-center gap-3">
+        <span className={`grid size-11 shrink-0 place-items-center rounded-full border ${owner ? "border-kerb/50 bg-kerb/10 text-kerb" : "border-rule-strong bg-high text-road"}`}>
+          <KeyGlyph role={role} size={20} />
+        </span>
+        <span className="min-w-0 grow">
+          <h2 id={`${role}-h`} className={`text-[17px] font-semibold ${owner ? "text-kerb" : "text-road"}`}>
+            {owner ? "Owner key" : "Trading key"}
+          </h2>
+          <span className="block text-[13px] text-muted">{owner ? "Requires Face ID" : "No prompt required"}</span>
+        </span>
+        {badge}
+      </header>
+      {children}
+    </section>
+  );
 }
 
 function Keys({ account }: { account: CurbAccountRecord }) {
@@ -41,76 +74,69 @@ function Keys({ account }: { account: CurbAccountRecord }) {
   const trading = useBalances(account.trading);
 
   return (
-    <main className="mx-auto w-full max-w-[1100px] px-5 pb-28 pt-4 md:px-8 md:pt-12">
-      <p className="text-[12px] font-semibold tracking-[0.14em] text-muted">KEYS</p>
-      <h1 className="mt-2 font-display text-[44px] font-extrabold leading-none [font-variation-settings:'wdth'_62] md:text-[64px]">One passkey, two keys.</h1>
+    <main className="mx-auto w-full max-w-[1100px] pb-32 md:px-8">
+      <ScreenHeader title="Keys" lede="One passkey, two keys. Only the owner key can move money out." />
 
-      <div className="mt-8 grid gap-8 md:grid-cols-2 md:gap-10">
-        <section aria-labelledby="owner-h" className="flex flex-col">
-          <div className="kerb-painted" aria-hidden="true" />
-          <div className="bg-lane px-5 pb-6 pt-5">
-            <h2 id="owner-h" className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.12em] text-kerb">
-              <KeyGlyph role="owner" /> OWNER KEY
-            </h2>
-            <p className="mt-1 text-[13px] text-muted">Face ID required · the only key that moves money out</p>
-            <div className="mt-4">
-              <CopyAddress address={account.owner} tone="owner" />
-            </div>
+      <div className="mt-6 grid gap-4 px-4 md:mt-10 md:grid-cols-2 md:gap-6 md:px-0">
+        <div className="flex flex-col gap-4 md:gap-6">
+          <KeyCard role="owner" i={1} badge={<span className="pill border-kerb/40 text-kerb">Moves money</span>}>
+            <CopyAddress address={account.owner} />
             <BalanceRows balances={owner.data} loading={owner.isPending} />
-          </div>
-        </section>
+          </KeyCard>
+          <GasTopUp account={account} ownerMon={owner.data?.mon ?? null} />
+        </div>
 
-        <section aria-labelledby="trading-h" className="flex flex-col">
-          <div className="curb-line" aria-hidden="true" />
-          <div className="bg-lane px-5 pb-6 pt-5">
-            <h2 id="trading-h" className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.12em] text-road">
-              <KeyGlyph role="trading" /> TRADING KEY
-            </h2>
-            <p className="mt-1 text-[13px] text-muted">No prompt · places and cancels orders inside the lane</p>
-            <div className="mt-4">
-              <CopyAddress address={account.trading} tone="trading" />
-            </div>
+        <div className="flex flex-col gap-4 md:gap-6">
+          <KeyCard role="trading" i={2} badge={<span className="pill text-road">Held to the lane</span>}>
+            <CopyAddress address={account.trading} />
             <BalanceRows balances={trading.data} loading={trading.isPending} gasOnly />
-            <p className="mt-4 text-[12px] leading-relaxed text-muted">
+            <p className="rounded-[12px] border border-dashed border-rule-strong px-3.5 py-3 text-[12.5px] leading-relaxed text-muted">
               Today this is a plain key. The withdraw and off-lane refusals are enforced by your Curb account contract, which arrives next.
             </p>
-          </div>
-        </section>
+          </KeyCard>
+
+          <section aria-labelledby="deposit-h" className="panel rise flex gap-4 p-5" style={{ "--i": 4 } as CSSProperties}>
+            <span className="grid size-11 shrink-0 place-items-center rounded-full border border-kerb/50 bg-kerb/10 text-kerb">
+              <ArrowDownToLine size={19} strokeWidth={1.9} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <h2 id="deposit-h" className="text-[17px] font-semibold text-road">Deposit</h2>
+              <p className="mt-1 text-[13px] leading-relaxed text-muted">
+                Send MON for gas and USDC to trade to your <span className="text-kerb">owner key</span> on <span className="text-road">Monad mainnet</span>. Other networks will not arrive.
+              </p>
+            </div>
+          </section>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("Forget this account on this device? Your passkey and funds are not affected; you can sign in again with the passkey.")) forgetAccount();
+            }}
+            className="panel rise flex min-h-14 items-center gap-3 px-5 text-left text-[14px] text-muted transition-colors hover:text-road"
+            style={{ "--i": 5 } as CSSProperties}
+          >
+            <LogOut size={18} strokeWidth={1.8} aria-hidden="true" />
+            <span className="grow">Forget this account on this device</span>
+            <ChevronRight size={18} aria-hidden="true" />
+          </button>
+        </div>
       </div>
-
-      <GasTopUp account={account} ownerMon={owner.data?.mon ?? null} />
-
-      <section aria-labelledby="deposit-h" className="mt-10 max-w-[60ch]">
-        <h2 id="deposit-h" className="text-[13px] font-semibold tracking-[0.12em] text-kerb">DEPOSIT</h2>
-        <p className="mt-2 text-[14px] leading-relaxed text-muted">
-          Send MON (for gas) and USDC (to trade) on <span className="text-road">Monad mainnet</span> to your owner key&apos;s address above. Other networks will not arrive.
-        </p>
-      </section>
-
-      <button
-        type="button"
-        onClick={() => {
-          if (window.confirm("Forget this account on this device? Your passkey and funds are not affected; you can sign in again with the passkey.")) forgetAccount();
-        }}
-        className="mt-12 min-h-11 text-[13px] text-muted underline decoration-faint underline-offset-4"
-      >
-        Forget this account on this device
-      </button>
     </main>
   );
 }
 
 function BalanceRows({ balances, loading, gasOnly = false }: { balances?: { mon: bigint; usdc: bigint }; loading: boolean; gasOnly?: boolean }) {
+  const value = (v: bigint | undefined, dec: number, dp: number) => (v !== undefined ? formatToken(v, dec, dp) : loading ? "…" : "—");
   return (
-    <dl className="figures mt-5 grid grid-cols-2 gap-3 border-t border-rule pt-4 text-[12px]">
-      <div>
-        <dt className="text-muted">MON{gasOnly ? " · GAS" : ""}</dt>
-        <dd className="mt-0.5 text-[15px]">{balances ? formatToken(balances.mon, 18, 4) : loading ? "…" : "—"}</dd>
+    <dl className={`grid gap-2.5 ${gasOnly ? "grid-cols-1" : "grid-cols-2"}`}>
+      <div className="rounded-[12px] border border-rule bg-asphalt px-4 py-3">
+        <dt className="text-[12px] text-muted">MON{gasOnly ? " · for gas" : ""}</dt>
+        <dd className="mt-1 font-display text-[24px] font-semibold text-road tnum [font-variation-settings:'wdth'_75]">{value(balances?.mon, 18, 4)}</dd>
       </div>
       {!gasOnly ? (
-        <div>
-          <dt className="text-muted">USDC</dt>
-          <dd className="mt-0.5 text-[15px]">{balances ? formatToken(balances.usdc, 6) : loading ? "…" : "—"}</dd>
+        <div className="rounded-[12px] border border-rule bg-asphalt px-4 py-3">
+          <dt className="text-[12px] text-muted">USDC</dt>
+          <dd className="mt-1 font-display text-[24px] font-semibold text-road tnum [font-variation-settings:'wdth'_75]">{value(balances?.usdc, 6, 2)}</dd>
         </div>
       ) : null}
     </dl>
@@ -145,49 +171,53 @@ function GasTopUp({ account, ownerMon }: { account: CurbAccountRecord; ownerMon:
   };
 
   return (
-    <section aria-labelledby={`${id}-h`} className="mt-10 max-w-[560px]">
-      <div className="flex items-center gap-3" aria-hidden="true">
-        <span className="font-stencil text-[13px] font-extrabold tracking-[0.18em] text-kerb [font-variation-settings:'opsz'_72]">LOADING ZONE</span>
-        <span className="h-[2px] grow bg-kerb opacity-60" />
-        <span className="font-stencil text-[13px] font-extrabold tracking-[0.18em] text-kerb [font-variation-settings:'opsz'_72]">OWNER KEY ONLY</span>
-      </div>
-      <h2 id={`${id}-h`} className="mt-4 text-[18px] font-semibold">Send gas to your trading key</h2>
-      <p className="mt-1 text-[13px] leading-relaxed text-muted">The trading key pays its own gas. This moves MON from your owner key to it, on Monad mainnet.</p>
-      <label htmlFor={`${id}-amt`} className="mt-4 flex flex-col gap-1">
-        <span className="text-[11px] font-semibold tracking-[0.12em] text-muted">AMOUNT · MON</span>
+    <section aria-labelledby={`${id}-h`} className="panel rise flex flex-col gap-4 p-5" style={{ "--i": 3 } as CSSProperties}>
+      <div className="kerb-painted -mx-5 -mt-5 rounded-t-[15px]" aria-hidden="true" />
+      <header>
+        <h2 id={`${id}-h`} className="text-[17px] font-semibold text-road">
+          Send gas to your trading key
+        </h2>
+        <p className="mt-1 text-[13px] leading-relaxed text-muted">The trading key pays its own gas. This moves MON from your owner key to it, on Monad mainnet.</p>
+      </header>
+      <label htmlFor={`${id}-amt`} className="block rounded-[12px] border border-rule bg-asphalt px-4 pb-2.5 pt-3 transition-colors focus-within:border-kerb">
+        <span className="flex items-center justify-between text-[12px] text-muted">
+          Amount
+          <span className="font-medium text-road">MON</span>
+        </span>
         <input
           id={`${id}-amt`}
           inputMode="decimal"
           autoComplete="off"
           value={amountText}
           onChange={(e) => setAmountText(e.target.value)}
-          className="figures h-10 w-40 border-0 border-b-2 border-kerb bg-transparent px-1 text-[19px] text-road"
+          className="mt-1 w-full bg-transparent font-display text-[26px] font-semibold text-road outline-none tnum [font-variation-settings:'wdth'_75]"
         />
+        <span className="block text-[12px] text-muted tnum">{ownerMon !== null ? `Owner key holds ${formatToken(ownerMon, 18, 4)} MON` : "Reading balance…"}</span>
       </label>
+      <Signer role="owner" detail="signs this transfer" />
       <button
         type="button"
         onClick={send}
         disabled={busy || amount === null || amount === 0n || insufficient || ownerMon === null || ownerMon === 0n}
-        className="mt-5 flex h-14 w-full items-center justify-center gap-2.5 rounded-[2px] bg-kerb font-display text-[18px] font-extrabold tracking-[0.05em] text-asphalt [font-variation-settings:'wdth'_75] disabled:opacity-45"
+        className="btn btn-owner w-full"
       >
-        <KeyGlyph role="owner" size={22} />
-        {state.kind === "signing" ? "WAITING FOR FACE ID" : state.kind === "sent" ? "CONFIRMING ON MONAD" : "SEND WITH FACE ID"}
+        <KeyGlyph role="owner" size={20} />
+        {state.kind === "signing" ? "Waiting for Face ID…" : state.kind === "sent" ? "Confirming on Monad…" : "Send with Face ID"}
       </button>
-      <div aria-live="polite" className="mt-3 min-h-6 text-[13px]">
+      <div aria-live="polite" className="min-h-5 text-[13px] empty:hidden">
         {ownerMon === 0n ? <p className="text-muted">Your owner key has no MON yet. Deposit first.</p> : null}
-        {insufficient ? <p className="text-muted">More than your owner key holds.</p> : null}
+        {insufficient && ownerMon !== 0n ? <p className="text-muted">That&apos;s more than your owner key holds.</p> : null}
         {state.kind === "sent" || state.kind === "confirmed" ? (
-          <p className="figures text-[12px]">
-            {state.kind === "confirmed" ? "CONFIRMED · " : "SENT · "}
-            <a className="underline decoration-faint underline-offset-4" href={explorerUrl("tx", state.hash)} target="_blank" rel="noreferrer">
-              {state.hash.slice(0, 10)}…{state.hash.slice(-6)} ↗
-            </a>
-          </p>
+          <a className="pill min-h-9 px-3 text-road" href={explorerUrl("tx", state.hash)} target="_blank" rel="noreferrer">
+            <span className={`size-1.5 rounded-full ${state.kind === "confirmed" ? "bg-kerb" : "bg-muted"}`} aria-hidden="true" />
+            {state.kind === "confirmed" ? "Confirmed" : "Sent"} · <span className="figures text-[11px]">{state.hash.slice(0, 10)}…{state.hash.slice(-6)}</span>
+            <ExternalLink size={13} aria-hidden="true" />
+          </a>
         ) : null}
         {state.kind === "error" ? (
-          <div role="alert">
-            <p className="font-semibold">{state.problem.title}</p>
-            <p className="mt-0.5 text-muted">{state.problem.body}</p>
+          <div role="alert" className="rounded-[12px] border border-rule-strong bg-high px-3.5 py-3">
+            <p className="font-semibold text-road">{state.problem.title}</p>
+            <p className="mt-0.5 break-words text-muted">{state.problem.body}</p>
           </div>
         ) : null}
       </div>

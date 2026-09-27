@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // The floating dev badge would land inside measured screenshots of the tab bar.
+  devIndicators: false,
 };
 
 export default nextConfig;

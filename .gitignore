@@ -30,3 +30,10 @@ contracts/broadcast/**/dry-run/
 
 # Local copy of the platform rules (archived in internal/research/raw/)
 rules-and-guildline.md
+
+# Impeccable working files: comps, diffs and review crops contain the private concept board (BRIEF amendment 7)
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/tmp/
+# Plate source material; the shipped plate (provenance embedded) is web/public/plates/curb-photo.png
+assets/

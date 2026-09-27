@@ -1,38 +1,34 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
-/** An honest empty screen, drawn as an empty stretch of lane. */
-export function EmptyLane({
+/** An honest empty panel: what will appear here, and nothing pretending to be it. */
+export function EmptyPanel({
+  icon: Icon,
   title,
-  eyebrow,
   children,
   action,
+  i = 2,
 }: {
+  icon: LucideIcon;
   title: string;
-  eyebrow: string;
   children: ReactNode;
   action?: { href: string; label: string };
+  i?: number;
 }) {
   return (
-    <main className="mx-auto w-full max-w-[720px] px-5 pb-28 pt-2 md:pt-14">
-      <p className="text-[12px] font-semibold tracking-[0.14em] text-muted">{eyebrow}</p>
-      <h1 className="mt-2 font-display text-[44px] font-extrabold leading-none [font-variation-settings:'wdth'_62] md:text-[64px]">{title}</h1>
-      <div className="mt-8 bg-lane" aria-hidden="true">
-        <div className="curb-line" />
-        <div className="flex h-24 items-center px-5">
-          <div className="lane-dashes grow opacity-40" />
-        </div>
-        <div className="curb-line" />
-      </div>
-      <div className="mt-6 max-w-[52ch] text-[14px] leading-relaxed text-muted">{children}</div>
+    <section className="panel rise flex flex-col items-center px-6 py-10 text-center" style={{ "--i": i } as CSSProperties}>
+      <span className="grid size-14 place-items-center rounded-full border border-rule-strong bg-high text-road">
+        <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
+      </span>
+      <h2 className="mt-4 text-[18px] font-semibold text-road">{title}</h2>
+      <div className="mt-1.5 max-w-[44ch] text-[13.5px] leading-relaxed text-muted">{children}</div>
       {action ? (
-        <Link
-          href={action.href}
-          className="mt-8 inline-flex h-12 items-center rounded-[2px] border-[1.5px] border-road px-5 font-display text-[15px] font-extrabold tracking-[0.06em] [font-variation-settings:'wdth'_75]"
-        >
-          {action.label}
+        <Link href={action.href} className="btn btn-quiet mt-6 min-h-12 px-5 text-[15px]">
+          {action.label} <ArrowRight size={17} aria-hidden="true" />
         </Link>
       ) : null}
-    </main>
+    </section>
   );
 }
