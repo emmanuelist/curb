@@ -80,3 +80,15 @@ export function useLiveBlock(): BlockState {
     () => INITIAL,
   );
 }
+
+/**
+ * One slice of the block state. The component re-renders only when the selected value changes, so return a primitive
+ * (a number, string, boolean or bigint): most readers need the bucket or the status, not every block.
+ */
+export function useBlockSelector<T>(select: (s: BlockState) => T): T {
+  return useSyncExternalStore(
+    subscribe,
+    () => select(state),
+    () => select(INITIAL),
+  );
+}

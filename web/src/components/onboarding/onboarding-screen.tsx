@@ -7,7 +7,8 @@ import { ArrowRight, Check, Copy, Menu } from "lucide-react";
 import { Wordmark } from "@/components/curb/wordmark";
 import { KeyGlyph } from "@/components/keys/signer";
 import { CopyAddress } from "@/components/keys/copy-address";
-import { createAccount, signIn, type KeyRole } from "@/lib/passkey/keys";
+import type { KeyRole } from "@/lib/passkey/keys";
+import { usePasskeyKeys } from "@/hooks/use-passkey-keys";
 import { detectPasskeyEnvironment, explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
 import { saveAccount } from "@/lib/passkey/store";
 import { useAccount } from "@/hooks/use-account";
@@ -22,6 +23,8 @@ export function OnboardingScreen() {
   const isClient = useIsClient();
   const account = useAccount();
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
+  // Loaded when this screen opens; the passkey buttons wait for it, so a tap goes straight to Face ID.
+  const keys = usePasskeyKeys();
 
   if (!isClient) return <Shell title={<>One passkey.<br />Two keys.</>} />;
 
@@ -58,10 +61,11 @@ export function OnboardingScreen() {
   }
 
   const run = async (mode: "create" | "sign-in") => {
+    if (!keys) return;
     const rpId = window.location.hostname;
     try {
       const onStage = (stage: KeyRole) => setPhase({ kind: "working", mode, stage });
-      const record = mode === "create" ? await createAccount(rpId, onStage) : await signIn(rpId, onStage);
+      const record = mode === "create" ? await keys.createAccount(rpId, onStage) : await keys.signIn(rpId, onStage);
       saveAccount(record);
       setPhase({ kind: "idle" });
     } catch (error) {
@@ -93,7 +97,7 @@ export function OnboardingScreen() {
       <div aria-live="polite" className="mt-4 empty:hidden">
         {working ? (
           <p className="pill h-8 px-3 text-road">
-            <span className="block-pulse size-1.5 rounded-full bg-kerb" aria-hidden="true" />
+            <span className="block-pulse size-1.5 rounded-full bg-kerb [--pulse:var(--owner-key)]" aria-hidden="true" />
             Face ID {promptNumber} of 2 · {working.stage === "owner" ? "owner key" : "trading key"}
           </p>
         ) : phase.kind === "error" ? (
@@ -102,11 +106,11 @@ export function OnboardingScreen() {
       </div>
 
       <div className="rise mt-6 flex flex-col gap-2.5" style={{ "--i": 3 } as CSSProperties}>
-        <button type="button" disabled={Boolean(working)} onClick={() => run("create")} className="btn btn-owner">
+        <button type="button" disabled={Boolean(working) || !keys} onClick={() => run("create")} className="btn btn-owner">
           <KeyGlyph role="owner" size={20} />
           {working?.mode === "create" ? "Waiting for Face ID…" : "Create with a passkey"}
         </button>
-        <button type="button" disabled={Boolean(working)} onClick={() => run("sign-in")} className="btn btn-quiet">
+        <button type="button" disabled={Boolean(working) || !keys} onClick={() => run("sign-in")} className="btn btn-quiet">
           {working?.mode === "sign-in" ? "Waiting for Face ID…" : "I already have a Curb passkey"}
         </button>
       </div>
@@ -121,7 +125,7 @@ function Shell({ title, lede, children }: { title?: ReactNode; lede?: string; ch
   return (
     <main className="mx-auto grid w-full max-w-[1100px] pb-32 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-8 md:px-8 md:pb-16 md:pt-10">
       <section aria-label="Curb" className="relative isolate flex min-h-[300px] flex-col justify-between overflow-hidden px-[22px] pb-7 pt-6 md:min-h-[620px] md:rounded-[16px] md:border md:border-rule md:shadow-[var(--shadow-panel)] md:p-8">
-        <Image src="/plates/curb-photo.png" alt="" fill priority sizes="(min-width: 768px) 50vw, 100vw" className="pointer-events-none -z-10 object-cover object-[70%_100%]" />
+        <Image src="/plates/curb-photo.png" alt="" fill fetchPriority="high" sizes="(min-width: 768px) 50vw, 100vw" className="pointer-events-none -z-10 object-cover object-[70%_100%]" />
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgb(11_13_15/0.55)_0%,rgb(11_13_15/0.15)_40%,rgb(11_13_15/0.95)_100%)]" aria-hidden="true" />
         <div className="flex items-center justify-between md:hidden">
           <Wordmark />
@@ -161,7 +165,7 @@ function StepCard({ role, state, step, i, children }: { role: KeyRole; state: St
       className={`panel rise flex list-none gap-4 p-4 transition-[border-color,opacity] duration-300 ${active ? (owner ? "border-kerb/70" : "border-road/70") : ""} ${state === "waiting" ? "opacity-50" : ""}`}
     >
       <span
-        className={`grid size-11 shrink-0 place-items-center rounded-full border ${owner ? "border-kerb/50 bg-kerb/10 text-kerb" : "border-rule-strong bg-high text-road"} ${active ? "block-pulse" : ""}`}
+        className={`grid size-11 shrink-0 place-items-center rounded-full border ${owner ? "border-kerb/50 bg-kerb/10 text-kerb" : "border-rule-strong bg-high text-road"} ${active ? (owner ? "block-pulse [--pulse:var(--owner-key)]" : "block-pulse") : ""}`}
       >
         {state === "done" ? <Check size={19} strokeWidth={2.4} aria-hidden="true" /> : <KeyGlyph role={role} size={20} />}
       </span>

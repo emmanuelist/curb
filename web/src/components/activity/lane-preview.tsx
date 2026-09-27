@@ -3,7 +3,8 @@
 import type { CSSProperties } from "react";
 import { formatPrice } from "@/lib/format";
 import { MON_USDC } from "@/lib/markets/registry";
-import { useLiveBlock } from "@/hooks/use-live-block";
+import { LaneDashes } from "@/components/curb/lane-dashes";
+import { useBlockSelector } from "@/hooks/use-live-block";
 import { useMarket } from "@/hooks/use-market";
 
 const market = MON_USDC;
@@ -11,7 +12,7 @@ const market = MON_USDC;
 /** The board's "Order lane preview": where an order may rest right now, live from Kuru, between the two curbs. */
 export function LanePreview() {
   const { lane } = useMarket(market);
-  const { step, status } = useLiveBlock();
+  const live = useBlockSelector((s) => s.status === "live");
   const open = lane?.status === "open" ? lane : null;
   const p = (x: bigint) => formatPrice(x, market.pricePrecision);
 
@@ -22,7 +23,7 @@ export function LanePreview() {
           Order lane preview
         </h2>
         <p className="flex items-center gap-1.5 text-[12px] text-muted">
-          <span className={`size-1.5 rounded-full ${status === "live" ? "bg-live" : "bg-faint"}`} aria-hidden="true" />
+          <span className={`size-1.5 rounded-full ${live ? "bg-live" : "bg-faint"}`} aria-hidden="true" />
           {market.base.symbol} / {market.quote.symbol} · Kuru
         </p>
       </header>
@@ -35,7 +36,7 @@ export function LanePreview() {
         <Level label="Ask" value={open ? p(open.ask) : "—"} />
         <div className="flex h-7 items-center" aria-hidden="true">
           <span className="size-2 shrink-0 rounded-full bg-road" />
-          <div className="lane-dashes ml-2 grow" data-status={status} style={{ "--step": step } as CSSProperties} />
+          <LaneDashes className="ml-2 grow" />
         </div>
         <Level label="Bid" value={open ? p(open.bid) : "—"} />
         <Edge label="Min sell" value={open ? p(open.minSell) : "—"} />
