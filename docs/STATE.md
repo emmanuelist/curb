@@ -1,13 +1,13 @@
 # State
 
-_Last verified: 2026-09-27, branch `6-git-deploy-evidence`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-09-28, branch `6-m1-exit`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
-**Milestone:** M1 · Walking skeleton (due 2026-10-02) · **Deadline:** 2026-10-13 23:59 ET · 16 days left
-**Next action:** The real-phone check on https://curb-jet.vercel.app (D-010, #6): the user creates an account in Safari, funds the owner key with ~50 MON, and sends gas to the trading key with Face ID.
-**Blocked on:** ~50 MON from the user for the phone check; the bounty texts (#5).
+**Milestone:** M1 done 2026-09-28 (E-013); next M2 · Core claim (due 2026-10-08) · **Deadline:** 2026-10-13 23:59 ET · 15 days left
+**Next action:** Start M2 (#7) once the user says go: CurbAccount with onchain refusals, orders on Kuru, and an owner-key Withdraw (the user's MON must be returnable). Deploying the contract to mainnet needs the user's go-ahead.
+**Blocked on:** the user's go-ahead for M2; the bounty texts (#5).
 
-## Works (E-006 to E-012 and the web gate verified 2026-09-27; E-001 to E-005 verified 2026-09-26)
+## Works (E-013 verified 2026-09-28; E-006 to E-012 and the web gate 2026-09-27; E-001 to E-005 verified 2026-09-26)
 
 | Capability | Verified by | Evidence |
 |---|---|---|
@@ -19,6 +19,7 @@ _Last verified: 2026-09-27, branch `6-git-deploy-evidence`; repo: https://github
 | Gate: lint (0 warnings), typecheck, 17 tests, warning-free build; contracts fork test | CI on GitHub | E-005 |
 | Board redesign (D-013) on every screen, live data, 390–1440 with no overflow; finish review `ship` | Playwright + Impeccable comp-diff, detector, reviewer | E-006 |
 | Production deploy on live mainnet data, blocks streaming, zero console errors | curl + Playwright on https://curb-jet.vercel.app | E-007 |
+| **M1 exit:** real passkey on the user's iPhone creates the account; owner key sends a real mainnet tx with Face ID | tx 0x72c21e7e…4a9ab4, status 1 | E-013 |
 | Live green (D-015), favicon, app icons, manifest, share card, 404 and error pages, on production | Playwright + build output + curl on production | E-008, E-009 |
 | Performance pass on production: phone Lighthouse 84–99 (SEO, a11y, best practices 100), desktop 99; LCP photo eager, High, AVIF; passkey code off the home page | Lighthouse + CDP metrics + fork harness | E-010, E-011, E-012 |
 
