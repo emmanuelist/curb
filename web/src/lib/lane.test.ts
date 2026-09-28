@@ -22,6 +22,15 @@ describe("computeLane", () => {
     expect(lane.spreadBps).toBeCloseTo(10.63, 2);
   });
 
+  it("holds on a one-tick spread (the same fixture as contracts/test/CurbLane.t.sol)", () => {
+    const lane = computeLane({ bid: 2_632_000n, ask: 2_632_100n }, opts);
+    expect(lane.status).toBe("open");
+    if (lane.status !== "open") return;
+    // 0.026321 × 1.005 = 0.02645260… → floored to 0.026452; 0.026320 × 0.995 = 0.02618840 → ceiled to 0.026189
+    expect(lane.maxBuy).toBe(2_645_200n);
+    expect(lane.minSell).toBe(2_618_900n);
+  });
+
   it("refuses to draw a lane from an empty or crossed book", () => {
     expect(computeLane({ bid: null, ask }, opts)).toEqual({ status: "no-market", reason: "no-bids" });
     expect(computeLane({ bid, ask: null }, opts)).toEqual({ status: "no-market", reason: "no-asks" });

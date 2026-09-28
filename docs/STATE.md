@@ -1,11 +1,11 @@
 # State
 
-_Last verified: 2026-09-28, branch `29-foundry-monad`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-09-28, branch `30-curb-account`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M1 done 2026-09-28 (E-013); next M2 · Core claim (due 2026-10-08) · **Deadline:** 2026-10-13 23:59 ET · 15 days left
-**Next action:** Start M2 (#7) once the user says go: CurbAccount with onchain refusals, orders on Kuru, and an owner-key Withdraw (the user's MON must be returnable). Deploying the contract to mainnet needs the user's go-ahead.
-**Blocked on:** the user's go-ahead for M2; the bounty texts (#5).
+**Next action:** #31: deploy CurbFactory to Monad mainnet. Needs the user's go-ahead and ~1 MON for a fresh deployer key.
+**Blocked on:** the user's go-ahead (and ~1 MON) for the mainnet factory deploy; the bounty texts (#5).
 
 ## Works (E-013 verified 2026-09-28; E-006 to E-012 and the web gate 2026-09-27; E-001 to E-005 verified 2026-09-26)
 
@@ -20,6 +20,7 @@ _Last verified: 2026-09-28, branch `29-foundry-monad`; repo: https://github.com/
 | Board redesign (D-013) on every screen, live data, 390–1440 with no overflow; finish review `ship` | Playwright + Impeccable comp-diff, detector, reviewer | E-006 |
 | Production deploy on live mainnet data, blocks streaming, zero console errors | curl + Playwright on https://curb-jet.vercel.app | E-007 |
 | **M1 exit:** real passkey on the user's iPhone creates the account; owner key sends a real mainnet tx with Face ID | tx 0x72c21e7e…4a9ab4, status 1 | E-013 |
+| CurbAccount + CurbFactory enforce the thesis on a mainnet fork: trader withdrawal and off-lane orders revert; in-lane orders rest on Kuru and cancel; owner withdraws out (not deployed yet) | forge fork tests under Monad rules | E-015 |
 | Live green (D-015), favicon, app icons, manifest, share card, 404 and error pages, on production | Playwright + build output + curl on production | E-008, E-009 |
 | Performance pass on production: phone Lighthouse 84–99 (SEO, a11y, best practices 100), desktop 99; LCP photo eager, High, AVIF; passkey code off the home page | Lighthouse + CDP metrics + fork harness | E-010, E-011, E-012 |
 
