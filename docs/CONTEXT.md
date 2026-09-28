@@ -27,6 +27,7 @@ Addresses from https://docs.kuru.io/contracts/Contract-addresses (captured 2026-
 | Kuru Router (market factory) | `0xd651346d7c789536ebf06dc72aE3C8502cd695CC` | code present; `deployProxy` → `Unauthorized()` for arbitrary callers |
 | USDC | `0x754704Bc059F8C67012fEd69BC8A327a5aafb603` | code present |
 | AUSD | `0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a` | code present |
+| **CurbFactory (ours, #31)** | `0x633Bf378031d694Bcb8E39E6CF160efD75Af18e8` | deployed block 108,627,002 (E-016); Sourcify exact match; accounts at `accountOf(owner, trader)` |
 | WMON | `0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A` | from docs only; code unverified |
 | KuruFlowEntrypoint / KuruFlowRouter / KuruForwarder | `0xb3e6…13cb` / `0x0d3a…FFa2` / `0x974E…FAA` | from docs only; unverified |
 
@@ -134,6 +135,9 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 - **Local `vercel build` writes `web/.vercel/output`**, which ESLint then scans (thousands of findings). It is ignored in `eslint.config.mjs`. (verified 2026-09-27)
 
 - **Vercel deploys come from GitHub now (D-016).** The project's root directory is `web`, so a manual `vercel deploy` must run from the repo root (running it inside `web/` would look for `web/web`). Local `vercel build` output still lands in `web/.vercel/output` and is lint-ignored.
+
+- **Monad's reserve balance (docs.monad.xyz/developer-essentials/reserve-balance, captured 2026-09-28):** every EOA keeps a 10 MON reserve. A transaction reverts at execution if its *value* transfer leaves the sender below 10 MON, **unless** it is an "emptying transaction": the sender is undelegated and sent no other transaction in the past k = 3 blocks (~1.2 s). Consequences for Curb: the trading key's orders carry no value, so only gas counts (budget min(10 MON, balance) across inflight txs); an owner-key deposit or send that ends below 10 MON must not follow another owner-key tx within ~1.2 s. Verified live: the deployer went from 0.7898 to exactly 0 MON in one emptying transaction (E-016).
+- **Contract verification:** `forge verify-contract <addr> <path>:<Name> --chain 143 --verifier sourcify --verifier-url https://sourcify-api-monad.blockvision.org/ --constructor-args …` (no API key; shows on MonadVision). Monadscan's etherscan verifier needs an API key.
 
 ## Environment (names and purpose only, never values)
 
