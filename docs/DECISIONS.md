@@ -188,3 +188,22 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** A GitHub Actions deploy with a Vercel token (a secret to create and rotate, more moving parts); keep manual CLI deploys (the user's time, and production drifts behind `main`).
 **Consequences:** "Merge only on green CI" now also gates production. Preview URLs are never used for passkeys (D-014). A manual CLI deploy, if ever needed, must run from the repo root, because the project's root directory is `web`.
 **Evidence:** E-012.
+
+## D-017 · CurbAccount: two roles, one lane, created per owner by a CREATE2 factory · 2026-09-28 · accepted
+**Context:** M2's core claim must hold onchain (D-004): the trading key can't withdraw, and can't trade off Kuru's live book. M0 proved a contract can own Kuru margin and orders (E-001).
+**Decision:**
+
+- `CurbAccount` owns its Kuru margin and orders. **Owner** (passkey key A): `withdraw` from margin to any address, `sweep`, `setTrader` (address(0) revokes), `setMarket`, `cancel`. **Trader** (passkey key B): `placeBuy` / `placeSell` on allowlisted markets, and `cancel`. Nothing else.
+- Every placement checks the price against Kuru's `bestBidAsk()` in the same transaction, with the exact rule of `web/src/lib/lane.ts`: maxBuy = ask × 1.005 floored to a tick, minSell = bid × 0.995 ceiled to a tick; a 0 or 2^256−1 sentinel on either side, or a crossed book, has no lane. Shared fixtures in `CurbLane.t.sol` and `lane.test.ts` prove the two agree.
+- Custom errors the app decodes into its Refused state: `NotOwner`, `NotTrader`, `NotOwnerOrTrader`, `MarketNotAllowed`, `NoMarket`, `OffLane(isBuy, price, limit)`, `NotOnTick`, `ZeroPrice`.
+- `CurbFactory.create(trader)` deploys the caller's account with CREATE2, salt = owner, so `accountOf(owner, trader)` recomputes the address from the passkey's two keys alone. One account per owner.
+- Deposits need no account function: the owner credits the account directly with `MarginAccount.deposit(account, token, amount)` (native MON is `address(0)` with `msg.value`; verified on a fork).
+
+**Alternatives:** EIP-7702 delegation (rejected in D-004); minimal-proxy clones (cheaper per account, but an initializer adds a front-running surface for ~0.1 MON of savings); a per-owner deploy without a factory (the address would depend on the owner's nonce, so recovery would need a search).
+**Consequences:**
+
+- **The lane bounds price, not frequency.** A stolen trading key can never withdraw, but it could churn trades at up to 0.5% off Kuru's best price each time. Disclose this in the README limits; a volume cap is a later option.
+- A second `create` for the same owner collides and burns most of its gas limit (Monad charges the limit): the app must check for code at `accountOf` first.
+- Gas under Monad rules (fork): `create` 1,181,268; `placeSell` 326,161; `cancel` 177,099. The app sets explicit limits just above these.
+
+**Evidence:** E-015.

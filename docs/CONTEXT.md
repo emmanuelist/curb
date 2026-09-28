@@ -49,6 +49,8 @@ Addresses from https://docs.kuru.io/contracts/Contract-addresses (captured 2026-
 - Forking Monad mainnet through the public RPC works: the test completes in about 13.5 s, with no historical-state errors at the fork block.
 - Fork tests now run under **Monad** execution rules (`network = "monad"`, Foundry 1.8.3), not Ethereum's: E-001's round trip used 1,416,102 gas that way (2026-09-28).
 
+**Native MON margin (verified on a fork, 2026-09-28):** `MarginAccount.deposit{value: amount}(user, address(0), amount)` credits `user` with native MON, and a 200 MON resting sell locks exactly 200 MON of it. `withdraw(amount, address(0))` pays native MON to the caller (a contract needs `receive()`).
+
 ## Kuru ABI surface (from `@kuru-labs/kuru-sdk` 0.0.95 `abi/*.json`, last published 2026-01-27)
 
 The ABI may lag the deployed implementation. Fork tests are the source of truth.
