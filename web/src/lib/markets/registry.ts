@@ -37,3 +37,9 @@ export const LANE_BAND_BPS = 50n;
 
 /** Kuru MarginAccount on Monad mainnet (docs/CONTEXT.md). */
 export const KURU_MARGIN_ACCOUNT: Address = "0x2A68ba1833cDf93fa9Da1EEbd7F46242aD8E90c5";
+
+/**
+ * CurbFactory on Monad mainnet (#31, D-017): creates one CurbAccount per owner at a CREATE2 address that
+ * `accountOf(owner, trader)` recomputes. Deployed at block 108,627,002; source verified (Sourcify exact match).
+ */
+export const CURB_FACTORY: Address = "0x633Bf378031d694Bcb8E39E6CF160efD75Af18e8";
