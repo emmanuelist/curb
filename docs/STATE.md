@@ -1,6 +1,6 @@
 # State
 
-_Last verified: 2026-09-28, branch `6-m1-exit`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-09-28, branch `29-foundry-monad`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M1 done 2026-09-28 (E-013); next M2 · Core claim (due 2026-10-08) · **Deadline:** 2026-10-13 23:59 ET · 15 days left
@@ -32,7 +32,6 @@ _Last verified: 2026-09-28, branch `6-m1-exit`; repo: https://github.com/emmanue
 ## Broken or unverified
 
 - The Buy button is disabled until CurbAccount exists (M2, #7), and the UI says so.
-- `evm_version = cancun` for Monad is still assumed (contracts/foundry.toml).
 - The Impeccable hero gate stays formally open at 81%: its last two controls differ only by the colours the user waived (D-013).
 
 ## Open questions

@@ -35,9 +35,9 @@ jobs:
           submodules: recursive
       - uses: foundry-rs/foundry-toolchain@v1
         with:
-          # Pinned: newer Foundry refuses Monad forks ("cannot create a `monad` fork with an EVM
-          # instantiated for `ethereum`"). 1.4.4 is the version E-001 was produced with. See docs/CONTEXT.md.
-          version: v1.4.4
+          # Pinned: 1.8+ has Monad execution (`network = "monad"` in foundry.toml), which fixes the
+          # "cannot create a `monad` fork with an EVM instantiated for `ethereum`" refusal of newer versions.
+          version: v1.8.3
       - run: forge fmt --check
       - run: forge build --sizes
       - name: forge test (forks Monad mainnet over the public RPC)
