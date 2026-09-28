@@ -10,7 +10,9 @@ export function CopyAddress({ address }: { address: string }) {
   const groups = address.slice(2).match(/.{1,4}/g) ?? [];
   return (
     <div className="flex flex-col gap-2.5">
-      <p className="figures text-[12.5px] leading-[1.7] text-road">
+      {/* The address is public (where funds are sent); the private key is never shown or stored anywhere. */}
+      <p className="text-[12px] text-muted">Public address · safe to share</p>
+      <p className="figures -mt-1.5 text-[12.5px] leading-[1.7] text-road">
         <span className="text-muted">0x</span>
         {groups.join(" ")}
       </p>
