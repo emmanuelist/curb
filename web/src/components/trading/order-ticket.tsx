@@ -1,11 +1,9 @@
-import Link from "next/link";
 import { useId } from "react";
-import { ArrowRight } from "lucide-react";
-import { useAccount } from "@/hooks/use-account";
 import { formatPrice, formatToken, parseDecimal } from "@/lib/format";
 import { placeOrder, type Lane, type Placement, type Side } from "@/lib/lane";
 import type { Market } from "@/lib/markets/registry";
 import { Signer } from "@/components/keys/signer";
+import { PlaceOrder } from "@/components/trading/place-order";
 
 export type TicketState = { side: Side; priceText: string; sizeText: string };
 
@@ -39,12 +37,10 @@ type Props = {
 
 export function OrderTicket({ market, lane, value, onChange }: Props) {
   const id = useId();
-  const account = useAccount();
   const r = readTicket(market, lane, value);
   const p = (x: bigint) => formatPrice(x, market.pricePrecision);
   const minSize = (market.minSize / market.sizePrecision).toString();
   const offBook = r.placement?.kind === "off-book" ? r.placement : null;
-  const sideWord = value.side === "buy" ? "BUY" : "SELL";
 
   let hint = "";
   if (lane?.status === "open" && r.price !== null && r.placement?.kind === "in-lane") {
@@ -131,34 +127,15 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {account ? (
-            <>
-              <button
-                type="button"
-                disabled
-                aria-describedby={`${id}-notlive`}
-                className="btn btn-primary w-full"
-              >
-                {sideWord === "BUY" ? "Buy" : "Sell"} {value.sizeText || "—"} {market.base.symbol}
-              </button>
-              <p id={`${id}-notlive`} className="text-center text-[12px] text-muted">
-                Orders go live with the Curb account contract.
-              </p>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/start"
-                className="btn btn-primary w-full"
-              >
-                Create your account to trade
-                <ArrowRight size={18} strokeWidth={2.2} aria-hidden="true" />
-              </Link>
-              <p className="text-center text-[12px] text-muted">One passkey makes both keys. No seed phrase.</p>
-            </>
-          )}
-        </div>
+        <PlaceOrder
+          market={market}
+          lane={lane}
+          side={value.side}
+          price={r.price}
+          size={r.size}
+          notional={r.notional}
+          blocked={problem !== null || r.price === null || r.size === null || r.placement?.kind !== "in-lane" || lane?.status !== "open"}
+        />
       )}
     </section>
   );

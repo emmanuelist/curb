@@ -53,5 +53,10 @@ export function explainPasskeyError(error: unknown): PasskeyProblem {
         return { title: "Something went wrong with the passkey.", body: error.message };
     }
   }
-  return { title: "Something went wrong.", body: error instanceof Error ? error.message : String(error) };
+  // viem errors carry a one-line `shortMessage`; their full message repeats the request, which helps nobody here.
+  const short = typeof error === "object" && error !== null && "shortMessage" in error ? String(error.shortMessage) : null;
+  if (short && /insufficient funds/i.test(short)) {
+    return { title: "Not enough MON for gas.", body: "The key signing this has too little MON to pay for the transaction. Nothing was sent." };
+  }
+  return { title: "Something went wrong.", body: short ?? (error instanceof Error ? error.message : String(error)) };
 }

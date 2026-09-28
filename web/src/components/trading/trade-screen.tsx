@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRightLeft, ArrowUpFromLine, Ban, ChevronRight } from "lucide-react";
 import { KeyGlyph } from "@/components/keys/signer";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BlockIndicator } from "@/components/curb/block-indicator";
 import { CurbLane } from "@/components/curb/curb-lane";
 import { OrderTicket, readTicket, type TicketState } from "@/components/trading/order-ticket";
@@ -53,13 +53,16 @@ export function TradeScreen() {
   const mid = lane?.status === "open" ? lane.mid : null;
 
   // The tab carries the live mid, as a trading terminal's does; it only changes when Kuru's book does.
+  const liveTitle = useRef<string | null>(null);
   useEffect(() => {
     if (mid === null) return;
-    document.title = `${formatPrice(mid, market.pricePrecision)} ${market.base.symbol}/${market.quote.symbol} · Curb`;
+    liveTitle.current = `${formatPrice(mid, market.pricePrecision)} ${market.base.symbol}/${market.quote.symbol} · Curb`;
+    document.title = liveTitle.current;
   }, [mid]);
+  // On leaving, drop the live price only if it is still showing: the next route may already have set its own title.
   useEffect(
     () => () => {
-      document.title = "Curb";
+      if (document.title === liveTitle.current) document.title = "Curb";
     },
     [],
   );
