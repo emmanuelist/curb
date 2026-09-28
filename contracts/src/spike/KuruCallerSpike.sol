@@ -24,7 +24,7 @@ contract KuruCallerSpike {
     }
 
     function deposit(address token, uint256 amount) external onlyOwner {
-        IERC20(token).approve(address(margin), amount);
+        require(IERC20(token).approve(address(margin), amount), "approve");
         margin.deposit(address(this), token, amount);
     }
 

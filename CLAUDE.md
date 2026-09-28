@@ -38,7 +38,7 @@ Latest on npm as of 2026-09-26. Pin exactly in package.json at scaffold (M1) and
 | Tailwind CSS | 4.3.3, CSS-first config. **No `tailwind.config.js` in v3 style.** |
 | viem | 2.56.9 exact (Mera's peer range is ^2.28.0) |
 | @category-labs/mera | **0.2.0 exact.** New library, pre-1.0; read its `.d.ts` before using anything. |
-| Foundry | forge 1.4.4 |
+| Foundry | forge 1.8.3, with `network = "monad"` (Monad gas model, opcode pricing, size limits) and `evm_version = "osaka"` (docs.monad.xyz) |
 | TypeScript | 5.9.3 (Next 16.3.6 template), target ES2022 (BigInt) |
 | TanStack Query | 5.104.0. All async and onchain reads go through it (D-011). |
 | Vitest | 3.2.7 (`npm test`) |

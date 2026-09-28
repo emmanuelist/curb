@@ -3,9 +3,11 @@ src = "src"
 out = "out"
 libs = ["lib"]
 solc_version = "0.8.30"
-# Monad supports EIP-7702 and EIP-7951 (Pectra-era features), so Cancun opcodes are assumed.
-# Unverified: confirm against docs.monad.xyz before the M2 mainnet deploy (docs/CONTEXT.md).
-evm_version = "cancun"
+# Monad is bytecode-compatible with Ethereum as of Fusaka, and its docs require the `osaka` target
+# (docs.monad.xyz, captured 2026-09-28). `network = "monad"` (Foundry >= 1.8) runs local tests, forks and
+# scripts under Monad's gas model (charged on the gas limit), opcode pricing and contract-size limits.
+evm_version = "osaka"
+network = "monad"
 optimizer = true
 optimizer_runs = 200
 

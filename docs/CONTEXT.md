@@ -47,7 +47,7 @@ Addresses from https://docs.kuru.io/contracts/Contract-addresses (captured 2026-
 - `batchCancelOrders` returns the locked quote; `withdraw(amount, token)` pays `msg.sender`.
 - **Smallest order = minSize 2e12 / sizePrecision 1e10 = 200 MON**, about $5.34 at 0.0267. Budget any real mainnet trade at ≥ $6 of USDC plus gas.
 - Forking Monad mainnet through the public RPC works: the test completes in about 13.5 s, with no historical-state errors at the fork block.
-- Caveat: fork tests run Kuru's bytecode in revm under **Ethereum** gas rules. Monad's gas-limit charging and reserve-balance rules are not simulated.
+- Fork tests now run under **Monad** execution rules (`network = "monad"`, Foundry 1.8.3), not Ethereum's: E-001's round trip used 1,416,102 gas that way (2026-09-28).
 
 ## Kuru ABI surface (from `@kuru-labs/kuru-sdk` 0.0.95 `abi/*.json`, last published 2026-01-27)
 
@@ -115,7 +115,7 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 - **Kuru market creation is gated on mainnet** (`Unauthorized()` on Router and MonadDeployer) and open on testnet. (verified)
 - **An empty book returns sentinels:** MON-AUSD `bestBidAsk()` → (2^256−1, 0); testnet MON-USDC → (2^256−1, 1.001e18) with no bids. The price check must treat these as "no market" and **refuse**, never compute a band from them. (verified)
 - Orders below `minSize` revert `SizeError()`. (verified)
-- **Newer Foundry refuses Monad forks.** CI's default Foundry (via foundry-toolchain v1.9.1, 2026-09-26) failed `vm.createSelectFork` with "cannot create a `monad` fork with an EVM instantiated for `ethereum`". Foundry **1.4.4** forks fine (E-001). CI is pinned to v1.4.4. Before upgrading, find the Monad network setting in the newer Foundry's docs. (verified in CI run 36271718824)
+- **Foundry needs `network = "monad"` to fork Monad.** Without it, newer Foundry refuses a Monad fork ("cannot create a `monad` fork with an EVM instantiated for `ethereum`", CI run 36271718824). Foundry **1.8.3** with `network = "monad"` forks fine and runs tests under Monad's gas model (charged on the gas limit), opcode pricing and contract-size limits; E-001's round trip passes that way (2026-09-28). Monad's docs require the `osaka` EVM target (they state bytecode compatibility with Ethereum as of Fusaka). CI is pinned to v1.8.3.
 - Kuru's `Trade` event records `txOrigin`, so the trading-key EOA shows up as the origin even when CurbAccount is the owner.
 - The testnet book is unusable for demos: no bids, one stray ask at 1.001 USDC, empty vault. (verified) → D-005.
 - **Passkeys without PRF fail at creation.** `createPasskeyWithPrfOutput` throws `PRF_UNAVAILABLE`, most likely for judges on desktop Chrome with local-profile passkeys, or with Bitwarden/Dashlane intercepting. The app must catch it and say exactly what to do: use Safari, turn on Chrome's "Offer to save passwords and passkeys" (Google Password Manager), or open it on a phone. (verified: authenticator-support capture)
