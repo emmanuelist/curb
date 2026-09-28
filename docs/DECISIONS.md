@@ -207,3 +207,16 @@ Append-only. To change a decision, add a new entry that supersedes it.
 - Gas under Monad rules (fork): `create` 1,181,268; `placeSell` 326,161; `cancel` 177,099. The app sets explicit limits just above these.
 
 **Evidence:** E-015.
+
+## D-018 · Orders and History come from a device ledger checked against the chain · 2026-09-28 · accepted
+**Context:** #32 planned Orders and History "from Kuru events for the account". Kuru's events carry no indexed fields (so no topic filter by account), and the public RPC serves `eth_getLogs` over at most 100 blocks (~40 s). Kuru clears a cancelled order's slot, and usually a filled one's the same way, so after the fact `s_orders` can't always say which happened.
+**Decision:**
+
+- The app keeps a per-device ledger (`localStorage`, public data only: hashes, prices, sizes, order ids) of the transactions it sent: created, deposit, order, cancel. Every status shown is read from Monad: `s_orders` for each tracked id; receipts for the resting id, taker fills and the ids a cancel really removed.
+- While an order rests, each refresh scans the new blocks' Kuru logs (≤ 100) for this account as **maker** and records fills with the taker's tx hash. An order whose slot still names the account with size 0 is filled (a cancel never leaves that). An order gone with no fill or cancel seen here reads "Left the book", with a note saying why.
+- The trading key unlocks once per tab (one Face ID), stays in memory only, and locks on Lock, reload, or 15 minutes unused. Orders and cancels sign with no prompt while it is unlocked.
+- Deposits are MON only in #32. A buy is funded by the USDC a sell leaves in the account. A USDC deposit (approve + deposit, two owner-key transactions) is deferred, not dropped.
+
+**Alternatives:** an indexer or backend (breaks rule 1's "the chain is the only store" and adds a service to run); paging `eth_getLogs` 100 blocks at a time from each placement (thousands of calls per day of history on the public RPC); CurbAccount events (it emits `OrderSent`, but that says nothing about fills or cancels).
+**Consequences:** another device signed in with the same passkey sees none of this device's history, and a cancel from there shows here as "Left the book". Known fills are only those seen while Curb was open, plus fills on arrival. README limits must say so.
+**Evidence:** E-017.

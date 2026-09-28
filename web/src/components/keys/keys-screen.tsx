@@ -5,6 +5,7 @@ import { useId, useState, type CSSProperties, type ReactNode } from "react";
 import { ArrowDownToLine, ArrowRight, ChevronRight, ExternalLink, LogOut } from "lucide-react";
 import { createWalletClient, http, type Hash } from "viem";
 import { CopyAddress } from "@/components/keys/copy-address";
+import { CurbAccountCard } from "@/components/keys/curb-account-card";
 import { KeyGlyph, Signer, type KeyRole } from "@/components/keys/signer";
 import { ScreenHeader } from "@/components/navigation/app-nav";
 import { chain, explorerUrl, publicClient, rpcHttpUrl } from "@/lib/chain/clients";
@@ -15,6 +16,7 @@ import { usePasskeyKeys } from "@/hooks/use-passkey-keys";
 import { forgetAccount } from "@/lib/passkey/store";
 import { useAccount } from "@/hooks/use-account";
 import { useBalances } from "@/hooks/use-balances";
+import { useCurbAccount } from "@/hooks/use-curb-account";
 
 const MON = 10n ** 18n;
 /** A plain transfer. Monad charges the gas limit, not gas used, so it is set exactly (docs/CONTEXT.md → Traps). */
@@ -73,14 +75,18 @@ function KeyCard({ role, i, children, badge }: { role: KeyRole; i: number; child
 function Keys({ account }: { account: CurbAccountRecord }) {
   const owner = useBalances(account.owner);
   const trading = useBalances(account.trading);
+  const curb = useCurbAccount();
+  const live = curb.state?.deployed ?? false;
 
   return (
     <main className="mx-auto w-full max-w-[1100px] pb-32 md:px-8">
       <ScreenHeader title="Keys" lede="One passkey, two keys. Only the owner key can move money out." />
 
       <div className="mt-6 grid gap-4 px-4 md:mt-10 md:grid-cols-2 md:gap-6 md:px-0">
+        <CurbAccountCard record={account} state={curb.state} ownerMon={owner.data?.mon ?? null} onChanged={() => void curb.refetch()} />
+
         <div className="flex flex-col gap-4 md:gap-6">
-          <KeyCard role="owner" i={1} badge={<span className="pill border-kerb/40 text-kerb">Moves money</span>}>
+          <KeyCard role="owner" i={2} badge={<span className="pill border-kerb/40 text-kerb">Moves money</span>}>
             <CopyAddress address={account.owner} />
             <BalanceRows balances={owner.data} loading={owner.isPending} />
           </KeyCard>
@@ -88,22 +94,24 @@ function Keys({ account }: { account: CurbAccountRecord }) {
         </div>
 
         <div className="flex flex-col gap-4 md:gap-6">
-          <KeyCard role="trading" i={2} badge={<span className="pill text-road">Held to the lane</span>}>
+          <KeyCard role="trading" i={3} badge={<span className="pill text-road">Held to the lane</span>}>
             <CopyAddress address={account.trading} />
             <BalanceRows balances={trading.data} loading={trading.isPending} gasOnly />
             <p className="rounded-[12px] border border-dashed border-rule-strong px-3.5 py-3 text-[12.5px] leading-relaxed text-muted">
-              Today this is a plain key. The withdraw and off-lane refusals are enforced by your Curb account contract, which arrives next.
+              {live
+                ? "It signs for your Curb account, which refuses its withdrawals and any order outside the lane, onchain."
+                : "Its limits are enforced by your Curb account contract. Until you create it, this key can't trade."}
             </p>
           </KeyCard>
 
-          <section aria-labelledby="deposit-h" className="panel rise flex gap-4 p-5" style={{ "--i": 4 } as CSSProperties}>
+          <section aria-labelledby="deposit-h" className="panel rise flex gap-4 p-5" style={{ "--i": 5 } as CSSProperties}>
             <span className="grid size-11 shrink-0 place-items-center rounded-full border border-kerb/50 bg-kerb/10 text-kerb">
               <ArrowDownToLine size={19} strokeWidth={1.9} aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <h2 id="deposit-h" className="text-[17px] font-semibold text-road">Deposit</h2>
+              <h2 id="deposit-h" className="text-[17px] font-semibold text-road">Adding money</h2>
               <p className="mt-1 text-[13px] leading-relaxed text-muted">
-                Send MON for gas and USDC to trade to your <span className="text-kerb">owner key</span> on <span className="text-road">Monad mainnet</span>. Other networks will not arrive.
+                Send MON to your <span className="text-kerb">owner key</span> on <span className="text-road">Monad mainnet</span>, then deposit it into your Curb account. Other networks will not arrive.
               </p>
             </div>
           </section>
@@ -114,7 +122,7 @@ function Keys({ account }: { account: CurbAccountRecord }) {
               if (window.confirm("Forget this account on this device? Your passkey and funds are not affected; you can sign in again with the passkey.")) forgetAccount();
             }}
             className="panel rise flex min-h-14 items-center gap-3 px-5 text-left text-[14px] text-muted transition-colors hover:text-road"
-            style={{ "--i": 5 } as CSSProperties}
+            style={{ "--i": 6 } as CSSProperties}
           >
             <LogOut size={18} strokeWidth={1.8} aria-hidden="true" />
             <span className="grow">Forget this account on this device</span>
@@ -174,7 +182,7 @@ function GasTopUp({ account, ownerMon }: { account: CurbAccountRecord; ownerMon:
   };
 
   return (
-    <section aria-labelledby={`${id}-h`} className="panel rise flex flex-col gap-4 p-5" style={{ "--i": 3 } as CSSProperties}>
+    <section aria-labelledby={`${id}-h`} className="panel rise flex flex-col gap-4 p-5" style={{ "--i": 4 } as CSSProperties}>
       <div className="kerb-painted -mx-5 -mt-5 rounded-t-[15px]" aria-hidden="true" />
       <header>
         <h2 id={`${id}-h`} className="text-[17px] font-semibold text-road">

@@ -97,3 +97,18 @@ export async function withOwnerKey<T>(
     owner.session.end();
   }
 }
+
+export type TradingSession = { address: Address; account: LocalAccount; end: () => void };
+
+/**
+ * Unlock the trading key for this session: one biometric prompt, then orders and cancels sign without asking.
+ * The key lives only in this tab's memory (never stored, CLAUDE.md rule 7) until `end()` or a reload.
+ */
+export async function openTradingSession(rpId: string, record: CurbAccountRecord): Promise<TradingSession> {
+  const trading = await derive(rpId, record.credential, "trading");
+  if (trading.address !== record.trading) {
+    trading.session.end();
+    throw new Error("This passkey does not match the account on this device");
+  }
+  return { address: trading.address, account: toViemAccount(trading.session), end: () => trading.session.end() };
+}
