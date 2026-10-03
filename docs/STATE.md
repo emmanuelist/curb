@@ -1,16 +1,17 @@
 # State
 
-_Last verified: 2026-10-03, branch `5-bounty-texts`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-03, branch `49-curb-perpl`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M2 done 2026-10-03 (E-019); now M3 · Proof surface (due 2026-10-11) · **Deadline:** 2026-10-13 23:59 ET · 10 days left
-**Next action:** M3 is broken into #40–#47 (each mapped to the bounty requirements, #5). Start with #40 (the stateless rebuild) once the user confirms the bounty targets: Track 1 + Kuru + Mera UX.
-**Blocked on:** the user's go on M3 and on skipping Agora (needs Perpl + AUSD) and Mera Many Keys (excludes wallet keys).
+**Next action:** #51, futures in the app (AUSD balance, Perpl lane, long/short with the cap, positions) on a fork, against CurbAccount v2 (#49, fork-tested, E-021). Then #50 (deploy factory v2: needs the user's go-ahead and about 0.5 MON on the deployer), then #40.
+**Blocked on:** Agora's answer on whether a mobile web app counts (#52, the user asked in Discord).
 
 ## Works
 
 | Capability | Verified by | Evidence |
 |---|---|---|
+| CurbAccount v2 also holds the trading key to Perpl's live book and a leverage cap; AUSD in and out by the owner only (D-021) | 36/36 fork tests under Monad rules | E-020, E-021 (2026-10-03) |
 | **M2 exit on mainnet, from the user's iPhone:** account created and funded; trading key's withdrawal refused onchain (`NotOwner`); a real 200 MON sell placed and cancelled on Kuru; an off-lane buy refused onchain (`OffLane`); owner withdrew 200 MON to the user's wallet | txs found by nonce, decoded with traces; account source exact match | E-019 (2026-10-03) |
 | Refusal moment, proofs, owner withdraw and send, on a fork (D-019) | anvil + Playwright + virtual passkey; finish review fixes applied | E-018 (2026-10-03) |
 | Create, deposit, place, cancel, fills, Orders and History from the device ledger, on a fork (D-018) | anvil + Playwright + virtual passkey | E-017 (2026-09-28) |
@@ -39,4 +40,4 @@ The user's owner key holds 14.63 MON and the trading key 0.90 MON: gas for recor
 
 ## Open questions
 
-- Agora's $10k needs trades through Perpl and an AUSD balance, so Curb as built is not eligible (#5). Build a Perpl lane, or skip? The user decides.
+- Does Agora accept a mobile web app as "a mobile application"? (#52; asked in Discord)

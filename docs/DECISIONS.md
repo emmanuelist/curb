@@ -246,3 +246,15 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** build them (about 1–2 days that M3 needs).
 **Consequences:** PLAN's M2 line reads with this cut. If time remains after M4's preflight, the order preview is the first to revisit.
 **Evidence:** E-019.
+
+## D-021 · Go for every bounty Curb can be built to win, Agora included, through a Perpl lane · 2026-10-03 · accepted
+**Context:** the bounty texts (#5) showed Agora's $10k needs an AUSD balance and trades through Perpl; Curb trades spot on Kuru. The user's direction: "I don't want us to limit ourselves to time. If we can build it to win us and we have what it takes then we do that." The user also can't recruit outside traders.
+**Decision:**
+
+- Targets: Track 1, Kuru (Next Consumer Trading App), Mera (Best Mera-Powered UX), and Agora (Best Mobile Trading App) through **CurbAccount v2**. The same two keys, AUSD as collateral on Perpl, and the trading key held to Perpl's live best bid/ask plus an owner-set leverage cap, all enforced onchain. Perpl's book is onchain, which is what makes this possible (E-020).
+- Mera "One Passkey, Many Keys" only with a non-account idea that could win, since the bounty excludes wallet keys.
+- Kuru's evidence of demand comes from research and onchain data (#46), never presented as outside users.
+
+**Alternatives:** stay with Track 1 + Kuru + Mera UX (less work, $10k left on the table); build Perpl trading outside the account (an unguarded key, which contradicts the thesis).
+**Consequences:** a new factory and a new account per user (v2); the thesis generalises to "can't trade off the live order book" on two venues. Order of work: v2 contract and fork tests (#49), then the factory deploy (#50, needs the user's go-ahead), the futures screen (#51), the stateless rebuild (#40), then the proof surface. Agora's "mobile application" wording is being asked of the sponsor (#52).
+**Evidence:** E-020.
