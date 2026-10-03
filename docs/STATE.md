@@ -1,11 +1,11 @@
 # State
 
-_Last verified: 2026-10-03, branch `7-m2-exit`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-03, branch `5-bounty-texts`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M2 done 2026-10-03 (E-019); now M3 · Proof surface (due 2026-10-11) · **Deadline:** 2026-10-13 23:59 ET · 10 days left
-**Next action:** break M3 (#8) into issues: README proof section with limits, measured order-to-confirmation latency, the demo video (D-007), then BRIEF phases 7–11 polish.
-**Blocked on:** the bounty texts (#5), which only the user can paste.
+**Next action:** M3 is broken into #40–#47 (each mapped to the bounty requirements, #5). Start with #40 (the stateless rebuild) once the user confirms the bounty targets: Track 1 + Kuru + Mera UX.
+**Blocked on:** the user's go on M3 and on skipping Agora (needs Perpl + AUSD) and Mera Many Keys (excludes wallet keys).
 
 ## Works
 
@@ -39,4 +39,4 @@ The user's owner key holds 14.63 MON and the trading key 0.90 MON: gas for recor
 
 ## Open questions
 
-- Does Agora's "Best Mobile Trading App" accept a mobile web app? (#5)
+- Agora's $10k needs trades through Perpl and an AUSD balance, so Curb as built is not eligible (#5). Build a Perpl lane, or skip? The user decides.
