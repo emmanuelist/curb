@@ -220,3 +220,17 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** an indexer or backend (breaks rule 1's "the chain is the only store" and adds a service to run); paging `eth_getLogs` 100 blocks at a time from each placement (thousands of calls per day of history on the public RPC); CurbAccount events (it emits `OrderSent`, but that says nothing about fills or cancels).
 **Consequences:** another device signed in with the same passkey sees none of this device's history, and a cancel from there shows here as "Left the book". Known fills are only those seen while Curb was open, plus fills on arrival. README limits must say so.
 **Evidence:** E-017.
+
+## D-019 · Refusals are proven onchain, read back from the chain, and can't turn into trades · 2026-10-03 · accepted
+**Context:** #33 makes the thesis visible: the trading key can't withdraw, and can't trade off the lane. A refusal has to happen onchain (a tx anyone can open), its reason must come from the chain rather than the app's guess, and a "proof" must never become a real order or a real withdrawal by accident. Monad charges the full gas limit, even on a revert.
+**Decision:**
+
+- **Proof actions** (trading key, no prompt): "Try a withdrawal with this key" on Keys (asks the account for its MON, sent to the trading key itself) and "Send it anyway" under an off-lane ticket. Each is **dry-run first** (`eth_call` from the trading key at the latest block) and sent only if the dry run shows one of CurbAccount's own refusals; otherwise nothing is sent and the screen says why.
+- The off-lane proof goes **post-only**: if the lane moved and the account let it through, Kuru refuses a crossing post-only order (`PostOnlyError`), so it can't take liquidity. The rare remainder (the book moved far enough that it no longer crosses) rests as a normal order the app records and offers to cancel.
+- **Tight gas limits**, measured on a fork: 40,000 for the withdrawal attempt (22,930 used), 220,000 for the off-lane order (172,826 used), about 0.004 and 0.022 MON at 102 gwei.
+- **The reason shown is the chain's**: the revert data comes from `debug_traceTransaction` (callTracer) on the mined tx and is decoded against CurbAccount's and Kuru's errors. If the node won't trace, the screen says the reason is from the dry run of the same call.
+- **Owner money out** (Face ID): withdraw MON or USDC from the account's Kuru margin to the owner key or any address; send MON from the owner key to the trading key or any address. A destination with code gets the node's gas estimate + 25%; a plain address gets the measured limit. A transfer that leaves the owner key under Monad's 10 MON reserve waits until the key has sent nothing for 3 blocks.
+
+**Alternatives:** simulate-only refusals (no tx, nothing for a judge to open); the stencil sign with the app's own reason (could disagree with the chain); a separate "proofs" screen (the refusal belongs where the action is: the ticket and the trading key).
+**Consequences:** every proof costs real gas and is labelled with its cost before the tap. Withdrawals can't touch margin held by open orders; the form says to cancel first.
+**Evidence:** E-018.

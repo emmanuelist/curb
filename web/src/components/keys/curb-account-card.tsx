@@ -1,12 +1,15 @@
 import { useId, useState, type CSSProperties, type ReactNode } from "react";
-import { ExternalLink } from "lucide-react";
-import type { Hash } from "viem";
+import { ClipboardPaste, ExternalLink } from "lucide-react";
+import { encodeFunctionData, getAddress, isAddress, type Address, type Hash } from "viem";
+import { RefusedMoment, type RefusedView } from "@/components/curb/refused";
 import { CopyAddress } from "@/components/keys/copy-address";
 import { KeyGlyph, Signer } from "@/components/keys/signer";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
-import { GAS, NATIVE, sendCreateAccount, sendDepositMon, type CurbAccountState } from "@/lib/curb/account";
+import { curbAccountAbi } from "@/lib/curb/abi";
+import { GAS, gasFor, NATIVE, RESERVE, sendCreateAccount, sendDepositMon, sendWithdraw, waitForQuiet, type CurbAccountState } from "@/lib/curb/account";
+import { explainRefusal, feePaid, revertDataOf } from "@/lib/curb/refusal";
 import { appendLedger } from "@/lib/curb/ledger";
-import { formatToken, parseDecimal } from "@/lib/format";
+import { formatToken, parseDecimal, shortAddress } from "@/lib/format";
 import { explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
 import type { CurbAccountRecord } from "@/lib/passkey/keys";
 import { MON_USDC } from "@/lib/markets/registry";
@@ -23,7 +26,13 @@ const GAS_HEADROOM = MON / 20n;
 /** Left on the owner key by Max: enough for the owner-key transactions that come later (withdraw, rotate). */
 const KEEP_FOR_GAS = MON / 2n;
 
-type Tx = { kind: "idle" } | { kind: "signing" } | { kind: "sent"; hash: Hash } | { kind: "confirmed"; hash: Hash } | { kind: "error"; problem: PasskeyProblem; hash?: Hash };
+type Tx =
+  | { kind: "idle" }
+  | { kind: "waiting" }
+  | { kind: "signing" }
+  | { kind: "sent"; hash: Hash }
+  | { kind: "confirmed"; hash: Hash }
+  | { kind: "error"; problem: PasskeyProblem; hash?: Hash };
 
 type Props = {
   record: CurbAccountRecord;
@@ -38,6 +47,7 @@ type Props = {
  */
 export function CurbAccountCard({ record, state, ownerMon, onChanged }: Props) {
   const id = useId();
+  const [mode, setMode] = useState<"deposit" | "withdraw">("deposit");
   const live = state?.deployed ?? false;
   return (
     <section aria-labelledby={`${id}-h`} className="panel rise overflow-hidden md:col-span-2" style={{ "--i": 1 } as CSSProperties}>
@@ -90,7 +100,28 @@ export function CurbAccountCard({ record, state, ownerMon, onChanged }: Props) {
           ) : live ? (
             <>
               <Margin state={state} />
-              <Deposit record={record} account={state.address} ownerMon={ownerMon} onChanged={onChanged} />
+              <div className="kerb-painted -mx-5 md:mx-0 md:rounded-full" aria-hidden="true" />
+              <div role="radiogroup" aria-label="Move money" className="grid grid-cols-2 gap-1.5 rounded-[12px] border border-rule bg-asphalt p-1">
+                {(["deposit", "withdraw"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    role="radio"
+                    aria-checked={mode === m}
+                    onClick={() => setMode(m)}
+                    className={`h-11 rounded-[9px] text-[15px] font-semibold transition-colors ${
+                      mode === m ? "border border-road bg-high text-road" : "border border-transparent text-muted hover:text-road"
+                    }`}
+                  >
+                    {m === "deposit" ? "Deposit" : "Withdraw"}
+                  </button>
+                ))}
+              </div>
+              {mode === "deposit" ? (
+                <Deposit record={record} account={state.address} ownerMon={ownerMon} onChanged={onChanged} />
+              ) : (
+                <Withdraw record={record} state={state} ownerMon={ownerMon} onChanged={onChanged} />
+              )}
             </>
           ) : (
             <Create record={record} account={state.address} ownerMon={ownerMon} onChanged={onChanged} />
@@ -192,12 +223,17 @@ function Deposit({ record, account, ownerMon, onChanged }: { record: CurbAccount
   const amount = parseDecimal(amountText, MON);
   const max = ownerMon !== null && ownerMon > KEEP_FOR_GAS ? ownerMon - KEEP_FOR_GAS : 0n;
   const tooMuch = ownerMon !== null && amount !== null && amount + GAS_HEADROOM > ownerMon;
-  const busy = tx.kind === "signing" || tx.kind === "sent";
+  const busy = tx.kind === "waiting" || tx.kind === "signing" || tx.kind === "sent";
 
   const deposit = async () => {
-    if (!keys || amount === null || amount === 0n) return;
-    setTx({ kind: "signing" });
+    if (!keys || amount === null || amount === 0n || ownerMon === null) return;
     try {
+      // Leaving the owner key under Monad's 10 MON reserve only works if it sent nothing in the last 3 blocks.
+      if (ownerMon - amount < RESERVE) {
+        setTx({ kind: "waiting" });
+        await waitForQuiet(publicClient, record.owner);
+      }
+      setTx({ kind: "signing" });
       const hash = await keys.withOwnerKey(window.location.hostname, record, (owner) => sendDepositMon(owner, account, amount));
       setTx({ kind: "sent", hash });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
@@ -216,7 +252,6 @@ function Deposit({ record, account, ownerMon, onChanged }: { record: CurbAccount
 
   return (
     <>
-      <div className="kerb-painted -mx-5 md:mx-0 md:rounded-full" aria-hidden="true" />
       <div>
         <h3 className="text-[17px] font-semibold text-road">Deposit MON</h3>
         <p className="mt-1 text-[13px] leading-relaxed text-muted">
@@ -240,7 +275,7 @@ function Deposit({ record, account, ownerMon, onChanged }: { record: CurbAccount
         <span className="flex items-center justify-between gap-2 text-[12px] text-muted tnum">
           <span>{ownerMon !== null ? `Owner key holds ${formatToken(ownerMon, 18, 4)} MON` : "Reading balance…"}</span>
           {max > 0n ? (
-            <button type="button" onClick={() => setAmountText(formatToken(max, 18, 4))} className="rounded-full px-2 py-1 font-medium text-road hover:bg-high">
+            <button type="button" onClick={() => setAmountText(formatToken(max, 18, 4))} className="-my-3 min-h-11 rounded-full px-3 font-medium text-road hover:bg-high">
               Max
             </button>
           ) : null}
@@ -249,7 +284,7 @@ function Deposit({ record, account, ownerMon, onChanged }: { record: CurbAccount
       <Signer role="owner" detail="signs this deposit" />
       <button type="button" onClick={deposit} disabled={busy || !keys || amount === null || amount === 0n || tooMuch || ownerMon === null} className="btn btn-owner w-full">
         <KeyGlyph role="owner" size={20} />
-        {tx.kind === "signing" ? "Waiting for Face ID…" : tx.kind === "sent" ? "Confirming on Monad…" : "Deposit with Face ID"}
+        {tx.kind === "waiting" ? "Waiting for Monad…" : tx.kind === "signing" ? "Waiting for Face ID…" : tx.kind === "sent" ? "Confirming on Monad…" : "Deposit with Face ID"}
       </button>
       <div aria-live="polite" className="text-[13px] empty:hidden">
         {tooMuch ? <p className="text-muted">That leaves too little on the owner key for gas.</p> : null}
@@ -259,10 +294,181 @@ function Deposit({ record, account, ownerMon, onChanged }: { record: CurbAccount
   );
 }
 
+/**
+ * Owner key (Face ID): take money out of the account's Kuru margin, to the owner key or any address on Monad. Only
+ * free margin can leave; what open orders hold comes back when they are cancelled.
+ */
+function Withdraw({ record, state, ownerMon, onChanged }: { record: CurbAccountRecord; state: CurbAccountState; ownerMon: bigint | null; onChanged: () => void }) {
+  const id = useId();
+  const [token, setToken] = useState<"MON" | "USDC">("MON");
+  const [amountText, setAmountText] = useState("");
+  const [dest, setDest] = useState<"owner" | "other">("owner");
+  const [otherText, setOtherText] = useState("");
+  const [tx, setTx] = useState<Tx>({ kind: "idle" });
+  const [refused, setRefused] = useState<RefusedView | null>(null);
+  const keys = usePasskeyKeys();
+
+  const decimals = token === "MON" ? MON_USDC.base.decimals : MON_USDC.quote.decimals;
+  const tokenAddress: Address = token === "MON" ? NATIVE : MON_USDC.quote.address;
+  const available = token === "MON" ? state.margin.mon : state.margin.usdc;
+  const amount = parseDecimal(amountText, 10n ** BigInt(decimals));
+  const typed = otherText.trim();
+  const to: Address | null = dest === "owner" ? record.owner : isAddress(typed, { strict: false }) ? getAddress(typed) : null;
+  const badAddress = dest === "other" && typed !== "" && to === null;
+  const tooMuch = amount !== null && amount > available;
+  const gasNeeded = (token === "MON" ? GAS.withdrawMon : GAS.withdrawToken) * GAS_PRICE_SEEN + GAS_HEADROOM / 2n;
+  const gasShort = ownerMon !== null && ownerMon < gasNeeded;
+  const busy = tx.kind === "signing" || tx.kind === "sent";
+
+  const withdraw = async () => {
+    if (!keys || amount === null || amount === 0n || !to) return;
+    setRefused(null);
+    setTx({ kind: "signing" });
+    try {
+      const data = encodeFunctionData({ abi: curbAccountAbi, functionName: "withdraw", args: [tokenAddress, amount, to] });
+      const gas = await gasFor(publicClient, { from: record.owner, to: state.address, data }, token === "MON" ? GAS.withdrawMon : GAS.withdrawToken, to);
+      const hash = await keys.withOwnerKey(window.location.hostname, record, (owner) => sendWithdraw(owner, state.address, { token: tokenAddress, amount, to, gas }));
+      setTx({ kind: "sent", hash });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") {
+        const refusal = explainRefusal(await revertDataOf(publicClient, hash), "withdraw", MON_USDC);
+        appendLedger(state.address, { kind: "refused", hash, at: Date.now(), attempt: "withdraw", signer: "owner", error: refusal.error, detail: refusal.body });
+        setRefused({ refusal, hash, signer: "owner", signerAddress: record.owner, fee: feePaid(receipt), source: "trace" });
+        setTx({ kind: "idle" });
+        return;
+      }
+      appendLedger(state.address, { kind: "withdraw", hash, at: Date.now(), token: tokenAddress, amount: amount.toString(), to });
+      setTx({ kind: "confirmed", hash });
+      setAmountText("");
+      onChanged();
+    } catch (error) {
+      setTx({ kind: "error", problem: explainPasskeyError(error) });
+    }
+  };
+
+  const paste = async () => {
+    try {
+      setOtherText((await navigator.clipboard.readText()).trim());
+    } catch {
+      // Clipboard blocked: the field still takes a typed or long-pressed paste.
+    }
+  };
+
+  const chip = (selected: boolean) =>
+    `min-h-11 rounded-[10px] border px-3 text-left text-[13px] transition-colors ${selected ? "border-road bg-high text-road" : "border-rule text-muted hover:text-road"}`;
+
+  return (
+    <>
+      <div>
+        <h3 className="text-[17px] font-semibold text-road">Withdraw</h3>
+        <p className="mt-1 text-[13px] leading-relaxed text-muted">Out of the account on Kuru, to your owner key or any address on Monad. Cancel open orders first to free what they hold.</p>
+      </div>
+
+      <div role="radiogroup" aria-label="Token" className="grid grid-cols-2 gap-2">
+        {(["MON", "USDC"] as const).map((t) => (
+          <button key={t} type="button" role="radio" aria-checked={token === t} onClick={() => setToken(t)} className={chip(token === t)}>
+            <span className="block font-semibold">{t}</span>
+            <span className="block text-[12px] tnum">
+              {formatToken(t === "MON" ? state.margin.mon : state.margin.usdc, t === "MON" ? MON_USDC.base.decimals : MON_USDC.quote.decimals, t === "MON" ? 4 : 2)} free
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <label htmlFor={`${id}-amt`} className="block rounded-[12px] border border-rule bg-asphalt px-4 pb-2.5 pt-3 transition-colors focus-within:border-kerb">
+        <span className="flex items-center justify-between text-[12px] text-muted">
+          Amount
+          <span className="font-medium text-road">{token}</span>
+        </span>
+        <input
+          id={`${id}-amt`}
+          inputMode="decimal"
+          autoComplete="off"
+          placeholder="0"
+          value={amountText}
+          onChange={(e) => setAmountText(e.target.value)}
+          className="mt-1 w-full bg-transparent font-display text-[26px] font-semibold text-road outline-none tnum placeholder:text-faint [font-variation-settings:'wdth'_75]"
+        />
+        <span className="flex items-center justify-between gap-2 text-[12px] text-muted tnum">
+          <span>
+            {formatToken(available, decimals, token === "MON" ? 4 : 2)} {token} free on Kuru
+          </span>
+          {available > 0n ? (
+            <button type="button" onClick={() => setAmountText(exact(available, decimals))} className="-my-3 min-h-11 rounded-full px-3 font-medium text-road hover:bg-high">
+              Max
+            </button>
+          ) : null}
+        </span>
+      </label>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-[12px] text-muted">To</legend>
+        <div role="radiogroup" aria-label="Send to" className="grid grid-cols-2 gap-2">
+          <button type="button" role="radio" aria-checked={dest === "owner"} onClick={() => setDest("owner")} className={chip(dest === "owner")}>
+            <span className="block font-semibold">Owner key</span>
+            <span className="figures block text-[11px]">{shortAddress(record.owner)}</span>
+          </button>
+          <button type="button" role="radio" aria-checked={dest === "other"} onClick={() => setDest("other")} className={chip(dest === "other")}>
+            <span className="block font-semibold">Another address</span>
+            <span className="block text-[12px]">on Monad</span>
+          </button>
+        </div>
+        {dest === "other" ? (
+          <div className="flex flex-col gap-1.5">
+            <div className={`flex items-center gap-2 rounded-[12px] border bg-asphalt px-3 py-2 focus-within:border-kerb ${badAddress ? "border-road" : "border-rule"}`}>
+              <input
+                aria-label="Address on Monad"
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder="0x…"
+                value={otherText}
+                onChange={(e) => setOtherText(e.target.value)}
+                aria-invalid={badAddress}
+                className="figures min-w-0 grow bg-transparent text-[13px] text-road outline-none placeholder:text-faint"
+              />
+              <button type="button" onClick={paste} className="-my-1 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-3 text-[12px] text-road hover:bg-high">
+                <ClipboardPaste size={13} aria-hidden="true" /> Paste
+              </button>
+            </div>
+            <p className="text-[12px] leading-relaxed text-muted">
+              {badAddress ? "That isn't an address. It starts with 0x and has 40 more characters." : "Only an address that takes MON on Monad. An exchange needs the Monad network selected."}
+            </p>
+          </div>
+        ) : null}
+      </fieldset>
+
+      {to ? (
+        <p className="figures break-all rounded-[10px] bg-asphalt px-3 py-2 text-[12px] leading-[1.7] text-road">
+          <span className="text-muted">0x</span>
+          {(to.slice(2).match(/.{1,4}/g) ?? []).join(" ")}
+        </p>
+      ) : null}
+      <Signer role="owner" detail={to ? `withdraws to ${shortAddress(to)}` : "withdraws"} />
+      <button type="button" onClick={withdraw} disabled={busy || !keys || amount === null || amount === 0n || tooMuch || !to || gasShort} className="btn btn-owner w-full">
+        <KeyGlyph role="owner" size={20} />
+        {tx.kind === "signing" ? "Waiting for Face ID…" : tx.kind === "sent" ? "Confirming on Monad…" : "Withdraw with Face ID"}
+      </button>
+      <div aria-live="polite" className="text-[13px] empty:hidden">
+        {tooMuch ? <p className="text-muted">That&apos;s more than the account has free on Kuru.</p> : null}
+        {gasShort ? <p className="text-muted">Your owner key needs about {formatToken(gasNeeded, 18, 3)} MON for gas. Send some to it first.</p> : null}
+        <TxLine tx={tx} />
+      </div>
+      {refused ? <RefusedMoment key={refused.hash} view={refused} onDismiss={() => setRefused(null)} /> : null}
+    </>
+  );
+}
+
+/** The whole amount, every digit kept, trailing zeros dropped: "250", "6.319". */
+function exact(amount: bigint, decimals: number): string {
+  const s = formatToken(amount, decimals, decimals);
+  return s.includes(".") ? s.replace(/0+$/, "").replace(/\.$/, "") : s;
+}
+
 function TxLine({ tx }: { tx: Tx }) {
   if (tx.kind === "sent" || tx.kind === "confirmed") {
     return (
-      <a className="pill min-h-9 px-3 text-road" href={explorerUrl("tx", tx.hash)} target="_blank" rel="noreferrer">
+      <a className="pill min-h-11 px-3 text-road" href={explorerUrl("tx", tx.hash)} target="_blank" rel="noreferrer">
         <span className={`size-1.5 rounded-full ${tx.kind === "confirmed" ? "bg-live" : "bg-muted"}`} aria-hidden="true" />
         <span className={tx.kind === "confirmed" ? "text-live" : ""}>{tx.kind === "confirmed" ? "Confirmed" : "Sent"}</span> ·{" "}
         <span className="figures text-[11px]">

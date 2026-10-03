@@ -1,4 +1,14 @@
-import { decodeEventLog, zeroAddress, type Address, type Hash, type LocalAccount, type PublicClient, type TransactionReceipt } from "viem";
+import {
+  decodeEventLog,
+  encodeFunctionData,
+  zeroAddress,
+  type Address,
+  type Hash,
+  type Hex,
+  type LocalAccount,
+  type PublicClient,
+  type TransactionReceipt,
+} from "viem";
 import { createWalletClient, http } from "viem";
 import { chain, rpcHttpUrl } from "@/lib/chain/clients";
 import { curbAccountAbi, curbFactoryAbi } from "@/lib/curb/abi";
@@ -21,6 +31,17 @@ export const GAS = {
   placeResting: 450_000n,
   placeTaking: 700_000n,
   cancel: 240_000n,
+  /** Owner withdrawals to an address without code: 99,010 (MON) and 180,112 (USDC) on a fork. */
+  withdrawMon: 130_000n,
+  withdrawToken: 230_000n,
+  /** A plain MON transfer to an address without code. */
+  transfer: 21_000n,
+  /**
+   * Proofs: transactions sent to be refused. Tight on purpose, since a revert still pays the whole limit: the off-lane
+   * refusal used 172,826-172,868 and the trading key's withdrawal attempt 22,930 on a fork (2026-10-03).
+   */
+  proofOffLane: 220_000n,
+  proofWithdraw: 40_000n,
 } as const;
 
 export type CurbAccountState = {
@@ -105,6 +126,122 @@ export function sendPlaceOrder(
     args: [market.orderBook, Number(order.price), order.size, !order.takes],
     gas: order.takes ? GAS.placeTaking : GAS.placeResting,
   });
+}
+
+/** Owner key (Face ID): withdraw from the account's Kuru margin straight to `to`. */
+export function sendWithdraw(owner: LocalAccount, account: Address, w: { token: Address; amount: bigint; to: Address; gas: bigint }): Promise<Hash> {
+  return wallet(owner).writeContract({
+    address: account,
+    abi: curbAccountAbi,
+    functionName: "withdraw",
+    args: [w.token, w.amount, w.to],
+    gas: w.gas,
+  });
+}
+
+/** Owner key (Face ID): send MON from the owner key itself. */
+export function sendMon(owner: LocalAccount, to: Address, amount: bigint, gas: bigint): Promise<Hash> {
+  return wallet(owner).sendTransaction({ to, value: amount, gas });
+}
+
+/**
+ * The gas limit for sending to `to`. An address without code takes the measured limit; one with code (a contract
+ * wallet) runs its own code on receipt, so it gets the node's estimate plus a quarter.
+ */
+export async function gasFor(client: PublicClient, req: { from: Address; to: Address; data?: Hex; value?: bigint }, plain: bigint, target: Address): Promise<bigint> {
+  const code = await client.getCode({ address: target });
+  if (!code || code === "0x") return plain;
+  const estimate = await client.estimateGas({ account: req.from, to: req.to, data: req.data, value: req.value });
+  return (estimate * 5n) / 4n;
+}
+
+/** A proof: the trading key asks the account to withdraw to itself. CurbAccount refuses it with NotOwner. */
+export function sendProofWithdraw(trader: LocalAccount, account: Address, amount: bigint): Promise<Hash> {
+  return wallet(trader).writeContract({
+    address: account,
+    abi: curbAccountAbi,
+    functionName: "withdraw",
+    args: [NATIVE, amount, trader.address],
+    gas: GAS.proofWithdraw,
+  });
+}
+
+/**
+ * A proof: the trading key sends an order past the curb. Post-only, so if the lane moved and the account let it
+ * through, Kuru would still refuse to let it trade (PostOnlyError): the proof can never take liquidity.
+ */
+export function sendProofOffLane(trader: LocalAccount, account: Address, market: Market, order: { side: Side; price: bigint; size: bigint }): Promise<Hash> {
+  return wallet(trader).writeContract({
+    address: account,
+    abi: curbAccountAbi,
+    functionName: order.side === "buy" ? "placeBuy" : "placeSell",
+    args: [market.orderBook, Number(order.price), order.size, true],
+    gas: GAS.proofOffLane,
+  });
+}
+
+/** Calldata for the off-lane proof and the withdrawal attempt, so they can be dry-run before they are sent. */
+export const proofCalldata = {
+  offLane: (market: Market, order: { side: Side; price: bigint; size: bigint }) =>
+    encodeFunctionData({
+      abi: curbAccountAbi,
+      functionName: order.side === "buy" ? "placeBuy" : "placeSell",
+      args: [market.orderBook, Number(order.price), order.size, true],
+    }),
+  withdraw: (amount: bigint, to: Address) => encodeFunctionData({ abi: curbAccountAbi, functionName: "withdraw", args: [NATIVE, amount, to] }),
+};
+
+/**
+ * Run a call against the latest block without sending it. A proof is only sent once this shows the account will
+ * refuse it, so a lane that moved can't turn a proof into a real order.
+ */
+export async function dryRun(client: PublicClient, from: Address, to: Address, data: Hex): Promise<{ reverted: false } | { reverted: true; data: Hex | null }> {
+  try {
+    // `account` keeps viem from batching this into Multicall3, which would wrap the revert data.
+    await client.call({ account: from, to, data });
+    return { reverted: false };
+  } catch (error) {
+    return { reverted: true, data: revertDataFrom(error) };
+  }
+}
+
+/**
+ * The revert data inside a viem error. For `call` it sits on the RPC error a few causes down (CallExecutionError →
+ * ExecutionRevertedError → RpcRequestError.data, verified against anvil 2026-10-03); other paths wrap it as
+ * `{ data }`. Null when there is none.
+ */
+export function revertDataFrom(error: unknown): Hex | null {
+  let e: unknown = error;
+  for (let depth = 0; depth < 10 && e; depth++) {
+    const value = (e as { data?: unknown }).data;
+    if (typeof value === "string" && /^0x[0-9a-fA-F]*$/.test(value)) return value as Hex;
+    const nested = value && typeof value === "object" ? (value as { data?: unknown }).data : undefined;
+    if (typeof nested === "string" && /^0x[0-9a-fA-F]*$/.test(nested)) return nested as Hex;
+    e = (e as { cause?: unknown }).cause;
+  }
+  return null;
+}
+
+/** Monad keeps 10 MON in every EOA: a value transfer may leave less only if the sender sent nothing in the last 3 blocks. */
+export const RESERVE = 10n * 10n ** 18n;
+const RESERVE_QUIET_BLOCKS = 3n;
+
+/**
+ * Wait until `address` has sent nothing for the last 3 blocks (~1.2 s), so a transfer that leaves it under the 10 MON
+ * reserve counts as an emptying transaction instead of reverting (docs/CONTEXT.md). False if it stays busy past `timeoutMs`.
+ */
+export async function waitForQuiet(client: PublicClient, address: Address, timeoutMs = 8_000): Promise<boolean> {
+  const until = Date.now() + timeoutMs;
+  while (Date.now() < until) {
+    const latest = await client.getBlockNumber({ cacheTime: 0 });
+    const [now, before] = await Promise.all([
+      client.getTransactionCount({ address, blockNumber: latest }),
+      client.getTransactionCount({ address, blockNumber: latest - RESERVE_QUIET_BLOCKS }),
+    ]);
+    if (now === before) return true;
+    await new Promise((resolve) => setTimeout(resolve, 400));
+  }
+  return false;
 }
 
 /** Trading key (no prompt) or owner key: cancel this account's orders. */

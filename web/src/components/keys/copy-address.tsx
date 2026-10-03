@@ -19,7 +19,7 @@ export function CopyAddress({ address }: { address: string }) {
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          className="pill min-h-9 border-rule-strong bg-high px-3 text-road transition-colors hover:border-muted"
+          className="pill min-h-11 border-rule-strong bg-high px-3 text-road transition-colors hover:border-muted"
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(address);
@@ -33,7 +33,7 @@ export function CopyAddress({ address }: { address: string }) {
           {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
           {copied ? "Copied" : "Copy"}
         </button>
-        <a className="pill min-h-9 px-3 text-muted transition-colors hover:text-road" href={explorerUrl("address", address)} target="_blank" rel="noreferrer">
+        <a className="pill min-h-11 px-3 text-muted transition-colors hover:text-road" href={explorerUrl("address", address)} target="_blank" rel="noreferrer">
           Monadscan <ExternalLink size={13} aria-hidden="true" />
         </a>
       </div>

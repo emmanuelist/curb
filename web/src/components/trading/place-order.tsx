@@ -3,7 +3,9 @@ import { useState } from "react";
 import { ArrowRight, ExternalLink, Lock } from "lucide-react";
 import { KeyGlyph } from "@/components/keys/signer";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
+import type { RefusedView } from "@/components/curb/refused";
 import { crosses, restingOrderFromReceipt, sendPlaceOrder, takerFillFromReceipt } from "@/lib/curb/account";
+import { explainRefusal, feePaid, revertDataOf } from "@/lib/curb/refusal";
 import { appendLedger } from "@/lib/curb/ledger";
 import { activeTradingKey, lockTrading } from "@/lib/curb/trading-session";
 import { formatSize, formatToken } from "@/lib/format";
@@ -31,6 +33,8 @@ type Props = {
   notional: bigint | null;
   /** True when the ticket has a problem or the price is outside the lane: nothing is sent. */
   blocked: boolean;
+  /** The chain refused a placement (the book moved past the curb, say): the ticket shows the refusal. */
+  onRefused: (view: RefusedView) => void;
 };
 
 const MON_UNITS = (size: bigint, market: Market) => (size * 10n ** BigInt(market.base.decimals)) / market.sizePrecision;
@@ -39,7 +43,7 @@ const MON_UNITS = (size: bigint, market: Market) => (size * 10n ** BigInt(market
  * The ticket's action. It walks the real preconditions in order (account, onchain account, margin, unlocked trading
  * key) and, once they hold, signs with the trading key: no prompt, the lane checked again onchain by CurbAccount.
  */
-export function PlaceOrder({ market, lane, side, price, size, notional, blocked }: Props) {
+export function PlaceOrder({ market, lane, side, price, size, notional, blocked, onRefused }: Props) {
   const { record, state } = useCurbAccount();
   const session = useTradingSession();
   const unlocker = useUnlockTrading(record);
@@ -122,7 +126,11 @@ export function PlaceOrder({ market, lane, side, price, size, notional, blocked 
       setPhase({ kind: "confirming", hash });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") {
-        setPhase({ kind: "error", hash, problem: { title: "Refused onchain.", body: "The Curb account reverted this order." } });
+        const data = await revertDataOf(publicClient, hash);
+        const refusal = explainRefusal(data, "order", market);
+        appendLedger(state.address, { kind: "refused", hash, at: Date.now(), attempt: "order", signer: "trading", error: refusal.error, detail: refusal.body });
+        onRefused({ refusal, hash, signer: "trading", signerAddress: key.address, fee: feePaid(receipt), source: "trace" });
+        setPhase({ kind: "idle" });
         return;
       }
       const rest = restingOrderFromReceipt(receipt, market, state.address);
@@ -151,7 +159,7 @@ export function PlaceOrder({ market, lane, side, price, size, notional, blocked 
       </button>
       <p className="flex items-center justify-center gap-2 text-center text-[12px] text-muted">
         <span>Trading key unlocked · no prompt</span>
-        <button type="button" onClick={lockTrading} className="inline-flex min-h-9 items-center gap-1 rounded-full px-2.5 text-road hover:bg-high">
+        <button type="button" onClick={lockTrading} className="-my-2 inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-road hover:bg-high">
           <Lock size={12} aria-hidden="true" /> Lock
         </button>
       </p>
@@ -171,7 +179,7 @@ function Note({ children }: { children: React.ReactNode }) {
 function PhaseLine({ phase, market }: { phase: Phase; market?: Market }) {
   if (phase.kind === "done") {
     return (
-      <a className="pill mx-auto min-h-9 px-3 text-road" href={explorerUrl("tx", phase.hash)} target="_blank" rel="noreferrer">
+      <a className="pill mx-auto min-h-11 px-3 text-road" href={explorerUrl("tx", phase.hash)} target="_blank" rel="noreferrer">
         <span className="size-1.5 rounded-full bg-live" aria-hidden="true" />
         <span className="text-live">Confirmed</span>
         {phase.orderId !== null ? ` · resting on Kuru #${phase.orderId}` : " · filled on arrival"}

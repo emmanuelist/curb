@@ -90,3 +90,15 @@ export const kuruMarginAbi = [
     outputs: [{ type: "uint256" }],
   },
 ] as const;
+
+/**
+ * Kuru errors seen onchain, so a refusal that came from Kuru rather than CurbAccount still decodes. Selectors verified:
+ * PostOnlyError 0x06e6da4d (a crossing post-only order, fork 2026-10-03), InsufficientBalance 0xf4d678b8,
+ * SizeError 0x0a5c4f1f, Unauthorized 0x82b42900 (docs/CONTEXT.md).
+ */
+export const kuruErrorsAbi = [
+  { type: "error", name: "PostOnlyError", inputs: [] },
+  { type: "error", name: "InsufficientBalance", inputs: [] },
+  { type: "error", name: "SizeError", inputs: [] },
+  { type: "error", name: "Unauthorized", inputs: [] },
+] as const;
