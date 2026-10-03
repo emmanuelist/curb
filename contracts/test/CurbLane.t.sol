@@ -88,22 +88,29 @@ contract CurbLaneTest is Test {
         assertEq(book.sells(), 1);
     }
 
-    /// @dev Rounding properties for any sane book: maxBuy is the floor to a tick of ask × 1.005, minSell the ceil
-    ///      of bid × 0.995.
+    /// @dev Rounding properties for any sane book: maxBuy is the largest tick at or below ask × 1.005, minSell the
+    ///      smallest tick at or above bid × 0.995 (exact, not floored first).
     function testFuzz_lane_roundsLikeTheApp(uint32 bidTicks, uint32 spreadTicks) public {
         uint256 bid = uint256(bound(bidTicks, 1, 20_000_000)) * 100;
         uint256 ask = bid + uint256(bound(spreadTicks, 1, 1_000_000)) * 100;
         book.setTop(_raw(bid), _raw(ask));
         (uint32 maxBuy, uint32 minSell) = account.lane(address(book));
 
-        uint256 up = ask * 10_050 / 10_000;
-        uint256 down = bid * 9_950 / 10_000;
         assertEq(maxBuy % 100, 0);
         assertEq(minSell % 100, 0);
-        assertLe(maxBuy, up);
-        assertGt(uint256(maxBuy) + 100, up);
-        assertGe(minSell, down);
-        assertLt(uint256(minSell), down + 100);
+        assertLe(uint256(maxBuy) * 10_000, ask * 10_050);
+        assertGt((uint256(maxBuy) + 100) * 10_000, ask * 10_050);
+        assertGe(uint256(minSell) * 10_000, bid * 9_950);
+        assertLt((uint256(minSell) - 100) * 10_000, bid * 9_950);
+    }
+
+    function test_lane_minSellRoundsTheExactValueUp() public {
+        // web/src/lib/lane.test.ts: bid 0.026399 × 0.995 = 0.0262670050. Rounding down first gives 0.026267, already on
+        // a tick, which would let a sell sit 0.0000000050 below best bid - 0.50%. The exact value rounds up to 0.026268.
+        book.setTop(_raw(2_639_900), _raw(2_642_000));
+        (, uint32 minSell) = account.lane(address(book));
+        assertEq(minSell, 2_626_800);
+        assertGe(uint256(minSell) * 10_000, uint256(2_639_900) * 9_950);
     }
 
     // ---------------------------------------------------------------- Perpl

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MAX_UINT256, toTopOfBook } from "@/lib/kuru/book";
 import { computeLane, placeOrder } from "@/lib/lane";
-import { LANE_BAND_BPS, MON_USDC } from "@/lib/markets/registry";
+import { LANE_BAND_BPS, MON_PERP, MON_USDC } from "@/lib/markets/registry";
 
 const opts = { bandBps: LANE_BAND_BPS, tickSize: MON_USDC.tickSize };
 
@@ -73,5 +73,38 @@ describe("placeOrder", () => {
       kind: "invalid",
       reason: "no-market",
     });
+  });
+});
+
+describe("computeLane rounds the exact sell curb up", () => {
+  it("never lets a sell sit below best bid − 0.50% (the same fixture as CurbLane.t.sol)", () => {
+    // 0.026399 × 0.995 = 0.0262670050: rounding down first would give 0.026267, below the curb; exact is 0.026268
+    const lane = computeLane({ bid: 2_639_900n, ask: 2_642_000n }, opts);
+    expect(lane.status).toBe("open");
+    if (lane.status !== "open") return;
+    expect(lane.minSell).toBe(2_626_800n);
+    expect(lane.minSell * 10_000n >= 2_639_900n * 9_950n).toBe(true);
+  });
+});
+
+describe("computeLane on Perpl (tick 1 price unit)", () => {
+  const perp = { bandBps: LANE_BAND_BPS, tickSize: MON_PERP.tickSize };
+
+  it("matches contracts/test/CurbLane.t.sol's Perpl fixture", () => {
+    // Perpl MON perp bid 0.033284 / ask 0.033376: 0.033376 × 1.005 = 0.03354288 → 0.033542;
+    // 0.033284 × 0.995 = 0.03311758 → 0.033118
+    const lane = computeLane({ bid: 33_284n, ask: 33_376n }, perp);
+    expect(lane.status).toBe("open");
+    if (lane.status !== "open") return;
+    expect(lane.maxBuy).toBe(33_542n);
+    expect(lane.minSell).toBe(33_118n);
+  });
+
+  it("places at the curb in-lane and one unit past it off-book", () => {
+    const lane = computeLane({ bid: 33_284n, ask: 33_376n }, perp);
+    expect(placeOrder(lane, "buy", 33_542n, 1n)).toEqual({ kind: "in-lane" });
+    expect(placeOrder(lane, "buy", 33_543n, 1n)).toEqual({ kind: "off-book", limit: 33_542n });
+    expect(placeOrder(lane, "sell", 33_118n, 1n)).toEqual({ kind: "in-lane" });
+    expect(placeOrder(lane, "sell", 33_117n, 1n)).toEqual({ kind: "off-book", limit: 33_118n });
   });
 });

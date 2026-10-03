@@ -3,7 +3,8 @@ import { encodeErrorResult } from "viem";
 import { curbAccountAbi } from "@/lib/curb/abi";
 import { explainRefusal, feePaid } from "@/lib/curb/refusal";
 import { kuruErrorsAbi } from "@/lib/kuru/abi";
-import { MON_USDC } from "@/lib/markets/registry";
+import { MON_PERP, MON_USDC } from "@/lib/markets/registry";
+import { perplErrorsAbi } from "@/lib/perpl/abi";
 
 describe("explainRefusal", () => {
   it("reads OffLane exactly as the fork returned it, curb price included", () => {
@@ -48,5 +49,27 @@ describe("explainRefusal", () => {
 describe("feePaid", () => {
   it("is gas used times the price paid (on Monad, gas used is the limit)", () => {
     expect(feePaid({ gasUsed: 40_000n, effectiveGasPrice: 102_000_000_000n })).toBe(4_080_000_000_000_000n);
+  });
+});
+
+describe("explainRefusal on Perpl", () => {
+  it("reads PerpOffLane with Perpl's curb, in the perp's price units", () => {
+    const data = encodeErrorResult({ abi: curbAccountAbi, errorName: "PerpOffLane", args: [10n, true, 33_543n, 33_542n] });
+    const r = explainRefusal(data, "order", MON_PERP);
+    expect(r).toMatchObject({ error: "PerpOffLane", by: "curb", signage: ["OFF-BOOK"], limit: 33_542n });
+    expect(r.body).toContain("0.033543");
+    expect(r.body).toContain("0.033542");
+  });
+
+  it("signs the leverage cap like a road sign", () => {
+    const data = encodeErrorResult({ abi: curbAccountAbi, errorName: "LeverageAboveCap", args: [1000n, 500n] });
+    const r = explainRefusal(data, "order", MON_PERP);
+    expect(r).toMatchObject({ error: "LeverageAboveCap", by: "curb", signage: ["MAX", "5X"], capHdths: 500 });
+    expect(r.body).toContain("10×");
+  });
+
+  it("names Perpl for Perpl's own rules", () => {
+    const data = encodeErrorResult({ abi: perplErrorsAbi, errorName: "CrossesBook", args: [10n, 5_394n, 33_376n, true, 33_376n, false] });
+    expect(explainRefusal(data, "order", MON_PERP)).toMatchObject({ error: "CrossesBook", by: "perpl" });
   });
 });

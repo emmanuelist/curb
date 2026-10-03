@@ -258,3 +258,48 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** stay with Track 1 + Kuru + Mera UX (less work, $10k left on the table); build Perpl trading outside the account (an unguarded key, which contradicts the thesis).
 **Consequences:** a new factory and a new account per user (v2); the thesis generalises to "can't trade off the live order book" on two venues. Order of work: v2 contract and fork tests (#49), then the factory deploy (#50, needs the user's go-ahead), the futures screen (#51), the stateless rebuild (#40), then the proof surface. Agora's "mobile application" wording is being asked of the sponsor (#52).
 **Evidence:** E-020.
+
+## D-022 · The sell curb is the exact bid × (1 − band), rounded up · 2026-10-03 · accepted
+**Context:** D-017 says "minSell = bid × 0.995 ceiled to a tick". The app and CurbAccount v1 computed it by rounding the product down first and then up to a tick, which can land one tick low: bid 0.026399 gives 0.026267, below the exact 0.0262670050. The Perpl lane (tick 1) exposed the gap, because its shared fixture disagreed with the contract by one unit.
+**Decision:** minSell = ceil(bid × (BPS − band) / BPS), then up to a tick, in `web/src/lib/lane.ts` and both lanes of CurbAccount v2 (Kuru and Perpl). maxBuy is unchanged (round down). New shared fixtures: Kuru bid 0.026399 → 0.026268; Perpl bid 0.033284 / ask 0.033376 → 0.033118 / 0.033542.
+**Alternatives:** keep floor-then-ceil everywhere (consistent, but a sell could sit a hair under the stated curb).
+**Consequences:** v1 accounts (only the builder's, empty) keep the old rounding; the app's rule is never looser than either version. Supersedes D-017's rounding detail only.
+**Evidence:** E-022 (CurbLaneTest 14/14, lane.test.ts).
+
+## D-023 · Futures in the app: MON perp only, read by a deployless reader, hidden until v2 is live · 2026-10-03 · accepted
+**Context:** #51 brings Agora's Perpl and AUSD into the app (D-021) on top of CurbAccount v2 (E-021).
+**Decision:**
+
+- One perpetual: MON (Perpl id 10), cap 5× by default, leverage choices 1/2/3/5/10× with anything over the cap drawn past a curb. A refusal for leverage signs as "MAX 5X".
+- Perpl's book is read in one `eth_call` by `PerplBookReader` run as deployless bytecode (viem `call({ code })`): nothing deployed, no backend, values straight from the chain. The lane comes from `getPerpetualInfo`, the same source the contract checks.
+- AUSD in is two owner-key transactions under one Face ID (to the account, then `perplDeposit`); out goes to the owner key or any address.
+- The Perpl market is hidden while the app points at the v1 factory, so nobody is led to an account that can't trade futures. It appears when #50's factory is live.
+- Fork tests of taker flows freeze block timestamps, because a fork otherwise ages Perpl's oracle past its 60-second limit.
+
+**Alternatives:** Perpl's REST API for depth (offchain data, breaks rule 1); several perpetuals (more surface, no extra proof).
+**Consequences:** a taking order that walks many levels may need more than the 450,000 gas limit; the app shows the refusal if it runs out. The demo uses one level.
+**Evidence:** E-022.
+
+## D-024 · The leverage cap is a curb: drawn as one, and a refusal returns the ticket to it · 2026-10-04 · accepted
+**Context:** #51's finish review found the over-cap ticket contradicting itself after a refusal: "the contract would refuse 10×" and the proof box stayed beside a card saying the account had refused it. The lane already avoids this, because an off-lane refusal returns the ticket to the curb (BRIEF §11) and its warning goes with it.
+**Decision:** treat the cap the same way. `LeverageAboveCap` carries the cap it enforced; the ticket returns to it, and the card says "Your ticket is back at your cap, 5×." In the leverage row the cap is drawn as a curb: the lane's double white line, once, between the last choice under the cap and the first past it.
+**Alternatives:** hide the warning and the proof box while the card shows (the reviewer's proposal). The ticket would stay unsendable, and spot and perp would behave differently after a refusal.
+**Consequences:** after a cap refusal the order can be sent at the cap with one tap.
+**Evidence:** E-023.
+
+## D-025 · Perpl orders are tracked by transaction, not by order id · 2026-10-04 · accepted
+**Context:** Perpl reuses order ids: 2^16−1 slots, and a freed id is handed straight out again. On a fork, three successive orders from one account were all #35. The ledger and the position card matched cancels to orders by id, so a new order that reused a cancelled id read as cancelled and disappeared.
+**Decision:**
+
+- A cancel or a fill belongs to the latest earlier order with that id. An order whose id a later order of ours took has left the book.
+- Reading the book checks the slot's account, side and price before calling the order ours.
+- Fills of resting orders are found by scanning Perpl's logs for `MakerOrderFilled(V2)` with our account and order id, as Kuru's are (D-018).
+- Orders lists Perpl orders beside Kuru's, with one row grammar.
+
+**Alternatives:**
+
+- Perpl's `orderDescId`: a client id that appears only in events, not on the stored order, so the book can't be read by it.
+- An indexer: a backend, which breaks rule 1.
+
+**Consequences:** a fill could be credited to the wrong order if the filled id is reused before the app sees the fill: both inside one ~5-block refresh while resting, or one 100-block scan window. #40's rebuild from the chain settles it.
+**Evidence:** E-023.

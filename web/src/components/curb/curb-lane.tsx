@@ -4,6 +4,7 @@ import type { Lane, Placement, Side } from "@/lib/lane";
 import type { Market } from "@/lib/markets/registry";
 import { formatPrice, formatSize } from "@/lib/format";
 import { LaneDashes } from "@/components/curb/lane-dashes";
+import { venueName } from "@/lib/markets/selected";
 
 export type DraftOrder = { side: Side; price: bigint; placement: Placement };
 
@@ -21,7 +22,7 @@ type Props = {
 const bandLabel = (bps: bigint) => `${(Number(bps) / 100).toFixed(2)}%`;
 
 /**
- * The order lane: Kuru's live book between two curb lines the trading key may not cross. Every boundary here
+ * The order lane: the venue's live book (Kuru or Perpl) between two curb lines the trading key may not cross. Every boundary here
  * comes from `lane`, the same numbers CurbAccount enforces (docs/BRIEF.md §6). Levels past a curb are drawn
  * inside the hatched off-book zone, where the trading key can't reach them.
  */
@@ -46,7 +47,7 @@ export const CurbLane = memo(function CurbLane({ market, lane, bids, asks, depth
       <header className="flex items-center justify-between gap-3 px-5 pb-3 pt-4">
         <h2 className="text-[15px] font-semibold text-road">{title}</h2>
         <p className="text-[12px] text-muted">
-          Kuru ±{bandLabel(lane.bandBps)} · <span className="tnum">{lane.spreadBps.toFixed(1)} bps</span> spread
+          {venueName(market)} ±{bandLabel(lane.bandBps)} · <span className="tnum">{lane.spreadBps.toFixed(1)} bps</span> spread
         </p>
       </header>
 

@@ -12,6 +12,8 @@ import type { Lane } from "@/lib/lane";
 import type { Market } from "@/lib/markets/registry";
 import { useBlockSelector, type BlockState } from "@/hooks/use-live-block";
 import { LaneDashes } from "@/components/curb/lane-dashes";
+import { MarketMenuButton } from "@/components/trading/market-switch";
+import { venueName } from "@/lib/markets/selected";
 
 type Props = {
   market: Market;
@@ -68,10 +70,7 @@ export const TradeHero = memo(function TradeHero({ market, lane, bids, asks, dra
 
       <NetworkRow />
 
-      <button type="button" className="mt-[36px] flex h-[32px] items-center gap-1.5 px-[22px] text-[23px] font-medium tracking-[0.01em] text-road" aria-label={`Market ${market.base.symbol} / ${market.quote.symbol}`}>
-        {market.base.symbol} / {market.quote.symbol}
-        <ChevronDown size={20} strokeWidth={2} className="mt-0.5 text-road" aria-hidden="true" />
-      </button>
+      <MarketMenuButton market={market} className="mt-[30px]" />
 
       <p
         className="mt-[6px] h-[76px] px-[22px] font-stencil text-[81px] font-bold leading-[0.94] tracking-[-0.02em] text-road"
@@ -86,7 +85,7 @@ export const TradeHero = memo(function TradeHero({ market, lane, bids, asks, dra
             Spread {p(spread)} <span className="text-muted">({open.spreadBps.toFixed(1)} bps)</span>
           </span>
         ) : (
-          <span className="text-muted">Reading Kuru&apos;s book…</span>
+          <span className="text-muted">Reading {venueName(market)}&apos;s book…</span>
         )}
       </p>
 
@@ -130,7 +129,9 @@ export const TradeHero = memo(function TradeHero({ market, lane, bids, asks, dra
           aria-label={`Review draft: ${draft.side} ${draft.sizeText || "—"} ${market.base.symbol} at ${draft.priceText || "—"}`}
           className="flex h-[55px] items-center gap-2 rounded-[10px] border-2 border-road bg-asphalt/60 pl-[18px] pr-3.5 text-[17px] text-road transition-colors hover:bg-road/5"
         >
-          <span className="font-display text-[20.5px] font-bold tracking-[0.02em] [font-variation-settings:'wdth'_80]">{draft.side === "buy" ? "BUY" : "SELL"}</span>
+          <span className="font-display text-[20.5px] font-bold tracking-[0.02em] [font-variation-settings:'wdth'_80]">
+            {market.venue === "perpl" ? (draft.side === "buy" ? "LONG" : "SHORT") : draft.side === "buy" ? "BUY" : "SELL"}
+          </span>
           <span className="font-display text-[20.5px] font-medium tnum [font-variation-settings:'wdth'_80]">
             {draft.sizeText || "—"} {market.base.symbol} @ {draft.priceText || "—"}
           </span>

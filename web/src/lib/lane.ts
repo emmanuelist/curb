@@ -32,6 +32,7 @@ const BPS = 10_000n;
 
 const floorToTick = (value: bigint, tick: bigint) => (value / tick) * tick;
 const ceilToTick = (value: bigint, tick: bigint) => ((value + tick - 1n) / tick) * tick;
+const ceilDiv = (a: bigint, b: bigint) => (a + b - 1n) / b;
 
 export function computeLane(top: TopOfBook, opts: { bandBps: bigint; tickSize: bigint }): Lane {
   const { bid, ask } = top;
@@ -48,7 +49,8 @@ export function computeLane(top: TopOfBook, opts: { bandBps: bigint; tickSize: b
     mid,
     spreadBps,
     maxBuy: floorToTick((ask * (BPS + opts.bandBps)) / BPS, opts.tickSize),
-    minSell: ceilToTick((bid * (BPS - opts.bandBps)) / BPS, opts.tickSize),
+    // The exact bid × (1 − band), rounded up, then up to a tick: a sell can never sit below best bid − band.
+    minSell: ceilToTick(ceilDiv(bid * (BPS - opts.bandBps), BPS), opts.tickSize),
     bandBps: opts.bandBps,
   };
 }
