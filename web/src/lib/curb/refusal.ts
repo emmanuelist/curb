@@ -3,8 +3,11 @@ import { curbAccountAbi } from "@/lib/curb/abi";
 import { formatPrice } from "@/lib/format";
 import { kuruErrorsAbi } from "@/lib/kuru/abi";
 import type { Market } from "@/lib/markets/registry";
+import { perplErrorsAbi } from "@/lib/perpl/abi";
 
-const errorsAbi = [...curbAccountAbi, ...kuruErrorsAbi] as const;
+// No error name appears twice across the three (checked 2026-10-03), so a decode names exactly one source.
+const errorsAbi = [...curbAccountAbi, ...kuruErrorsAbi, ...perplErrorsAbi] as const;
+const perplErrorNames: ReadonlySet<string> = new Set(perplErrorsAbi.map((e) => e.name));
 
 /** What the key was trying to do, which decides the signage ("NO WITHDRAWAL" only makes sense for a withdrawal). */
 export type Attempt = "order" | "withdraw" | "cancel";
@@ -12,14 +15,16 @@ export type Attempt = "order" | "withdraw" | "cancel";
 export type Refusal = {
   /** The error's name, decoded from the revert data; null when the chain didn't give one back. */
   error: string | null;
-  /** Who refused: Curb's account (the product's rules), or Kuru (the market's rules). */
-  by: "curb" | "kuru" | "unknown";
+  /** Who refused: Curb's account (the product's rules), or the venue (Kuru's or Perpl's rules). */
+  by: "curb" | "kuru" | "perpl" | "unknown";
   /** Stencil signage, one line per entry (BRIEF §5, §11). */
   signage: readonly string[];
   title: string;
   body: string;
   /** OffLane only: the curb price the contract enforced at that block (price units). */
   limit?: bigint;
+  /** LeverageAboveCap only: the cap the contract enforced, in hundredths (500 = 5x). */
+  capHdths?: number;
 };
 
 /** Turn a transaction's revert data into the reason shown to the person, in the product's words. */
@@ -42,6 +47,8 @@ export function explainRefusal(data: Hex | null | undefined, attempt: Attempt, m
     ...extra,
   });
   const kuru = (body: string): Refusal => ({ error: decoded?.errorName ?? null, by: "kuru", signage: ["REFUSED"], title: "Kuru refused it.", body });
+  const perpl = (body: string): Refusal => ({ error: decoded?.errorName ?? null, by: "perpl", signage: ["REFUSED"], title: "Perpl refused it.", body });
+  const times = (hdths: bigint | number) => `${(Number(hdths) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}×`;
 
   switch (decoded?.errorName) {
     case "OffLane": {
@@ -79,6 +86,33 @@ export function explainRefusal(data: Hex | null | undefined, attempt: Attempt, m
       return curb(["REFUSED"], "The transfer didn't go through.", "The address it was sent to wouldn't accept it. Nothing moved.");
     case "ZeroAddress":
       return curb(["REFUSED"], "Your Curb account refused it.", "It can't send to the zero address.");
+    case "PerpOffLane": {
+      const [, isBuy, price, limit] = decoded.args;
+      return curb(
+        ["OFF-BOOK"],
+        "Off the lane. Your Curb account refused it.",
+        isBuy
+          ? `A bid at ${p(price)} is past the curb: at that block the most it could pay was ${p(limit)}, Perpl's best ask + 0.50%.`
+          : `An ask at ${p(price)} is past the curb: at that block the least it could take was ${p(limit)}, Perpl's best bid − 0.50%.`,
+        { limit: BigInt(limit) },
+      );
+    }
+    case "LeverageAboveCap": {
+      const [leverage, cap] = decoded.args;
+      return curb(
+        // The stencil face has no multiplication sign; a road sign would read "MAX 5X" anyway.
+        ["MAX", times(cap).replace("×", "X")],
+        "Over your leverage cap. Your Curb account refused it.",
+        `The trading key asked for ${times(leverage)}; your cap on this market is ${times(cap)}. Only the owner key can raise it.`,
+        { capHdths: Number(cap) },
+      );
+    }
+    case "PerpNotAllowed":
+      return curb(["NO", "ENTRY"], "Your Curb account refused it.", "This perpetual isn't one the account allows its trading key to use.");
+    case "PerpNoMarket":
+      return curb(["NO", "LANE"], "Your Curb account refused it.", "Perpl's book was empty on one side or crossed at that block, so there was no lane to trade in.");
+    case "PerpOrderNotAllowed":
+      return curb(["REFUSED"], "Your Curb account refused it.", "The trading key may only open or close positions, with no collateral attached.");
     case "PostOnlyError":
       return kuru("The order would have traded straight away, and Curb sent it post-only so it couldn't. Nothing traded.");
     case "InsufficientBalance":
@@ -87,7 +121,16 @@ export function explainRefusal(data: Hex | null | undefined, attempt: Attempt, m
       return kuru(`The size is below Kuru's minimum of ${(market.minSize / market.sizePrecision).toString()} ${market.base.symbol}.`);
     case "Unauthorized":
       return kuru("Kuru didn't accept the caller.");
+    case "CrossesBook":
+      return perpl("A post-only order would have crossed the book, so Perpl didn't post it. Nothing traded.");
+    case "InsufficientFunds":
+    case "AmountExceedsAvailableBalance":
+      return perpl("The account's AUSD on Perpl doesn't cover this order's margin.");
+    case "CloseOrderExceedsPosition":
+    case "OrderSizeExceedsAvailableSize":
+      return perpl("The close is larger than the open position.");
     default:
+      if (decoded && perplErrorNames.has(decoded.errorName)) return perpl(`Perpl's rule: ${decoded.errorName}.`);
       return {
         error: null,
         by: "unknown",

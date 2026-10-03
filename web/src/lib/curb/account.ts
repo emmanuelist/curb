@@ -1,6 +1,7 @@
 import {
   decodeEventLog,
   encodeFunctionData,
+  erc20Abi,
   zeroAddress,
   type Address,
   type Hash,
@@ -13,7 +14,7 @@ import { createWalletClient, http } from "viem";
 import { chain, rpcHttpUrl } from "@/lib/chain/clients";
 import { curbAccountAbi, curbFactoryAbi } from "@/lib/curb/abi";
 import { kuruMarginAbi, kuruOrderBookAbi } from "@/lib/kuru/abi";
-import { CURB_FACTORY, KURU_MARGIN_ACCOUNT, type Market } from "@/lib/markets/registry";
+import { AUSD, CURB_FACTORY, KURU_MARGIN_ACCOUNT, MON_PERP, type Market } from "@/lib/markets/registry";
 import type { Side } from "@/lib/lane";
 
 /** Kuru's MarginAccount treats the zero address as native MON. */
@@ -26,7 +27,8 @@ export const NATIVE: Address = zeroAddress;
  * fork (E-017). An order that takes liquidity may walk several levels, so it gets the most headroom.
  */
 export const GAS = {
-  create: 1_300_000n,
+  /** factory.create for CurbAccount v2 (Kuru and Perpl): 2,156,647 under Monad rules (E-021); v1 took 1,181,268. */
+  create: 2_400_000n,
   deposit: 100_000n,
   placeResting: 450_000n,
   placeTaking: 700_000n,
@@ -50,6 +52,8 @@ export type CurbAccountState = {
   /** The trading key the account currently accepts (address(0) when revoked). Null until deployed. */
   trader: Address | null;
   margin: { mon: bigint; usdc: bigint };
+  /** v2 accounts trade Perpl too; a v1 account (Kuru only) reads false. */
+  perps: { supported: boolean; opened: boolean; capHdths: number | null; collateralHeld: bigint };
 };
 
 /** Where the account lives (CREATE2, recomputable from the passkey's two keys) and what it holds on Kuru. */
@@ -75,8 +79,29 @@ export async function readCurbAccount(
     }),
   ]);
   const deployed = Boolean(code && code !== "0x");
-  const trader = deployed ? await client.readContract({ address, abi: curbAccountAbi, functionName: "trader" }) : null;
-  return { address, deployed, trader, margin: { mon, usdc } };
+  if (!deployed) return { address, deployed, trader: null, margin: { mon, usdc }, perps: { supported: false, opened: false, capHdths: null, collateralHeld: 0n } };
+  // allowFailure: a v1 account has no Perpl functions, and must still read as a working Kuru account.
+  const [trader, opened, perp, collateral] = await client.multicall({
+    contracts: [
+      { address, abi: curbAccountAbi, functionName: "trader" },
+      { address, abi: curbAccountAbi, functionName: "perplOpened" },
+      { address, abi: curbAccountAbi, functionName: "perps", args: [MON_PERP.perpId ?? 0n] },
+      { address: AUSD, abi: erc20Abi, functionName: "balanceOf", args: [address] },
+    ],
+  });
+  const supported = opened.status === "success";
+  return {
+    address,
+    deployed,
+    trader: trader.status === "success" ? trader.result : null,
+    margin: { mon, usdc },
+    perps: {
+      supported,
+      opened: supported && opened.result === true,
+      capHdths: perp.status === "success" && perp.result[0] ? perp.result[1] : null,
+      collateralHeld: collateral.status === "success" ? collateral.result : 0n,
+    },
+  };
 }
 
 const wallet = (account: LocalAccount) => createWalletClient({ account, chain, transport: http(rpcHttpUrl) });

@@ -290,13 +290,14 @@ contract CurbAccount {
         uint256 ask = rawAsk * m.pricePrecision / WAD;
         if (bid >= ask) revert NoMarket(market);
 
-        // Floor (maxBuy) and ceil (minSell) to a tick: the division before the multiplication is the rounding,
-        // exactly as web/src/lib/lane.ts does it.
+        // maxBuy: ask × (1 + band) rounded down to a tick. minSell: bid × (1 − band) rounded up, then up to a tick,
+        // so a sell can never sit below best bid − band. The division before the multiplication is the rounding,
+        // exactly as web/src/lib/lane.ts does it (shared fixtures in CurbLane.t.sol and lane.test.ts).
         uint256 tick = m.tickSize;
         // forge-lint: disable-next-line(divide-before-multiply)
         uint256 up = ask * (BPS + LANE_BAND_BPS) / BPS / tick * tick;
         // forge-lint: disable-next-line(divide-before-multiply)
-        uint256 down = (bid * (BPS - LANE_BAND_BPS) / BPS + tick - 1) / tick * tick;
+        uint256 down = ((bid * (BPS - LANE_BAND_BPS) + BPS - 1) / BPS + tick - 1) / tick * tick;
         // Kuru prices are uint32. Cap instead of truncating: a truncated minSell could let an off-lane sell through.
         // forge-lint: disable-next-line(unsafe-typecast)
         maxBuy = up > type(uint32).max ? type(uint32).max : uint32(up);

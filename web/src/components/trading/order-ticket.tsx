@@ -1,13 +1,17 @@
-import { useId, useState } from "react";
+import { Fragment, useId, useState } from "react";
 import { formatPrice, formatToken, parseDecimal } from "@/lib/format";
 import { placeOrder, type Lane, type Placement, type Side } from "@/lib/lane";
 import type { Market } from "@/lib/markets/registry";
 import { Signer } from "@/components/keys/signer";
 import { RefusedMoment, type RefusedView } from "@/components/curb/refused";
+import { PerpPlaceOrder } from "@/components/trading/perp-place-order";
 import { PlaceOrder } from "@/components/trading/place-order";
-import { ProveOffLane } from "@/components/trading/prove-off-lane";
+import { ProveCap, ProveOffLane } from "@/components/trading/prove-off-lane";
+import { venueName } from "@/lib/markets/selected";
+import { useCurbAccount } from "@/hooks/use-curb-account";
 
-export type TicketState = { side: Side; priceText: string; sizeText: string };
+/** `leverage` (hundredths: 200 = 2x) only means something on a Perpl market. */
+export type TicketState = { side: Side; priceText: string; sizeText: string; leverage?: number };
 
 export type TicketReading = {
   price: bigint | null;
@@ -37,9 +41,19 @@ type Props = {
   onChange: (next: TicketState) => void;
 };
 
+/** Leverage the ticket offers on a perpetual, in hundredths. Choices above the account's cap are drawn past a curb. */
+const LEVERAGE = [100, 200, 300, 500, 1000] as const;
+
 export function OrderTicket({ market, lane, value, onChange }: Props) {
   const id = useId();
   const [refused, setRefused] = useState<RefusedView | null>(null);
+  const { state } = useCurbAccount();
+  const perps = market.venue === "perpl";
+  // The account's cap on this perpetual; before the account exists, the cap every new account starts with.
+  const cap = state?.perps.capHdths ?? 500;
+  const leverage = value.leverage ?? 200;
+  const overCap = perps && leverage > cap;
+  const words = perps ? { buy: "Long", sell: "Short" } : { buy: "Buy", sell: "Sell" };
   const r = readTicket(market, lane, value);
   const p = (x: bigint) => formatPrice(x, market.pricePrecision);
   const minSize = (market.minSize / market.sizePrecision).toString();
@@ -54,9 +68,15 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
     }
   }
 
-  // A refusal shows where it happened. Past a curb, the ticket then goes back to the curb the account named (BRIEF §11).
+  // A refusal shows where it happened. Past a curb, the ticket then goes back to the curb the account named (BRIEF §11):
+  // the lane's price, or the leverage cap.
   const onRefused = (view: RefusedView) => {
-    const limit = view.refusal.limit;
+    const { limit, capHdths } = view.refusal;
+    if (capHdths !== undefined) {
+      setRefused({ ...view, after: `Your ticket is back at your cap, ${capHdths / 100}×.` });
+      onChange({ ...value, leverage: capHdths });
+      return;
+    }
     if (limit === undefined) {
       setRefused(view);
       return;
@@ -69,7 +89,7 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
     r.placement?.kind === "invalid" && r.placement.reason === "not-on-tick"
       ? "Prices move in steps of 0.000001."
       : r.tooSmall
-        ? `The smallest order on Kuru is ${minSize} ${market.base.symbol}.`
+        ? `The smallest order on ${venueName(market)} is ${minSize} ${market.base.symbol}.`
         : null;
 
   return (
@@ -86,7 +106,7 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
               value.side === side ? "border border-road bg-high text-road" : "border border-transparent text-muted hover:text-road"
             }`}
           >
-            {side === "buy" ? "Buy" : "Sell"}
+            {words[side]}
           </button>
         ))}
       </div>
@@ -97,7 +117,13 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
         unit={market.base.symbol}
         value={value.sizeText}
         onChange={(v) => onChange({ ...value, sizeText: v })}
-        helper={r.notional !== null ? `≈ ${formatToken(r.notional, market.quote.decimals)} ${market.quote.symbol} · min ${minSize}` : `min ${minSize} ${market.base.symbol}`}
+        helper={
+          r.notional !== null
+            ? perps
+              ? `≈ ${formatToken(r.notional, market.quote.decimals)} ${market.quote.symbol} notional · margin ≈ ${formatToken((r.notional * 100n) / BigInt(leverage), market.quote.decimals)} at ${leverage / 100}×`
+              : `≈ ${formatToken(r.notional, market.quote.decimals)} ${market.quote.symbol} · min ${minSize}`
+            : `min ${minSize} ${market.base.symbol}`
+        }
       />
       <Field
         id={`${id}-price`}
@@ -111,8 +137,48 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
         hatched={offBook !== null}
       />
 
+      {perps ? (
+        <fieldset>
+          <legend className="mb-2 flex w-full items-center justify-between text-[12px] text-muted">
+            <span>Leverage</span>
+            <span>
+              Your cap <span className="font-semibold text-road">{cap / 100}×</span> · set by the <span className="text-kerb">owner key</span>
+            </span>
+          </legend>
+          <div role="radiogroup" aria-label="Leverage" className="flex gap-1.5">
+            {LEVERAGE.map((l, i) => {
+              const past = l > cap;
+              // The cap is a curb, drawn like the lane's: once, between the last choice under it and the first past it.
+              const curb = past && (i === 0 || LEVERAGE[i - 1] <= cap);
+              return (
+                <Fragment key={l}>
+                  {curb ? <span className="w-[7px] shrink-0 border-x-2 border-road" aria-hidden="true" /> : null}
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={leverage === l}
+                    aria-label={past ? `${l / 100}x, over your cap` : `${l / 100}x`}
+                    onClick={() => onChange({ ...value, leverage: l })}
+                    className={`h-11 min-w-0 flex-1 rounded-[10px] border text-[14px] font-semibold tnum transition-colors ${past ? "hatch border-dashed" : ""} ${
+                      leverage === l ? "border-road bg-high text-road" : past ? "border-faint text-muted" : "border-rule text-muted hover:text-road"
+                    }`}
+                  >
+                    {l / 100}×
+                  </button>
+                </Fragment>
+              );
+            })}
+          </div>
+        </fieldset>
+      ) : null}
+
       <div id={`${id}-status`} aria-live="polite" className="min-h-5 text-[13px] leading-snug">
-        {offBook ? (
+        {overCap ? (
+          <p className="text-muted">
+            <span className="font-semibold text-road">Over your cap.</span> The cap is <span className="text-road tnum">{cap / 100}×</span>. The contract would refuse {leverage / 100}×, so
+            Curb won&apos;t send it.
+          </p>
+        ) : offBook ? (
           <p className="text-muted">
             <span className="font-semibold text-road">Off the lane.</span> {value.side === "buy" ? "Max buy" : "Min sell"} is{" "}
             <span className="text-road tnum">{p(offBook.limit)}</span>. The contract would refuse this, so Curb won&apos;t send it.
@@ -120,7 +186,7 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
         ) : problem ? (
           <p className="text-muted">{problem}</p>
         ) : lane?.status === "no-market" ? (
-          <p className="text-muted">Kuru&apos;s book is empty on one side, so there is no lane to trade in.</p>
+          <p className="text-muted">{venueName(market)}&apos;s book is empty on one side, so there is no lane to trade in.</p>
         ) : (
           <Signer role="trading" detail="held to the lane" />
         )}
@@ -128,7 +194,24 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
 
       {refused ? <RefusedMoment key={refused.hash} view={refused} onDismiss={() => setRefused(null)} /> : null}
 
-      {offBook ? (
+      {overCap ? (
+        <div className="flex flex-col gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => onChange({ ...value, leverage: cap })}
+              className="flex h-14 flex-col items-center justify-center rounded-[12px] border border-road text-[15px] font-semibold leading-tight"
+            >
+              Use your cap
+              <span className="text-[12px] font-normal text-muted tnum">{cap / 100}×</span>
+            </button>
+            <button type="button" disabled className="hatch h-14 rounded-[12px] border border-dashed border-faint text-[15px] font-semibold text-muted">
+              Over the cap
+            </button>
+          </div>
+          {r.price !== null ? <ProveCap market={market} side={value.side} price={r.price} size={r.size} leverageHdths={leverage} capHdths={cap} onRefused={onRefused} /> : null}
+        </div>
+      ) : offBook ? (
         <div className="flex flex-col gap-2.5">
           <div className="grid grid-cols-2 gap-2.5">
             <button
@@ -143,8 +226,22 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
               Off the lane
             </button>
           </div>
-          {r.price !== null ? <ProveOffLane market={market} side={value.side} price={r.price} size={r.size} onRefused={onRefused} /> : null}
+          {r.price !== null ? (
+            <ProveOffLane market={market} side={value.side} price={r.price} size={r.size} leverageHdths={leverage} capHdths={cap} onRefused={onRefused} />
+          ) : null}
         </div>
+      ) : perps ? (
+        <PerpPlaceOrder
+          market={market}
+          lane={lane}
+          action={value.side === "buy" ? "open-long" : "open-short"}
+          price={r.price}
+          lots={r.size}
+          leverageHdths={leverage}
+          notional={r.notional}
+          onRefused={onRefused}
+          blocked={problem !== null || r.price === null || r.size === null || r.placement?.kind !== "in-lane" || lane?.status !== "open"}
+        />
       ) : (
         <PlaceOrder
           market={market}

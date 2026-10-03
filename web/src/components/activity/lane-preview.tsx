@@ -2,15 +2,15 @@
 
 import type { CSSProperties } from "react";
 import { formatPrice } from "@/lib/format";
-import { MON_USDC } from "@/lib/markets/registry";
+import { marketLabel, venueName } from "@/lib/markets/selected";
 import { LaneDashes } from "@/components/curb/lane-dashes";
 import { useBlockSelector } from "@/hooks/use-live-block";
 import { useMarket } from "@/hooks/use-market";
+import { useSelectedMarket } from "@/hooks/use-selected-market";
 
-const market = MON_USDC;
-
-/** The board's "Order lane preview": where an order may rest right now, live from Kuru, between the two curbs. */
+/** The board's "Order lane preview": where an order may rest right now on the market being traded, between the two curbs. */
 export function LanePreview() {
+  const market = useSelectedMarket();
   const { lane } = useMarket(market);
   const live = useBlockSelector((s) => s.status === "live");
   const open = lane?.status === "open" ? lane : null;
@@ -24,7 +24,7 @@ export function LanePreview() {
         </h2>
         <p className="flex items-center gap-1.5 text-[12px] text-muted">
           <span className={`size-1.5 rounded-full ${live ? "bg-live" : "bg-faint"}`} aria-hidden="true" />
-          {market.base.symbol} / {market.quote.symbol} · Kuru
+          {marketLabel(market)} · {venueName(market)}
         </p>
       </header>
 
@@ -47,8 +47,8 @@ export function LanePreview() {
         {open
           ? "Your orders rest between these curbs. Past either one, your Curb account refuses them."
           : lane
-            ? "No lane right now: Kuru's book is empty on one side or crossed for a moment."
-            : "Reading Kuru's book…"}
+            ? `No lane right now: ${venueName(market)}'s book is empty on one side or crossed for a moment.`
+            : `Reading ${venueName(market)}'s book…`}
       </p>
     </section>
   );

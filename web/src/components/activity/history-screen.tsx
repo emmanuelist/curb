@@ -8,7 +8,7 @@ import { ScreenHeader } from "@/components/navigation/app-nav";
 import { explorerUrl } from "@/lib/chain/clients";
 import type { LedgerEntry } from "@/lib/curb/ledger";
 import { formatPrice, formatSize, formatToken, shortAddress } from "@/lib/format";
-import { MON_USDC } from "@/lib/markets/registry";
+import { MARKETS, MON_USDC, PERPS_ENABLED } from "@/lib/markets/registry";
 import { useCurbAccount } from "@/hooks/use-curb-account";
 import { useLedger } from "@/hooks/use-ledger";
 
@@ -29,8 +29,8 @@ const EMPTY: Record<Tab, string> = {
   refusals: "Anything your Curb account refused onchain, like a withdrawal from the trading key or an order past the curb.",
 };
 
-const tabOf = (e: LedgerEntry): Tab =>
-  e.kind === "refused" ? "refusals" : e.kind === "order" || e.kind === "cancel" || e.kind === "fill" ? "trades" : "money";
+const TRADES: ReadonlySet<LedgerEntry["kind"]> = new Set(["order", "cancel", "fill", "perp-order", "perp-cancel", "perp-fill", "cap"]);
+const tabOf = (e: LedgerEntry): Tab => (e.kind === "refused" ? "refusals" : TRADES.has(e.kind) ? "trades" : "money");
 
 /** History is a road: events sit on a lane line, newest first. Nothing is drawn until it is onchain. */
 export function HistoryScreen() {
@@ -48,7 +48,7 @@ export function HistoryScreen() {
           {shown.length > 0 ? (
             <ol className="flex flex-col">
               {shown.map((e, i) => (
-                <Event key={`${e.kind}:${e.hash}:${e.kind === "fill" ? e.orderId : ""}`} entry={e} last={i === shown.length - 1} />
+                <Event key={`${e.kind}:${e.hash}:${e.kind === "fill" || e.kind === "perp-fill" ? e.orderId : ""}`} entry={e} last={i === shown.length - 1} />
               ))}
             </ol>
           ) : (
@@ -66,8 +66,8 @@ export function HistoryScreen() {
         </section>
         {entries.length > 0 ? (
           <p className="px-1 text-[12px] leading-relaxed text-muted">
-            Transactions sent from this device. Kuru&apos;s events aren&apos;t indexed by account, so Curb keeps the hashes it sent and every link opens the
-            transaction on Monad.
+            Transactions sent from this device. {PERPS_ENABLED ? "Kuru's and Perpl's events aren't" : "Kuru's events aren't"} indexed by account, so Curb keeps
+            the hashes it sent and every link opens the transaction on Monad.
           </p>
         ) : null}
       </div>
@@ -82,7 +82,7 @@ function Event({ entry, last }: { entry: LedgerEntry; last: boolean }) {
     <li className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-4">
       <div className="flex flex-col items-center" aria-hidden="true">
         <span className={`mt-1 grid size-5 place-items-center ${refused ? "text-stop" : signer === "owner" ? "text-kerb" : signer === "trading" ? "text-road" : "text-live"}`}>
-          {signer === "kuru" ? <span className="size-2.5 rounded-full bg-live" /> : <KeyGlyph role={signer} size={16} />}
+          {signer === "kuru" || signer === "perpl" ? <span className="size-2.5 rounded-full bg-live" /> : <KeyGlyph role={signer} size={16} />}
         </span>
         {!last ? <span className="mt-1.5 w-[3px] grow bg-[repeating-linear-gradient(180deg,var(--mark-faint)_0_14px,transparent_0_26px)]" /> : null}
       </div>
@@ -98,7 +98,7 @@ function Event({ entry, last }: { entry: LedgerEntry; last: boolean }) {
         </p>
         <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
           <span className={signer === "owner" ? "text-kerb" : signer === "trading" ? "text-road" : ""}>
-            {signer === "owner" ? "Owner key · Face ID" : signer === "trading" ? "Trading key · no prompt" : "Filled by another trader on Kuru"}
+            {signer === "owner" ? "Owner key · Face ID" : signer === "trading" ? "Trading key · no prompt" : `Filled by another trader on ${signer === "kuru" ? "Kuru" : "Perpl"}`}
           </span>
           {detail ? ` · ${detail}` : ""}
         </p>
@@ -113,7 +113,7 @@ function Event({ entry, last }: { entry: LedgerEntry; last: boolean }) {
   );
 }
 
-function describe(e: LedgerEntry): { title: string; detail: string; signer: "owner" | "trading" | "kuru"; code?: string } {
+function describe(e: LedgerEntry): { title: string; detail: string; signer: "owner" | "trading" | "kuru" | "perpl"; code?: string } {
   const s = (x: string) => formatSize(BigInt(x), market.sizePrecision);
   switch (e.kind) {
     case "created":
@@ -140,6 +140,29 @@ function describe(e: LedgerEntry): { title: string; detail: string; signer: "own
       return { title: `Sent ${formatToken(BigInt(e.amount), 18, 4)} MON`, detail: `from the owner key to ${shortAddress(e.to)}`, signer: "owner" };
     case "refused":
       return { title: "Refused onchain", detail: e.detail, signer: e.signer, code: e.error ?? undefined };
+    case "perp-order": {
+      const m = MARKETS.find((x) => x.id === e.market) ?? market;
+      const word = { "open-long": "Long", "open-short": "Short", "close-long": "Closed long", "close-short": "Closed short" }[e.action];
+      const traded = BigInt(e.filled) > 0n ? `${formatSize(BigInt(e.filled), m.sizePrecision)} traded on arrival` : "";
+      const rest = e.orderId ? `resting on Perpl as #${e.orderId}` : "";
+      return {
+        title: `${word} ${formatSize(BigInt(e.lots), m.sizePrecision)} ${m.base.symbol} at ${formatPrice(BigInt(e.price), m.pricePrecision)}${e.action.startsWith("open") ? ` · ${e.leverageHdths / 100}×` : ""}`,
+        detail: [traded, rest].filter(Boolean).join(", ") || "on Perpl",
+        signer: "trading",
+      };
+    }
+    case "perp-cancel":
+      return { title: `Cancelled Perpl #${e.orderId}`, detail: "", signer: "trading" };
+    case "perp-fill": {
+      const m = MARKETS.find((x) => x.id === e.market) ?? market;
+      return { title: `Perpl #${e.orderId} filled ${formatSize(BigInt(e.lots), m.sizePrecision)} ${m.base.symbol}`, detail: `block ${Number(e.block).toLocaleString("en-US")}`, signer: "perpl" };
+    }
+    case "ausd-in":
+      return { title: `Added ${formatToken(BigInt(e.amount), 6, 2)} AUSD`, detail: "to the account's margin on Perpl", signer: "owner" };
+    case "ausd-out":
+      return { title: `Withdrew ${formatToken(BigInt(e.amount), 6, 2)} AUSD`, detail: `from Perpl to ${shortAddress(e.to)}`, signer: "owner" };
+    case "cap":
+      return { title: `Leverage cap set to ${e.capHdths / 100}×`, detail: "the most the trading key may use", signer: "owner" };
   }
 }
 

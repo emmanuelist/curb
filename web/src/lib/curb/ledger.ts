@@ -1,4 +1,5 @@
 import type { Address, Hash } from "viem";
+import type { PerpAction } from "@/lib/curb/perp";
 import type { Attempt } from "@/lib/curb/refusal";
 import type { Side } from "@/lib/lane";
 
@@ -32,7 +33,31 @@ export type LedgerEntry =
   /** The owner key sent MON from itself (gas for the trading key, or anywhere else). */
   | { kind: "send"; hash: Hash; at: number; amount: string; to: Address }
   /** A transaction the chain refused, with the decoded reason. */
-  | { kind: "refused"; hash: Hash; at: number; attempt: Attempt; signer: "owner" | "trading"; error: string | null; detail: string };
+  | { kind: "refused"; hash: Hash; at: number; attempt: Attempt; signer: "owner" | "trading"; error: string | null; detail: string }
+  /** A Perpl order from the trading key: an open or a close, resting (with Perpl's order id) or traded on arrival. */
+  | {
+      kind: "perp-order";
+      hash: Hash;
+      at: number;
+      market: string;
+      action: PerpAction;
+      price: string;
+      lots: string;
+      leverageHdths: number;
+      orderId: string | null;
+      /** Lots traded on arrival. */
+      filled: string;
+      lane?: { bid: string; ask: string; minSell: string; maxBuy: string };
+    }
+  | { kind: "perp-cancel"; hash: Hash; at: number; market: string; orderId: string }
+  /** A resting Perpl order of this account filled (in part or whole) by someone else's transaction, seen while Curb was open. */
+  | { kind: "perp-fill"; hash: Hash; at: number; market: string; orderId: string; lots: string; block: string }
+  /** The owner key moved AUSD into the account's Perpl account (the first one opens it). */
+  | { kind: "ausd-in"; hash: Hash; at: number; amount: string }
+  /** The owner key withdrew AUSD from Perpl to an address. */
+  | { kind: "ausd-out"; hash: Hash; at: number; amount: string; to: Address }
+  /** The owner key set the trading key's leverage cap on a perpetual. */
+  | { kind: "cap"; hash: Hash; at: number; market: string; capHdths: number };
 
 const key = (account: Address) => `curb.ledger.v1:${account.toLowerCase()}`;
 
@@ -61,7 +86,7 @@ export function appendLedger(account: Address, ...entries: LedgerEntry[]) {
 }
 
 function ledgerKey(e: LedgerEntry): string {
-  return e.kind === "fill" ? `fill:${e.hash}:${e.orderId}` : `${e.kind}:${e.hash}`;
+  return e.kind === "fill" || e.kind === "perp-fill" ? `${e.kind}:${e.hash}:${e.orderId}` : `${e.kind}:${e.hash}`;
 }
 
 export function subscribeLedger(listener: () => void) {

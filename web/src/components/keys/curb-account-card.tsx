@@ -12,7 +12,8 @@ import { appendLedger } from "@/lib/curb/ledger";
 import { formatToken, parseDecimal, shortAddress } from "@/lib/format";
 import { explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
 import type { CurbAccountRecord } from "@/lib/passkey/keys";
-import { MON_USDC } from "@/lib/markets/registry";
+import { MON_PERP, MON_USDC } from "@/lib/markets/registry";
+import { marketLabel } from "@/lib/markets/selected";
 import { usePasskeyKeys } from "@/hooks/use-passkey-keys";
 
 const MON = 10n ** 18n;
@@ -49,6 +50,8 @@ export function CurbAccountCard({ record, state, ownerMon, onChanged }: Props) {
   const id = useId();
   const [mode, setMode] = useState<"deposit" | "withdraw">("deposit");
   const live = state?.deployed ?? false;
+  // A v2 account also trades Perpl's MON perpetual; a v1 account only ever trades Kuru.
+  const perps = state?.perps.supported ?? false;
   return (
     <section aria-labelledby={`${id}-h`} className="panel rise overflow-hidden md:col-span-2" style={{ "--i": 1 } as CSSProperties}>
       <div className="grid gap-6 p-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-10 md:p-7">
@@ -58,7 +61,9 @@ export function CurbAccountCard({ record, state, ownerMon, onChanged }: Props) {
               <h2 id={`${id}-h`} className="font-display text-[26px] font-bold uppercase leading-none tracking-[0.01em] text-road [font-variation-settings:'wdth'_75]">
                 Curb account
               </h2>
-              <p className="mt-2 text-[13px] leading-relaxed text-muted">A contract on Monad that holds your trading money on Kuru and holds each key to its job.</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                A contract on Monad that holds your trading money on {perps ? "Kuru and Perpl" : "Kuru"} and holds each key to its job.
+              </p>
             </div>
             {state === null ? (
               <span className="pill text-muted">Reading…</span>
@@ -74,10 +79,11 @@ export function CurbAccountCard({ record, state, ownerMon, onChanged }: Props) {
 
           <ul className="flex flex-col divide-y divide-rule rounded-[12px] border border-rule bg-asphalt">
             <Rule glyph={<span className="text-kerb"><KeyGlyph role="owner" size={18} /></span>}>
-              <span className="font-semibold text-kerb">Owner key</span> deposits, withdraws and can replace the trading key.
+              <span className="font-semibold text-kerb">Owner key</span> deposits, withdraws{perps ? ", sets the leverage cap" : ""} and can replace the trading key.
             </Rule>
             <Rule glyph={<span className="text-road"><KeyGlyph role="trading" size={18} /></span>}>
-              <span className="font-semibold text-road">Trading key</span> places and cancels on Kuru {MON_USDC.base.symbol}-{MON_USDC.quote.symbol}, only inside the lane. It can&apos;t withdraw.
+              <span className="font-semibold text-road">Trading key</span> places and cancels on Kuru {MON_USDC.base.symbol}-{MON_USDC.quote.symbol}
+              {perps ? ` and Perpl ${marketLabel(MON_PERP)}, only inside the lane and under your leverage cap` : ", only inside the lane"}. It can&apos;t withdraw.
             </Rule>
           </ul>
 
