@@ -7,7 +7,7 @@ import { FilterTabs } from "@/components/curb/tabs";
 import { ScreenHeader } from "@/components/navigation/app-nav";
 import { explorerUrl } from "@/lib/chain/clients";
 import type { LedgerEntry } from "@/lib/curb/ledger";
-import { formatPrice, formatSize, formatToken } from "@/lib/format";
+import { formatPrice, formatSize, formatToken, shortAddress } from "@/lib/format";
 import { MON_USDC } from "@/lib/markets/registry";
 import { useCurbAccount } from "@/hooks/use-curb-account";
 import { useLedger } from "@/hooks/use-ledger";
@@ -29,7 +29,8 @@ const EMPTY: Record<Tab, string> = {
   refusals: "Anything your Curb account refused onchain, like a withdrawal from the trading key or an order past the curb.",
 };
 
-const tabOf = (e: LedgerEntry): Tab => (e.kind === "order" || e.kind === "cancel" || e.kind === "fill" ? "trades" : "money");
+const tabOf = (e: LedgerEntry): Tab =>
+  e.kind === "refused" ? "refusals" : e.kind === "order" || e.kind === "cancel" || e.kind === "fill" ? "trades" : "money";
 
 /** History is a road: events sit on a lane line, newest first. Nothing is drawn until it is onchain. */
 export function HistoryScreen() {
@@ -75,18 +76,22 @@ export function HistoryScreen() {
 }
 
 function Event({ entry, last }: { entry: LedgerEntry; last: boolean }) {
-  const { title, detail, signer } = describe(entry);
+  const { title, detail, signer, code } = describe(entry);
+  const refused = entry.kind === "refused";
   return (
     <li className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-4">
       <div className="flex flex-col items-center" aria-hidden="true">
-        <span className={`mt-1 grid size-5 place-items-center ${signer === "owner" ? "text-kerb" : signer === "trading" ? "text-road" : "text-live"}`}>
+        <span className={`mt-1 grid size-5 place-items-center ${refused ? "text-stop" : signer === "owner" ? "text-kerb" : signer === "trading" ? "text-road" : "text-live"}`}>
           {signer === "kuru" ? <span className="size-2.5 rounded-full bg-live" /> : <KeyGlyph role={signer} size={16} />}
         </span>
         {!last ? <span className="mt-1.5 w-[3px] grow bg-[repeating-linear-gradient(180deg,var(--mark-faint)_0_14px,transparent_0_26px)]" /> : null}
       </div>
       <div className={`min-w-0 ${last ? "" : "pb-6"}`}>
         <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-          <span className="text-[15px] font-semibold text-road">{title}</span>
+          <span className="text-[15px] font-semibold text-road">
+            {title}
+            {code ? <span className="figures text-[12px] font-normal text-muted"> {code}()</span> : null}
+          </span>
           <time className="text-[12px] text-muted tnum" dateTime={new Date(entry.at).toISOString()}>
             {stamp(entry.at)}
           </time>
@@ -97,7 +102,7 @@ function Event({ entry, last }: { entry: LedgerEntry; last: boolean }) {
           </span>
           {detail ? ` · ${detail}` : ""}
         </p>
-        <a className="mt-1 inline-flex min-h-8 items-center gap-1 text-[12.5px] text-road underline decoration-faint underline-offset-4" href={explorerUrl("tx", entry.hash)} target="_blank" rel="noreferrer">
+        <a className="inline-flex min-h-11 items-center gap-1 text-[12.5px] text-road underline decoration-faint underline-offset-4" href={explorerUrl("tx", entry.hash)} target="_blank" rel="noreferrer">
           <span className="figures text-[11.5px]">
             {entry.hash.slice(0, 10)}…{entry.hash.slice(-6)}
           </span>
@@ -108,7 +113,7 @@ function Event({ entry, last }: { entry: LedgerEntry; last: boolean }) {
   );
 }
 
-function describe(e: LedgerEntry): { title: string; detail: string; signer: "owner" | "trading" | "kuru" } {
+function describe(e: LedgerEntry): { title: string; detail: string; signer: "owner" | "trading" | "kuru"; code?: string } {
   const s = (x: string) => formatSize(BigInt(x), market.sizePrecision);
   switch (e.kind) {
     case "created":
@@ -126,6 +131,15 @@ function describe(e: LedgerEntry): { title: string; detail: string; signer: "own
       return { title: `Cancelled ${e.orderIds.map((id) => `#${id}`).join(", ")}`, detail: "", signer: "trading" };
     case "fill":
       return { title: `#${e.orderId} filled ${s(e.size)} ${market.base.symbol}`, detail: `block ${Number(e.block).toLocaleString("en-US")}`, signer: "kuru" };
+    case "withdraw": {
+      const usdc = e.token.toLowerCase() === market.quote.address.toLowerCase();
+      const amount = formatToken(BigInt(e.amount), usdc ? market.quote.decimals : market.base.decimals, usdc ? 2 : 4);
+      return { title: `Withdrew ${amount} ${usdc ? market.quote.symbol : market.base.symbol}`, detail: `from the account to ${shortAddress(e.to)}`, signer: "owner" };
+    }
+    case "send":
+      return { title: `Sent ${formatToken(BigInt(e.amount), 18, 4)} MON`, detail: `from the owner key to ${shortAddress(e.to)}`, signer: "owner" };
+    case "refused":
+      return { title: "Refused onchain", detail: e.detail, signer: e.signer, code: e.error ?? undefined };
   }
 }
 

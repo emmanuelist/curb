@@ -1,4 +1,5 @@
 import type { Address, Hash } from "viem";
+import type { Attempt } from "@/lib/curb/refusal";
 import type { Side } from "@/lib/lane";
 
 /**
@@ -25,7 +26,13 @@ export type LedgerEntry =
     }
   | { kind: "cancel"; hash: Hash; at: number; orderIds: string[] }
   /** A resting order of this account filled (in part or whole) by someone else's transaction, seen while Curb was open. */
-  | { kind: "fill"; hash: Hash; at: number; orderId: string; size: string; block: string };
+  | { kind: "fill"; hash: Hash; at: number; orderId: string; size: string; block: string }
+  /** The owner key moved money out of the account's Kuru margin. */
+  | { kind: "withdraw"; hash: Hash; at: number; token: Address; amount: string; to: Address }
+  /** The owner key sent MON from itself (gas for the trading key, or anywhere else). */
+  | { kind: "send"; hash: Hash; at: number; amount: string; to: Address }
+  /** A transaction the chain refused, with the decoded reason. */
+  | { kind: "refused"; hash: Hash; at: number; attempt: Attempt; signer: "owner" | "trading"; error: string | null; detail: string };
 
 const key = (account: Address) => `curb.ledger.v1:${account.toLowerCase()}`;
 

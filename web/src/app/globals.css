@@ -199,6 +199,24 @@
     background-image: repeating-linear-gradient(90deg, var(--owner-key) 0 77px, rgb(0 0 0 / 0.45) 0 78px);
   }
 
+  /* A painted stop line: the refusal's red curb (BRIEF §11). Red only ever means the chain refused something. */
+  .stop-painted {
+    block-size: 10px;
+    background-image: repeating-linear-gradient(90deg, var(--refused) 0 77px, rgb(0 0 0 / 0.45) 0 78px);
+  }
+
+  /* The refusal lands like a barrier, once: the red line runs across, then the sign drops into place. */
+  .refused-barrier {
+    transform-origin: left center;
+    animation: barrier 200ms var(--ease-out) both;
+    --animation-reduced: none;
+  }
+
+  .refused-sign {
+    animation: sign-drop 240ms var(--ease-out) 120ms both;
+    --animation-reduced: none;
+  }
+
   /* Buttons. White: trading-key actions and navigation. Yellow: a Face ID (owner key) prompt happens now. */
   .btn {
     display: inline-flex;
@@ -343,11 +361,33 @@
   }
 }
 
+@keyframes barrier {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes sign-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .digit-settle,
   .block-pulse::after,
   .rise,
-  .lane-dashes-run {
+  .lane-dashes-run,
+  .refused-barrier,
+  .refused-sign {
     animation: var(--animation-reduced) !important;
   }
 }

@@ -1,9 +1,11 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import { formatPrice, formatToken, parseDecimal } from "@/lib/format";
 import { placeOrder, type Lane, type Placement, type Side } from "@/lib/lane";
 import type { Market } from "@/lib/markets/registry";
 import { Signer } from "@/components/keys/signer";
+import { RefusedMoment, type RefusedView } from "@/components/curb/refused";
 import { PlaceOrder } from "@/components/trading/place-order";
+import { ProveOffLane } from "@/components/trading/prove-off-lane";
 
 export type TicketState = { side: Side; priceText: string; sizeText: string };
 
@@ -37,6 +39,7 @@ type Props = {
 
 export function OrderTicket({ market, lane, value, onChange }: Props) {
   const id = useId();
+  const [refused, setRefused] = useState<RefusedView | null>(null);
   const r = readTicket(market, lane, value);
   const p = (x: bigint) => formatPrice(x, market.pricePrecision);
   const minSize = (market.minSize / market.sizePrecision).toString();
@@ -50,6 +53,17 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
       hint = r.price <= lane.bid ? "takes the best bid" : r.price === lane.ask ? "joins the best ask" : r.price < lane.ask ? "inside the spread" : "rests above the best ask";
     }
   }
+
+  // A refusal shows where it happened. Past a curb, the ticket then goes back to the curb the account named (BRIEF §11).
+  const onRefused = (view: RefusedView) => {
+    const limit = view.refusal.limit;
+    if (limit === undefined) {
+      setRefused(view);
+      return;
+    }
+    setRefused({ ...view, after: `Your ticket is back at the curb, ${p(limit)}.` });
+    onChange({ ...value, priceText: p(limit) });
+  };
 
   const problem =
     r.placement?.kind === "invalid" && r.placement.reason === "not-on-tick"
@@ -112,19 +126,24 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
         )}
       </div>
 
+      {refused ? <RefusedMoment key={refused.hash} view={refused} onDismiss={() => setRefused(null)} /> : null}
+
       {offBook ? (
-        <div className="grid grid-cols-2 gap-2.5">
-          <button
-            type="button"
-            onClick={() => onChange({ ...value, priceText: p(offBook.limit) })}
-            className="flex h-14 flex-col items-center justify-center rounded-[12px] border border-road text-[15px] font-semibold leading-tight"
-          >
-            Snap to curb
-            <span className="text-[12px] font-normal text-muted tnum">{p(offBook.limit)}</span>
-          </button>
-          <button type="button" disabled className="hatch h-14 rounded-[12px] border border-dashed border-faint text-[15px] font-semibold text-muted">
-            Off the lane
-          </button>
+        <div className="flex flex-col gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => onChange({ ...value, priceText: p(offBook.limit) })}
+              className="flex h-14 flex-col items-center justify-center rounded-[12px] border border-road text-[15px] font-semibold leading-tight"
+            >
+              Snap to curb
+              <span className="text-[12px] font-normal text-muted tnum">{p(offBook.limit)}</span>
+            </button>
+            <button type="button" disabled className="hatch h-14 rounded-[12px] border border-dashed border-faint text-[15px] font-semibold text-muted">
+              Off the lane
+            </button>
+          </div>
+          {r.price !== null ? <ProveOffLane market={market} side={value.side} price={r.price} size={r.size} onRefused={onRefused} /> : null}
         </div>
       ) : (
         <PlaceOrder
@@ -134,6 +153,7 @@ export function OrderTicket({ market, lane, value, onChange }: Props) {
           price={r.price}
           size={r.size}
           notional={r.notional}
+          onRefused={onRefused}
           blocked={problem !== null || r.price === null || r.size === null || r.placement?.kind !== "in-lane" || lane?.status !== "open"}
         />
       )}

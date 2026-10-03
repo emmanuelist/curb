@@ -1,11 +1,11 @@
 # State
 
-_Last verified: 2026-09-28, branch `32-app-trading`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-03, branch `33-refused-withdraw`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
-**Milestone:** M1 done 2026-09-28 (E-013); next M2 · Core claim (due 2026-10-08) · **Deadline:** 2026-10-13 23:59 ET · 15 days left
-**Next action:** #32's mainnet check with the user's go-ahead and ~215 MON on the owner key (create → deposit 200 → place → cancel on the phone), or first #33 so the same session can withdraw back out.
-**Blocked on:** the user's go-ahead and funds for the mainnet check; the bounty texts (#5).
+**Milestone:** M2 · Core claim (due 2026-10-08) · **Deadline:** 2026-10-13 23:59 ET · 10 days left
+**Next action:** the user's one phone session on mainnet (checklist in #32/#33): send 210 MON to the owner key, create, deposit 200, place and cancel, both refusals, withdraw and send everything back. It closes #32 and #33 and M2.
+**Blocked on:** the user's phone session; the bounty texts (#5).
 
 ## Works (E-013 verified 2026-09-28; E-006 to E-012 and the web gate 2026-09-27; E-001 to E-005 verified 2026-09-26)
 
@@ -23,6 +23,7 @@ _Last verified: 2026-09-28, branch `32-app-trading`; repo: https://github.com/em
 | CurbAccount + CurbFactory enforce the thesis on a mainnet fork: trader withdrawal and off-lane orders revert; in-lane orders rest on Kuru and cancel; owner withdraws out | forge fork tests under Monad rules | E-015 |
 | CurbFactory live on mainnet, source verified | deploy tx + Sourcify exact match | E-016 |
 | The app end to end on a mainnet fork: owner Face ID creates the account and deposits; one Face ID unlocks the trading key; resting sell, cancel, fill on arrival, maker fill caught; Orders and History from the device ledger checked onchain (D-018) | anvil `--network monad` + Playwright + virtual passkey | E-017 |
+| Refusals proven onchain on a fork: the trading key's withdrawal (NotOwner) and an off-lane order (OffLane) revert, the app shows the chain's reason, signer, gas and tx; the owner withdraws to any address and empties the owner key (D-019) | anvil `--network monad` + Playwright + virtual passkey | E-018 |
 | Live green (D-015), favicon, app icons, manifest, share card, 404 and error pages, on production | Playwright + build output + curl on production | E-008, E-009 |
 | Performance pass on production: phone Lighthouse 84–99 (SEO, a11y, best practices 100), desktop 99; LCP photo eager, High, AVIF; passkey code off the home page | Lighthouse + CDP metrics + fork harness | E-010, E-011, E-012 |
 
@@ -35,8 +36,7 @@ _Last verified: 2026-09-28, branch `32-app-trading`; repo: https://github.com/em
 
 ## Broken or unverified
 
-- #32 on **mainnet** is unverified: every app transaction so far ran on a fork (E-017).
-- No Refused state, proof actions or owner Withdraw in the app yet (#33). Money deposited on mainnet can only leave through the contract's `withdraw` until #33 ships.
+- #32 and #33 on **mainnet** are unverified: every app transaction so far ran on a fork (E-017, E-018).
 - Deposits are MON only; USDC deposit deferred (D-018).
 - The Impeccable hero gate stays formally open at 81%: its last two controls differ only by the colours the user waived (D-013).
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { encodeAbiParameters, encodeEventTopics, type Address, type Hex } from "viem";
-import { cancelledIdsFromReceipt, crosses, makerFillsFromLogs, restingOrderFromReceipt, takerFillFromReceipt } from "@/lib/curb/account";
+import { cancelledIdsFromReceipt, crosses, makerFillsFromLogs, restingOrderFromReceipt, revertDataFrom, takerFillFromReceipt } from "@/lib/curb/account";
 import { trackedOrderIds, type LedgerEntry } from "@/lib/curb/ledger";
 import { kuruOrderBookAbi } from "@/lib/kuru/abi";
 import { MON_USDC } from "@/lib/markets/registry";
@@ -123,5 +123,19 @@ describe("trackedOrderIds", () => {
       { kind: "cancel", hash: "0x4", at: 4, orderIds: ["10"] },
     ];
     expect(trackedOrderIds(entries)).toEqual(["11"]);
+  });
+});
+
+describe("revertDataFrom", () => {
+  it("finds the data where viem's call puts it, a few causes down", () => {
+    const rpc = Object.assign(new Error("RPC Request failed."), { data: "0x30cd7471", cause: { data: "0x30cd7471" } });
+    const reverted = Object.assign(new Error("Execution reverted"), { cause: rpc });
+    const top = Object.assign(new Error("CallExecutionError"), { cause: reverted });
+    expect(revertDataFrom(top)).toBe("0x30cd7471");
+  });
+  it("reads the { data } wrapping and refuses anything that isn't hex", () => {
+    expect(revertDataFrom({ data: { data: "0x06e6da4d" } })).toBe("0x06e6da4d");
+    expect(revertDataFrom(new Error("network down"))).toBeNull();
+    expect(revertDataFrom({ data: "not hex" })).toBeNull();
   });
 });

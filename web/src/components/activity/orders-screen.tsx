@@ -94,7 +94,7 @@ function SessionBar() {
         </span>
         Trading key unlocked · cancels sign with no prompt
       </span>
-      <button type="button" onClick={lockTrading} className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full px-2.5 text-road hover:bg-high">
+      <button type="button" onClick={lockTrading} className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-3 text-road hover:bg-high">
         <Lock size={12} aria-hidden="true" /> Lock
       </button>
     </div>
@@ -179,7 +179,7 @@ function OrderRow({ order, i, record, account, onCancelled }: { order: OrderView
         <ul className="flex flex-wrap gap-2">
           {order.fills.map((f) => (
             <li key={f.hash}>
-              <a className="pill min-h-8 text-road" href={explorerUrl("tx", f.hash)} target="_blank" rel="noreferrer">
+              <a className="pill min-h-11 text-road" href={explorerUrl("tx", f.hash)} target="_blank" rel="noreferrer">
                 <span className="size-1.5 rounded-full bg-live" aria-hidden="true" />
                 Filled {s(BigInt(f.size))} {market.base.symbol} <ExternalLink size={11} aria-hidden="true" />
               </a>
