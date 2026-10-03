@@ -234,3 +234,15 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** simulate-only refusals (no tx, nothing for a judge to open); the stencil sign with the app's own reason (could disagree with the chain); a separate "proofs" screen (the refusal belongs where the action is: the ticket and the trading key).
 **Consequences:** every proof costs real gas and is labelled with its cost before the tap. Withdrawals can't touch margin held by open orders; the form says to cancel first.
 **Evidence:** E-018.
+
+## D-020 · M2 closes without a separate order preview, transaction details screen or custom owner sheet · 2026-10-03 · accepted
+**Context:** PLAN's M2 row lists BRIEF phases 3–5, including an order preview / lane-lock confirmation, a Transaction details screen and an owner Face ID sheet. M2's mainnet exit (E-019) passed without them, and M3 (README proof surface, latency, demo video) is what judges see first, with 10 days left.
+**Decision:** cut all three, and say so.
+
+- **Order preview / lane-lock:** the ticket already draws the order on the live lane ("Your buy" between the curbs, the hint line, the hatched off-book state) before anything is sent, and the account re-checks the lane onchain in the same transaction. A confirm step would put a prompt in front of the key whose point is having none.
+- **Transaction details:** every transaction links to Monadscan, the canonical detail view. Refusals already show their decoded reason, signer, gas and hash in the app.
+- **Owner Face ID sheet:** the system Face ID sheet is the sheet. Every owner action names its signer in yellow before the tap.
+
+**Alternatives:** build them (about 1–2 days that M3 needs).
+**Consequences:** PLAN's M2 line reads with this cut. If time remains after M4's preflight, the order preview is the first to revisit.
+**Evidence:** E-019.
