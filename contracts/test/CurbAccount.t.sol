@@ -7,6 +7,7 @@ import {CurbAccount} from "../src/CurbAccount.sol";
 import {CurbFactory} from "../src/CurbFactory.sol";
 import {IKuruOrderBook} from "../src/interfaces/IKuruOrderBook.sol";
 import {IKuruMarginAccount} from "../src/interfaces/IKuruMarginAccount.sol";
+import {IPerplExchange} from "../src/interfaces/IPerplExchange.sol";
 
 /// @notice #30: CurbAccount on a fork of Monad mainnet against Kuru's live MON-USDC book, under Monad's
 ///         execution rules (foundry.toml `network = "monad"`). Refusal paths first (CLAUDE.md rule 4).
@@ -17,6 +18,7 @@ contract CurbAccountForkTest is Test {
     address constant MON_AUSD = 0x131A2e70A5b31a517A74b8c567149bc294470Da9;
     address constant USDC = 0x754704Bc059F8C67012fEd69BC8A327a5aafb603;
     address constant NATIVE = address(0);
+    IPerplExchange constant PERPL = IPerplExchange(0x34B6552d57a35a1D042CcAe1951BD1C370112a6F);
 
     uint32 constant TICK = 100;
     uint96 constant MIN_SIZE = 2e12; // 200 MON, Kuru's smallest order on MON-USDC
@@ -29,7 +31,7 @@ contract CurbAccountForkTest is Test {
 
     function setUp() public {
         vm.createSelectFork(vm.rpcUrl("monad"));
-        factory = new CurbFactory(MARGIN, MON_USDC);
+        factory = new CurbFactory(MARGIN, MON_USDC, PERPL, 10, 500);
         vm.prank(owner);
         account = factory.create(trader);
 

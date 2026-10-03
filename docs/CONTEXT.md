@@ -76,6 +76,16 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 
 **Order placement is permissionless** (verified): `eth_call addBuyOrder` from a random EOA reverts `InsufficientBalance()`, not `Unauthorized()`. A **contract** can be the order owner (verified on a fork, E-001).
 
+## Perpl (perps on Monad; verified 2026-10-03)
+
+- **Exchange** `0x34B6552d57a35a1D042CcAe1951BD1C370112a6F`: an EIP-1967 proxy (proxy verified on Sourcify) → implementation `0xa9Ab97A404A0bCA04d6A5b4a39995feA9E791b2A` (not verified). `getContractVersion()` = 1.7.5. **ABI:** `abi/dex/Exchange.json` and `Errors.abi.json` in the `perpl-sdk` crate 0.2.9 (crates.io, repo PerplFoundation/dex-sdk). Docs: github.com/PerplFoundation/api-docs.
+- **Collateral:** AUSD `0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a`, 6 decimals (CNS = AUSD × 10⁶). `getMinAccountOpenCNS()` = 10 AUSD; minimum post 0; whitelisting off; not halted.
+- **A contract can own a Perpl account** (`createAccount(amountCNS)` from the contract after `approve`) and trade with `execOrder` (E-020).
+- **OrderDesc** fields: `orderDescId, perpId, orderType, orderId, pricePNS, lotLNS, expiryBlock, postOnly, fillOrKill, immediateOrCancel, maxMatches, leverageHdths, lastExecutionBlock, amountCNS, maxNegPnlCollatBPS`. Order types: 0 OpenLong, 1 OpenShort, 2 CloseLong, 3 CloseShort, 4 Cancel (`orderId` set), 5 IncreasePositionCollateral, 6 Change. Bids are 0 and 3; asks are 1 and 2. The SDK's defaults: leverage 10 → `leverageHdths` 1000, `amountCNS` 0, `maxNegPnlCollatBPS` 1000.
+- **Book reads onchain:** `getPerpetualInfo(perpId)` returns `markPNS`, `oraclePNS`, `lastPNS`, `maxBidPriceONS` (best bid), `minAskPriceONS` (best ask), `basePricePNS` (PNS = ONS + base; base is 0 on live perps), `numOrders`, `status`. An empty side reads 0. Depth: `getNextPriceAboveWithOrders` / `getNextPriceBelowWithOrders`, `getVolumeAtBookPrice`.
+- **Events:** `OrderPlaced(uint256 orderId, uint256 lotLNS, uint256 lockedBalanceCNS, int256 amountCNS, uint256 balanceCNS)` gives a resting order's id. Others: `OrderCancelled`, `MakerOrderFilled(V2)`, `PositionIncreased(V2)`, `PositionClosed`, `CollateralDeposit`, `CollateralWithdrawal`, `AccountCreated(address account, uint256 id)`.
+- **MON perp is id 10:** `priceDecimals` 6 (price = PNS / 10⁶ USD), `lotDecimals` 0 (1 lot = 1 MON). Other live perps: BTC 1, ETH 20, SOL_v2 31, HYPE 40, ZEC 50, LIT 60, VVV 70, PUMP 90, NEAR 100, UNI 110. Fees: `getTakerFee` 345 and `getMakerFee` 45 (the SDK's fee setters name the unit PPM).
+
 ## Mera (`@category-labs/mera` 0.2.0; verified by reading `dist/*.d.ts`, 2026-09-26)
 
 - `createPasskeyWithPrfOutput({ rp: { id, name }, user: { name, displayName }, timeout?, prfSalt?, webAuthnClient? })` returns credential metadata plus `prfSalt` and a 32-byte `prfOutput`. It shows one prompt, or two on authenticators that don't evaluate PRF at creation.
