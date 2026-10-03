@@ -28,6 +28,7 @@ Addresses from https://docs.kuru.io/contracts/Contract-addresses (captured 2026-
 | USDC | `0x754704Bc059F8C67012fEd69BC8A327a5aafb603` | code present |
 | AUSD | `0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a` | code present |
 | **CurbFactory (ours, #31)** | `0x633Bf378031d694Bcb8E39E6CF160efD75Af18e8` | deployed block 108,627,002 (E-016); Sourcify exact match; accounts at `accountOf(owner, trader)` |
+| **CurbFactory v2 (ours, #50; the app's factory)** | `0xC3b37bfa0c4496005F01a9E92cD5d285398db000` | deployed block 110,314,645 (E-024) with `forge create`; Sourcify exact match (creation and runtime); Kuru MarginAccount + MON-USDC, Perpl Exchange, collateral AUSD, perp 10, cap 500 (5×); accounts at `accountOf(owner, trader)` |
 | WMON | `0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A` | from docs only; code unverified |
 | KuruFlowEntrypoint / KuruFlowRouter / KuruForwarder | `0xb3e6…13cb` / `0x0d3a…FFa2` / `0x974E…FAA` | from docs only; unverified |
 

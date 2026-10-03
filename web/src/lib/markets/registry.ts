@@ -70,12 +70,12 @@ export const LANE_BAND_BPS = 50n;
 export const KURU_MARGIN_ACCOUNT: Address = "0x2A68ba1833cDf93fa9Da1EEbd7F46242aD8E90c5";
 
 /**
- * CurbFactory on Monad mainnet (#31, D-017): creates one CurbAccount per owner at a CREATE2 address that
- * `accountOf(owner, trader)` recomputes. Deployed at block 108,627,002; source verified (Sourcify exact match).
- * NEXT_PUBLIC_CURB_FACTORY points the app at another factory (a fork deploy of v2 during development, #51).
+ * CurbFactory v2 on Monad mainnet (#50): creates one CurbAccount per owner at a CREATE2 address that
+ * `accountOf(owner, trader)` recomputes. Its accounts trade Kuru MON-USDC and Perpl's MON perpetual (D-021).
+ * NEXT_PUBLIC_CURB_FACTORY points the app at another factory (a fork deploy during development).
  */
 export const CURB_FACTORY: Address =
-  (process.env.NEXT_PUBLIC_CURB_FACTORY as Address | undefined) || "0x633Bf378031d694Bcb8E39E6CF160efD75Af18e8";
+  (process.env.NEXT_PUBLIC_CURB_FACTORY as Address | undefined) || "0xC3b37bfa0c4496005F01a9E92cD5d285398db000";
 
 /** The v1 factory (#31): its accounts trade Kuru only. */
 const FACTORY_V1: Address = "0x633Bf378031d694Bcb8E39E6CF160efD75Af18e8";
