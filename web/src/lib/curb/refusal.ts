@@ -23,6 +23,9 @@ export function refusedBy(error: string | null): Refusal["by"] {
   return "unknown";
 }
 
+/** The one word for what happened (D-032, #77): the Curb account refuses; a venue, or a revert with no reason, rejects. */
+export const verdict = (by: Refusal["by"]) => (by === "curb" ? "Refused" : "Rejected");
+
 /** What the key was trying to do, which decides the signage ("NO WITHDRAWAL" only makes sense for a withdrawal). */
 export type Attempt = "order" | "withdraw" | "cancel";
 
