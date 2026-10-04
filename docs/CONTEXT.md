@@ -122,6 +122,8 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 
 ## Mera (`@category-labs/mera` 0.2.0; verified by reading `dist/*.d.ts`, 2026-09-26)
 
+- **Safari Private Browsing on iOS offers the iCloud Keychain passkey, PRF included** (2026-10-04, the user's iPhone, E-031): a private tab is a clean device for the stateless test.
+
 - `createPasskeyWithPrfOutput({ rp: { id, name }, user: { name, displayName }, timeout?, prfSalt?, webAuthnClient? })` returns credential metadata plus `prfSalt` and a 32-byte `prfOutput`. It shows one prompt, or two on authenticators that don't evaluate PRF at creation.
 - `getPasskeyPrfOutput({ rpId, credential?, prfSalt?, timeout?, webAuthnClient? })` returns a 32-byte `prfOutput`. It shows **one user-verification prompt per call**, and UV isn't configurable.
   - Default salt: `sha256("mera.prf.salt.v1")`.
