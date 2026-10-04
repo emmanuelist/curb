@@ -7,7 +7,7 @@ import { RefusedMoment } from "@/components/curb/refused";
 import { KeyGlyph } from "@/components/keys/signer";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
 import { appendLedger, setCancelling } from "@/lib/curb/ledger";
-import { perpOrderFromReceipt, sendPerpCancel, sendPerpOrder } from "@/lib/curb/perp";
+import { closePrice, perpOrderFromReceipt, sendPerpCancel, sendPerpOrder, takingGas } from "@/lib/curb/perp";
 import { perpCancelKey } from "@/lib/curb/perp-orders";
 import { explainRefusal, feePaid, revertDataOf } from "@/lib/curb/refusal";
 import { activeTradingKey } from "@/lib/curb/trading-session";
@@ -77,14 +77,26 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
 
   const close = () => {
     if (!pos || lane?.status !== "open") return;
-    // A long closes by selling into the best bid; a short by buying the best ask. Both sit inside the lane.
+    // Priced at the far curb, not the top level: the close walks the book inside the lane until the position is gone,
+    // filling at each bid's (or ask's) own price (#59).
     const action = pos.type === "long" ? ("close-long" as const) : ("close-short" as const);
-    const price = pos.type === "long" ? lane.bid : lane.ask;
-    void run(() => sendPerpOrder(activeTradingKey()!.account, state.address, market, { action, price, lots: pos.lots, leverageHdths: BigInt(Math.min(state.perps.capHdths ?? 100, 100)), postOnly: false }), (hash, receipt) => {
-      const fill = perpOrderFromReceipt(receipt, market, perp.accountId);
-      appendLedger(state.address, { kind: "perp-order", hash, at: now(), market: market.id, action, price: price.toString(), lots: pos.lots.toString(), leverageHdths: 100, orderId: fill.orderId === null ? null : fill.orderId.toString(), filled: fill.filled.toString() });
-      return fill.closed ? "Position closed" : `${formatSize(fill.filled, market.sizePrecision)} ${market.base.symbol} closed`;
-    });
+    const limit = closePrice(pos.type, lane);
+    const order = { action, price: limit, lots: pos.lots, leverageHdths: BigInt(Math.min(state.perps.capHdths ?? 100, 100)), postOnly: false };
+    void run(
+      async () => {
+        const trader = activeTradingKey()!.account;
+        return sendPerpOrder(trader, state.address, market, order, await takingGas(trader.address, state.address, market, order));
+      },
+      (hash, receipt) => {
+        const fill = perpOrderFromReceipt(receipt, market, perp.accountId);
+        const price = fill.avgPrice ?? limit;
+        appendLedger(state.address, { kind: "perp-order", hash, at: now(), market: market.id, action, price: price.toString(), lots: pos.lots.toString(), leverageHdths: 100, orderId: fill.orderId === null ? null : fill.orderId.toString(), filled: fill.filled.toString() });
+        const s = (x: bigint) => formatSize(x, market.sizePrecision);
+        if (fill.closed) return `Position closed at ${p(price)}`;
+        if (fill.filled > 0n) return `Closed ${s(fill.filled)} of ${s(pos.lots)} ${market.base.symbol} at ${p(price)}`;
+        return `Nothing closed: no ${pos.type === "long" ? "bids" : "asks"} inside the lane`;
+      },
+    );
   };
 
   const cancel = (orderId: string) => {
@@ -130,7 +142,7 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
           </p>
           {session ? (
             <button type="button" onClick={close} disabled={busy || lane?.status !== "open"} className="btn btn-quiet mt-3 min-h-11 w-full text-[14px]">
-              {busy ? "Closing on Monad…" : `Close at ${lane?.status === "open" ? p(pos.type === "long" ? lane.bid : lane.ask) : "—"}`}
+              {busy ? "Closing on Monad…" : lane?.status === "open" ? `Close now · no worse than ${p(closePrice(pos.type, lane))}` : "Close: no lane right now"}
             </button>
           ) : (
             <button type="button" onClick={unlocker.unlock} disabled={!unlocker.ready || unlocker.unlocking} className="btn btn-quiet mt-3 min-h-11 w-full text-[14px]">

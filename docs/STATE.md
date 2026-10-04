@@ -1,10 +1,10 @@
 # State
 
-_Last verified: 2026-10-04, branch `51-mainnet-run`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-04, branch `59-walk-the-book`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M2 done 2026-10-03 (E-019); now M3 · Proof surface (due 2026-10-11) · **Deadline:** 2026-10-13 23:59 ET · 9 days left
-**Next action:** #59: closes and taking orders walk the book inside the lane, so a demo can't leave part of a position open. Then #40 (rebuild Orders and History from the chain), then the videos (#45; Agora's is #52).
+**Next action:** #40: rebuild Orders and History from the chain on a fresh device. Then the videos (#45; Agora's is #52). After submission, return the demo funds (#61).
 **Blocked on:** Agora's answer on whether a mobile web app counts (#52).
 
 ## Works
@@ -12,6 +12,7 @@ _Last verified: 2026-10-04, branch `51-mainnet-run`; repo: https://github.com/em
 | Capability | Verified by | Evidence |
 |---|---|---|
 | **Agora's flow on mainnet from the user's iPhone (#51, #56):** passkey → create the v2 account → Get 354.08 MON → 11.86 AUSD through Kuru Flow → onto Perpl → long 300 MON at 2× → 10× refused onchain (`LeverageAboveCap`) → a bid past the curb refused onchain (`PerpOffLane`) → closed | 8 txs found by nonce and decoded with traces; account source exact match | E-028 (2026-10-04) |
+| A one-tap close walks a thin book inside the lane with a measured gas limit (D-028): 300 MON closed across two levels when the top held 10 | fork + Playwright + virtual passkey | E-029 (2026-10-04) |
 | Kuru Flow picks the route; Monad prices it (D-027): Kuru's estimates ran about 1% above what routes paid | read-only `eth_call` and `estimateGas` from the owner key | E-027 (2026-10-04) |
 | Fund futures from MON inside Curb (#56), on a fork | fresh mainnet fork + Playwright + virtual passkey | E-026 (2026-10-04) |
 | Production trades through factory v2 | Playwright on production | E-025 (2026-10-04) |
@@ -22,7 +23,7 @@ _Last verified: 2026-10-04, branch `51-mainnet-run`; repo: https://github.com/em
 | Refusal moment, proofs, owner withdraw and send; create, deposit, place, cancel, fills, Orders and History from the device ledger (D-018, D-019) | anvil + Playwright + virtual passkey | E-017, E-018 |
 | M1: real passkey on the user's iPhone; owner key signs a real mainnet tx with Face ID | tx 0x72c21e7e…4a9ab4 | E-013 (2026-09-28) |
 | Board redesign, identity, performance (phone Lighthouse 84–99, desktop 99) | Playwright, Lighthouse | E-006 to E-011 (2026-09-27) |
-| Gate: web lint 0 warnings, typecheck, 61 tests, warning-free build; contracts 39/39, `forge lint` 0 | local + CI on PR #58 | 2026-10-04 |
+| Gate: web lint 0 warnings, typecheck, 63 tests, warning-free build; contracts 39/39, `forge lint` 0 | local; CI on PR #58 | 2026-10-04 |
 
 ## Deployed
 
@@ -38,7 +39,6 @@ Read on mainnet 2026-10-04 after the run: the owner key holds 10.39 MON (Monad's
 
 ## Broken or unverified
 
-- A close or taking order priced at exactly the top level can fill only partly when that level is thin (#59).
 - Get depends on Kuru Flow's API for the route (one quote a second); AUSD can still arrive from outside (D-026, D-027).
 - A v1 account no longer shows in the app; the user's holds nothing.
 - Kuru deposits are MON only; USDC deposit deferred (D-018).

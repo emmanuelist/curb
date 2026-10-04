@@ -6,10 +6,10 @@ import type { RefusedView } from "@/components/curb/refused";
 import { KeyGlyph } from "@/components/keys/signer";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
 import { appendLedger } from "@/lib/curb/ledger";
-import { perpOrderFromReceipt, sendPerpOrder, type PerpAction } from "@/lib/curb/perp";
+import { perpOrderFromReceipt, sendPerpOrder, takingGas, type PerpAction } from "@/lib/curb/perp";
 import { explainRefusal, feePaid, revertDataOf } from "@/lib/curb/refusal";
 import { activeTradingKey, lockTrading } from "@/lib/curb/trading-session";
-import { formatSize, formatToken } from "@/lib/format";
+import { formatPrice, formatSize, formatToken } from "@/lib/format";
 import type { Lane } from "@/lib/lane";
 import type { Market } from "@/lib/markets/registry";
 import { explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
@@ -21,7 +21,7 @@ type Phase =
   | { kind: "idle" }
   | { kind: "sending" }
   | { kind: "confirming"; hash: Hash }
-  | { kind: "done"; hash: Hash; orderId: bigint | null; filled: bigint }
+  | { kind: "done"; hash: Hash; orderId: bigint | null; filled: bigint; lots: bigint; avgPrice: bigint | null }
   | { kind: "error"; problem: PasskeyProblem };
 
 type Props = {
@@ -99,7 +99,10 @@ export function PerpPlaceOrder({ market, lane, action, price, lots, leverageHdth
     try {
       const bid = action === "open-long" || action === "close-short";
       const takes = bid ? price >= lane.ask : price <= lane.bid;
-      const hash = await sendPerpOrder(key.account, state.address, market, { action, price, lots, leverageHdths: BigInt(leverageHdths), postOnly: !takes });
+      const order = { action, price, lots, leverageHdths: BigInt(leverageHdths), postOnly: !takes };
+      // A taking order may walk several levels; its gas is measured rather than fixed (#59). A resting one costs the same every time.
+      const gas = takes ? await takingGas(key.address, state.address, market, order) : undefined;
+      const hash = await sendPerpOrder(key.account, state.address, market, order, gas);
       setPhase({ kind: "confirming", hash });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") {
@@ -116,14 +119,15 @@ export function PerpPlaceOrder({ market, lane, action, price, lots, leverageHdth
         at: Date.now(),
         market: market.id,
         action,
-        price: price.toString(),
+        // What the lots that traded cost on average; the order's own price when nothing traded.
+        price: (fill.avgPrice ?? price).toString(),
         lots: lots.toString(),
         leverageHdths,
         orderId: fill.orderId === null ? null : fill.orderId.toString(),
         filled: fill.filled.toString(),
         lane: { bid: lane.bid.toString(), ask: lane.ask.toString(), minSell: lane.minSell.toString(), maxBuy: lane.maxBuy.toString() },
       });
-      setPhase({ kind: "done", hash, orderId: fill.orderId, filled: fill.filled });
+      setPhase({ kind: "done", hash, orderId: fill.orderId, filled: fill.filled, lots, avgPrice: fill.avgPrice });
     } catch (error) {
       setPhase({ kind: "error", problem: explainPasskeyError(error) });
     }
@@ -175,13 +179,23 @@ function Note({ children }: { children: React.ReactNode }) {
   return <p className="text-center text-[12px] leading-relaxed text-muted">{children}</p>;
 }
 
+/** What an order did, in full: resting, all traded, part traded, or nothing (an immediate order's rest is cancelled). */
+function tradedText(phase: Extract<Phase, { kind: "done" }>, market: Market): string {
+  const s = (x: bigint) => formatSize(x, market.sizePrecision);
+  const at = phase.avgPrice !== null ? ` at ${formatPrice(phase.avgPrice, market.pricePrecision)}` : "";
+  if (phase.orderId !== null) return `resting on Perpl #${phase.orderId}`;
+  if (phase.filled === 0n) return "nothing traded: the book moved past your price";
+  if (phase.filled < phase.lots) return `${s(phase.filled)} of ${s(phase.lots)} ${market.base.symbol} traded${at}; nothing else was there at your price`;
+  return `${s(phase.filled)} ${market.base.symbol} traded${at}`;
+}
+
 function PhaseLine({ phase, market }: { phase: Phase; market: Market }) {
   if (phase.kind === "done") {
     return (
       <a className="pill mx-auto min-h-11 px-3 text-road" href={explorerUrl("tx", phase.hash)} target="_blank" rel="noreferrer">
         <span className="size-1.5 rounded-full bg-live" aria-hidden="true" />
         <span className="text-live">Confirmed</span>
-        {phase.orderId !== null ? ` · resting on Perpl #${phase.orderId}` : ` · ${formatSize(phase.filled, market.sizePrecision)} ${market.base.symbol} traded`}
+        {` · ${tradedText(phase, market)}`}
         <ExternalLink size={13} aria-hidden="true" />
       </a>
     );

@@ -1,5 +1,5 @@
 import { createWalletClient, decodeEventLog, erc20Abi, http, type Address, type Hash, type LocalAccount, type TransactionReceipt } from "viem";
-import { chain, rpcHttpUrl } from "@/lib/chain/clients";
+import { chain, publicClient, rpcHttpUrl } from "@/lib/chain/clients";
 import { encodeFunctionData } from "viem";
 import { curbAccountAbi } from "@/lib/curb/abi";
 import { AUSD, type Market } from "@/lib/markets/registry";
@@ -131,6 +131,11 @@ export type PerpFill = {
   filled: bigint;
   /** The account's position after the transaction ended flat. */
   closed: boolean;
+  /**
+   * What the lots that traded cost on average (PNS): every maker fill in the receipt, weighted by size. Null when
+   * nothing traded. A taking order is limited by its price but filled at each resting order's own price.
+   */
+  avgPrice: bigint | null;
 };
 
 /**
@@ -144,6 +149,8 @@ export function perpOrderFromReceipt(receipt: Pick<TransactionReceipt, "logs">, 
   let orderId: bigint | null = null;
   let filled = 0n;
   let closed = false;
+  let makerLots = 0n;
+  let makerValue = 0n;
   for (const log of receipt.logs) {
     if (log.address.toLowerCase() !== market.orderBook.toLowerCase()) continue;
     try {
@@ -156,6 +163,11 @@ export function perpOrderFromReceipt(receipt: Pick<TransactionReceipt, "logs">, 
         case "TakerOrderFilledV2":
           filled += ev.args.lotLNS;
           break;
+        case "MakerOrderFilled":
+        case "MakerOrderFilledV2":
+          makerLots += ev.args.lotLNS;
+          makerValue += ev.args.pricePNS * ev.args.lotLNS;
+          break;
         case "PositionClosed":
           if (perplAccountId !== null && ev.args.accountId === perplAccountId) closed = true;
           break;
@@ -164,7 +176,28 @@ export function perpOrderFromReceipt(receipt: Pick<TransactionReceipt, "logs">, 
       // Not one of the events we decode.
     }
   }
-  return { orderId, filled, closed };
+  return { orderId, filled, closed, avgPrice: makerLots > 0n ? makerValue / makerLots : null };
+}
+
+/**
+ * Where a one-tap close is priced: the lane's own curb on the far side (min sell to close a long, max buy to close a
+ * short). It is the worst the close may get, not what it pays: Perpl fills at each resting order's price, so the close
+ * walks levels inside the lane when the top one is thinner than the position (#59).
+ */
+export const closePrice = (type: "long" | "short", lane: { minSell: bigint; maxBuy: bigint }) => (type === "long" ? lane.minSell : lane.maxBuy);
+
+/**
+ * The gas limit for a taking order, read before it is sent: a dry run from the trading key, plus a fifth. Walking more
+ * levels costs more, and Monad charges the whole limit, so a measured limit beats a fixed one. If the dry run fails, the
+ * fixed limit stands and the chain's answer is shown.
+ */
+export async function takingGas(trader: Address, account: Address, market: Market, o: PerpOrder): Promise<bigint> {
+  try {
+    const estimate = await publicClient.estimateGas({ account: trader, to: account, data: perpOrderCalldata(market, o) });
+    return (estimate * 6n) / 5n;
+  } catch {
+    return PERP_GAS.orderTaking;
+  }
 }
 
 /** Calldata for a perplOrder, so a proof can be dry-run before it is sent. */
