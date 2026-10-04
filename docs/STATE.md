@@ -1,10 +1,10 @@
 # State
 
-_Last verified: 2026-10-04, branch `40-rebuild-from-chain`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-04, branch `40-phone-check`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M2 done 2026-10-03 (E-019); now M3 · Proof surface (due 2026-10-11) · **Deadline:** 2026-10-13 23:59 ET · 9 days left
-**Next action:** the user's phone check of #40 (clear Curb's data or use a private tab, sign in with the passkey, open History). Then the videos (#45; Agora's is #52). After submission, return the demo funds (#61).
+**Next action:** the demo videos (#45: main ≤ 3:00, Mera ≤ 2:00, Agora ≤ 2:00 via #52), then the README proof surface and submission answers (#43). After submission, return the demo funds (#61).
 **Blocked on:** Agora's answer on whether a mobile web app counts (#52).
 
 ## Works
@@ -12,7 +12,7 @@ _Last verified: 2026-10-04, branch `40-rebuild-from-chain`; repo: https://github
 | Capability | Verified by | Evidence |
 |---|---|---|
 | **Agora's flow on mainnet from the user's iPhone (#51, #56):** passkey → create the v2 account → Get 354.08 MON → 11.86 AUSD through Kuru Flow → onto Perpl → long 300 MON at 2× → 10× refused onchain (`LeverageAboveCap`) → a bid past the curb refused onchain (`PerpOffLane`) → closed | 8 txs found by nonce and decoded with traces; account source exact match | E-028 (2026-10-04) |
-| **Orders and History rebuild from the chain alone (#40, D-029):** a fresh profile read the user's 8 mainnet transactions and the long's fill in about 20 s; a wiped device rebuilt an open order and cancelled it | Playwright on mainnet (read-only) and on a fork | E-030 (2026-10-04) |
+| **Orders and History rebuild from the chain alone (#40, D-029):** a fresh profile read the user's 8 mainnet transactions and the long's fill in about 20 s; a wiped device rebuilt an open order and cancelled it | Playwright on mainnet (read-only) and on a fork; the user's iPhone in a Private tab, 12.9 s | E-030, E-031 (2026-10-04) |
 | A one-tap close walks a thin book inside the lane with a measured gas limit (D-028): 300 MON closed across two levels when the top held 10 | fork + Playwright + virtual passkey | E-029 (2026-10-04) |
 | Kuru Flow picks the route; Monad prices it (D-027): Kuru's estimates ran about 1% above what routes paid | read-only `eth_call` and `estimateGas` from the owner key | E-027 (2026-10-04) |
 | Fund futures from MON inside Curb (#56), on a fork | fresh mainnet fork + Playwright + virtual passkey | E-026 (2026-10-04) |
@@ -44,7 +44,6 @@ Read on mainnet 2026-10-04 after the run: the owner key holds 10.39 MON (Monad's
 - A v1 account no longer shows in the app; the user's holds nothing.
 - Kuru deposits are MON only; USDC deposit deferred (D-018).
 - No separate order preview, transaction details screen or custom owner sheet (D-020).
-- Unverified on the user's phone: the rebuild (#40) has run in a fresh browser profile and on a fork, not yet on the phone.
 - A first read on a new device takes about 20 s on the public RPC. Fills of an order that filled in parts are found only for its last part (D-029). A Perpl fill seen only after its id was reused could be credited to the newer order (D-025).
 - The Impeccable hero gate stays formally open at 81% (colours the user waived, D-013).
 
