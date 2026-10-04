@@ -8,6 +8,7 @@ import { FilterTabs } from "@/components/curb/tabs";
 import { ScreenHeader } from "@/components/navigation/app-nav";
 import { explorerUrl } from "@/lib/chain/clients";
 import type { LedgerEntry } from "@/lib/curb/ledger";
+import { refusedBy } from "@/lib/curb/refusal";
 import { formatPrice, formatSize, formatToken, shortAddress } from "@/lib/format";
 import { MARKETS, MON_USDC, PERPS_ENABLED } from "@/lib/markets/registry";
 import { useCurbAccount } from "@/hooks/use-curb-account";
@@ -32,7 +33,10 @@ const EMPTY: Record<Tab, string> = {
 };
 
 const TRADES: ReadonlySet<LedgerEntry["kind"]> = new Set(["order", "cancel", "fill", "perp-order", "perp-cancel", "perp-fill", "cap"]);
-const tabOf = (e: LedgerEntry): Tab => (e.kind === "refused" ? "refusals" : TRADES.has(e.kind) ? "trades" : "money");
+/** Refused by Curb's own account. A venue's rejection, or a revert with no readable reason, isn't one. */
+const curbRefused = (e: LedgerEntry) => e.kind === "refused" && refusedBy(e.error) === "curb";
+const tabOf = (e: LedgerEntry): Tab =>
+  curbRefused(e) ? "refusals" : e.kind === "refused" ? (e.attempt === "withdraw" ? "money" : "trades") : TRADES.has(e.kind) ? "trades" : "money";
 
 /** History is a road: events sit on a lane line, newest first. Nothing is drawn until it is onchain. */
 export function HistoryScreen() {
@@ -86,7 +90,7 @@ export function HistoryScreen() {
 
 function Event({ entry, last }: { entry: LedgerEntry; last: boolean }) {
   const { title, detail, signer, code } = describe(entry);
-  const refused = entry.kind === "refused";
+  const refused = curbRefused(entry);
   return (
     <li className="grid grid-cols-[20px_minmax(0,1fr)] gap-x-4">
       <div className="flex flex-col items-center" aria-hidden="true">
@@ -147,8 +151,11 @@ function describe(e: LedgerEntry): { title: string; detail: string; signer: "own
     }
     case "send":
       return { title: `Sent ${formatToken(BigInt(e.amount), 18, 4)} MON`, detail: `from the owner key to ${shortAddress(e.to)}`, signer: "owner" };
-    case "refused":
-      return { title: "Refused onchain", detail: e.detail, signer: e.signer, code: e.error ?? undefined };
+    case "refused": {
+      const by = refusedBy(e.error);
+      const title = by === "curb" ? "Refused onchain" : by === "kuru" ? "Rejected by Kuru" : by === "perpl" ? "Rejected by Perpl" : "Reverted onchain";
+      return { title, detail: e.detail, signer: e.signer, code: e.error ?? undefined };
+    }
     case "perp-order": {
       const m = MARKETS.find((x) => x.id === e.market) ?? market;
       const word = { "open-long": "Long", "open-short": "Short", "close-long": "Closed long", "close-short": "Closed short" }[e.action];

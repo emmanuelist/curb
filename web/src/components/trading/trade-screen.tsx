@@ -115,7 +115,8 @@ export function TradeScreen() {
         </div>
 
         <div id="ticket" className="flex scroll-mt-4 flex-col gap-4">
-          <OrderTicket market={market} lane={lane} value={ticket} onChange={onTicket} />
+          {/* Keyed by market: a refusal or a confirmation belongs to the market it happened on, not the next one. */}
+          <OrderTicket key={market.id} market={market} lane={lane} value={ticket} onChange={onTicket} />
           {market.venue === "perpl" ? <PerpPosition market={market} lane={lane} /> : null}
           <AccountStrip />
           <KeyLimits market={market} className="hidden md:block xl:hidden" />

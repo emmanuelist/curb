@@ -165,9 +165,16 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
                   #{e.orderId} · {e.leverageHdths / 100}×
                 </span>
               </span>
-              <button type="button" onClick={() => cancel(e.orderId!)} disabled={busy || !session || status === "cancelling"} className="btn btn-quiet min-h-11 shrink-0 px-4 text-[13px]">
-                {status === "cancelling" ? "Cancelling…" : "Cancel"}
-              </button>
+              {session ? (
+                <button type="button" onClick={() => cancel(e.orderId!)} disabled={busy || status === "cancelling"} className="btn btn-quiet min-h-11 shrink-0 px-4 text-[13px]">
+                  {status === "cancelling" ? "Cancelling…" : "Cancel"}
+                </button>
+              ) : (
+                // Locked, the button says how to get there, as on Orders, rather than sitting disabled.
+                <button type="button" onClick={unlocker.unlock} disabled={!unlocker.ready || unlocker.unlocking} className="btn btn-quiet min-h-11 shrink-0 px-4 text-[13px]">
+                  {unlocker.unlocking ? "Face ID…" : "Unlock to cancel"}
+                </button>
+              )}
             </li>
           ))}
         </ul>
