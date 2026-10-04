@@ -3,6 +3,7 @@
 import { useState, type CSSProperties } from "react";
 import { ExternalLink } from "lucide-react";
 import { KeyGlyph } from "@/components/keys/signer";
+import { ChainSync } from "@/components/activity/chain-sync";
 import { FilterTabs } from "@/components/curb/tabs";
 import { ScreenHeader } from "@/components/navigation/app-nav";
 import { explorerUrl } from "@/lib/chain/clients";
@@ -10,6 +11,7 @@ import type { LedgerEntry } from "@/lib/curb/ledger";
 import { formatPrice, formatSize, formatToken, shortAddress } from "@/lib/format";
 import { MARKETS, MON_USDC, PERPS_ENABLED } from "@/lib/markets/registry";
 import { useCurbAccount } from "@/hooks/use-curb-account";
+import { useChainHistory } from "@/hooks/use-chain-history";
 import { useLedger } from "@/hooks/use-ledger";
 
 const market = MON_USDC;
@@ -37,6 +39,9 @@ export function HistoryScreen() {
   const [tab, setTab] = useState<Tab>("all");
   const { state } = useCurbAccount();
   const entries = useLedger(state?.address ?? null);
+  const chain = useChainHistory();
+  // On a new device the record is empty until the chain has been read: say so, rather than "nothing onchain".
+  const reading = chain.status === "reading" && entries.length === 0;
   const shown = [...entries].reverse().filter((e) => tab === "all" || tabOf(e) === tab);
 
   return (
@@ -44,6 +49,7 @@ export function HistoryScreen() {
       <ScreenHeader title="History" lede="What happened onchain, and which key signed it." />
       <div className="mt-5 flex flex-col gap-4 px-4 md:mt-8 md:px-0">
         <FilterTabs label="Event type" items={TABS} value={tab} onChange={setTab} />
+        <ChainSync h={chain} />
         <section role="tabpanel" aria-label="Timeline" className="panel rise relative overflow-hidden px-5 py-6" style={{ "--i": 2 } as CSSProperties}>
           {shown.length > 0 ? (
             <ol className="flex flex-col">
@@ -58,16 +64,19 @@ export function HistoryScreen() {
                 <span className="mt-2 w-[3px] grow bg-[repeating-linear-gradient(180deg,var(--mark-faint)_0_14px,transparent_0_26px)]" />
               </div>
               <div className="pb-16">
-                <p className="text-[15px] font-semibold text-road">Nothing onchain yet</p>
-                <p className="mt-1 max-w-[52ch] text-[13.5px] leading-relaxed text-muted">{EMPTY[tab]}</p>
+                <p className="text-[15px] font-semibold text-road">{reading ? "Reading your history from Monad" : "Nothing onchain yet"}</p>
+                <p className="mt-1 max-w-[52ch] text-[13.5px] leading-relaxed text-muted">
+                  {reading ? "Every transaction your two keys sent is found by nonce and decoded here. On a new device that takes a few seconds." : EMPTY[tab]}
+                </p>
               </div>
             </div>
           )}
         </section>
         {entries.length > 0 ? (
           <p className="px-1 text-[12px] leading-relaxed text-muted">
-            Transactions sent from this device. {PERPS_ENABLED ? "Kuru's and Perpl's events aren't" : "Kuru's events aren't"} indexed by account, so Curb keeps
-            the hashes it sent and every link opens the transaction on Monad.
+            Every transaction your two keys sent since the account was created, found on Monad by nonce and decoded here.{" "}
+            {PERPS_ENABLED ? "Kuru's and Perpl's events aren't" : "Kuru's events aren't"} indexed by account, so nothing else could list them. Each link opens the
+            transaction on Monad.
           </p>
         ) : null}
       </div>
@@ -160,7 +169,7 @@ function describe(e: LedgerEntry): { title: string; detail: string; signer: "own
     case "ausd-in":
       return { title: `Added ${formatToken(BigInt(e.amount), 6, 2)} AUSD`, detail: "to the account's margin on Perpl", signer: "owner" };
     case "swap":
-      return { title: `Swapped ${formatToken(BigInt(e.monIn), 18, 4)} MON for ${formatToken(BigInt(e.ausdOut), 6, 2)} AUSD`, detail: "through Kuru Flow, onto the owner key", signer: "owner" };
+      return { title: `Swapped ${formatToken(BigInt(e.monIn), 18, 2)} MON for ${formatToken(BigInt(e.ausdOut), 6, 2)} AUSD`, detail: "through Kuru Flow, onto the owner key", signer: "owner" };
     case "ausd-out":
       return { title: `Withdrew ${formatToken(BigInt(e.amount), 6, 2)} AUSD`, detail: `from Perpl to ${shortAddress(e.to)}`, signer: "owner" };
     case "cap":

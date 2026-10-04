@@ -3,6 +3,7 @@
 import { useState, type CSSProperties } from "react";
 import { ClipboardList, ExternalLink, Lock } from "lucide-react";
 import type { Address, Hash, LocalAccount } from "viem";
+import { ChainSync } from "@/components/activity/chain-sync";
 import { LanePreview } from "@/components/activity/lane-preview";
 import { KeyGlyph } from "@/components/keys/signer";
 import { EmptyPanel } from "@/components/curb/empty-state";
@@ -20,6 +21,7 @@ import { MON_USDC, PERPS_ENABLED, type Market } from "@/lib/markets/registry";
 import { marketLabel } from "@/lib/markets/selected";
 import { explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
 import type { CurbAccountRecord } from "@/lib/passkey/keys";
+import { useChainHistory } from "@/hooks/use-chain-history";
 import { useCurbAccount } from "@/hooks/use-curb-account";
 import { useLedger } from "@/hooks/use-ledger";
 import { useOrders, type OrderView } from "@/hooks/use-orders";
@@ -156,6 +158,7 @@ export function OrdersScreen() {
   const perps = usePerpOrders(account, entries);
   const rows = account ? [...kuru.orders.map((o) => kuruRow(o, account)), ...perps.orders.map((o) => perpRow(o, account))].sort((a, b) => b.at - a.at) : [];
   const shown = rows.filter((r) => tabOf(r.status) === tab);
+  const chain = useChainHistory();
   const refetch = () => {
     void kuru.refetch();
     void perps.refetch();
@@ -166,6 +169,7 @@ export function OrdersScreen() {
       <ScreenHeader title="Orders" lede={`Everything your trading key has placed on ${VENUES.books}.`} />
       <div className="mt-5 flex flex-col gap-4 px-4 md:mt-8 md:px-0">
         <FilterTabs label="Order status" items={TABS} value={tab} onChange={setTab} />
+        <ChainSync h={chain} />
         {tab === "open" ? <LanePreview /> : null}
         <div role="tabpanel" aria-label={TABS.find((t) => t.id === tab)?.label} className="flex flex-col gap-3">
           {shown.length > 0 && record && account ? (
@@ -181,9 +185,9 @@ export function OrdersScreen() {
                 </p>
               ) : null}
             </>
-          ) : (kuru.isLoading || perps.isLoading) && tab === "open" ? (
+          ) : ((kuru.isLoading || perps.isLoading) && tab === "open") || (chain.status === "reading" && rows.length === 0) ? (
             <p className="panel rise px-5 py-6 text-[13px] text-muted" style={{ "--i": 3 } as CSSProperties}>
-              Reading your orders from {VENUES.and}…
+              {chain.status === "reading" && rows.length === 0 ? "Reading your orders from Monad…" : `Reading your orders from ${VENUES.and}…`}
             </p>
           ) : (
             <EmptyPanel key={tab} i={3} icon={ClipboardList} title={EMPTY[tab].title} action={tab === "open" ? { href: "/", label: "Go to the lane" } : undefined}>
@@ -191,7 +195,7 @@ export function OrdersScreen() {
             </EmptyPanel>
           )}
         </div>
-        {rows.length > 0 ? <p className="px-1 text-[12px] text-muted">Orders sent from this device. Each status is read from {VENUES.books} on Monad.</p> : null}
+        {rows.length > 0 ? <p className="px-1 text-[12px] text-muted">Orders your trading key sent, found on Monad. Each status is read from {VENUES.books}.</p> : null}
       </div>
     </main>
   );

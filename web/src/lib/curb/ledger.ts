@@ -63,6 +63,31 @@ export type LedgerEntry =
 
 const key = (account: Address) => `curb.ledger.v1:${account.toLowerCase()}`;
 
+/**
+ * How far this device's ledger is known to match the chain (#40): the block the account was created in, each key's
+ * next nonce, the block read up to, and the resting orders already settled (found filled or gone).
+ */
+export type SyncMarker = { created: string; owner: number; trading: number; block: string; settled?: string[] };
+
+const syncKey = (account: Address) => `curb.ledger.sync.v1:${account.toLowerCase()}`;
+
+export function readSync(account: Address): SyncMarker | null {
+  try {
+    const raw = localStorage.getItem(syncKey(account));
+    return raw ? (JSON.parse(raw) as SyncMarker) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeSync(account: Address, marker: SyncMarker) {
+  try {
+    localStorage.setItem(syncKey(account), JSON.stringify(marker));
+  } catch {
+    // Storage blocked: the next visit reads the chain again from the start.
+  }
+}
+
 export function readLedger(account: Address): LedgerEntry[] {
   try {
     const raw = localStorage.getItem(key(account));
