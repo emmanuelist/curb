@@ -52,6 +52,8 @@ flowchart LR
 
 The lane is a price check against the live book, done inside the contract that places the order. It needs the order book to be onchain and cheap to read in the same transaction. On Monad, Kuru and Perpl are both full onchain order books, so `CurbAccount` can call `bestBidAsk()` on Kuru, or read Perpl's book, before it forwards an order. An exchange whose book lives offchain can give a key "trade but don't withdraw", but it can't let a third-party contract enforce "only near the real price".
 
+It is also fast enough that prompt-free trading feels instant. From the builder's iPhone on mainnet, the trading key's orders and cancels confirmed in a median **1.4 s from tap to receipt** (90% within 1.8 s, 17 transactions). That covers signing, sending over a phone connection, the block and the receipt (E-038). The app prints each one as "Confirmed in 0.9 s".
+
 ## Mera is the whole account layer
 
 - **No seed phrase, no wallet extension, no custody backend.** The passkey is the only secret, and the device's authenticator keeps it.
