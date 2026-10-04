@@ -1,10 +1,10 @@
 # State
 
-_Last verified: 2026-10-04, branch `47-lighthouse`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-04, branch `44-state`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M2 done 2026-10-03 (E-019); now M3 · Proof surface (due 2026-10-11) · **Deadline:** 2026-10-13 23:59 ET · 9 days left
-**Next action:** Kuru demand evidence (#46: research and the onchain sample are in `internal/research/demand.md`, the script in `web/scripts/kuru-flow-sample.mjs` is not yet committed), then the README and submission answers (#43), latency on mainnet (#44, needs the user's go-ahead), and the videos (#45, #52). After submission, return the demo funds (#61).
+**Next action:** the user's mainnet latency run (#44): 10 one-MON resting longs on Perpl and their cancels from the iPhone. The app now prints "Confirmed in X s" for each, and no new money is needed (gas about 0.6 MON from the trading key's 0.80). Then the recording session for the videos (#45, #52; run of show in `internal/demo/`), which needs the user's yes on about 200 MON for the Kuru beats and a voice choice. #43 waits only on the video link. After submission, return the demo funds (#61).
 **Blocked on:** Agora's answer on whether a mobile web app counts (#52).
 
 ## Works
@@ -12,6 +12,9 @@ _Last verified: 2026-10-04, branch `47-lighthouse`; repo: https://github.com/emm
 | Capability | Verified by | Evidence |
 |---|---|---|
 | **Agora's flow on mainnet from the user's iPhone (#51, #56):** passkey → create the v2 account → Get 354.08 MON → 11.86 AUSD through Kuru Flow → onto Perpl → long 300 MON at 2× → 10× refused onchain (`LeverageAboveCap`) → a bid past the curb refused onchain (`PerpOffLane`) → closed | 8 txs found by nonce and decoded with traces; account source exact match | E-028 (2026-10-04) |
+| **Demand evidence (#46):** docs/DEMAND.md, with Binance's trade-only key permissions, HAPI's account of the 3Commas drain ($27.3M with trade-only keys) and a mainnet sample showing most Kuru and Perpl order flow signed by gas-only keys for contracts that hold the funds | public sources; `web/scripts/order-flow-sample.mjs` | E-037 (2026-10-04) |
+| **README as a proof surface (#43):** eight mainnet transactions (four onchain refusals) with their status read onchain, addresses, how it works, limits | all 25 links checked | PR #71 (2026-10-04) |
+| **Order latency shown in the app (#44):** "Confirmed in X s" from tap to receipt, receipts polled every 100 ms; mainnet figures not yet measured | unit tests; fork; production bundle | PR #72 (2026-10-04) |
 | **Polish pass (#47):** every screen at 390 and 1280, two finish-review rounds (8 fixes resolved, 1 regression fixed). Venue rejections no longer wear the account's red (D-032); production Lighthouse: phone Trade 91–92 / 100 / 100 / 100, desktop 85–86 from here (99 locally, network-bound) | fork + Playwright; impeccable detect []; Lighthouse 12.8.2 | E-035, E-036 (2026-10-04) |
 | **The trading session's scope and expiry, stated and enforced (#42, D-031):** the unlock step says what the key can't do; every ticket state and Orders show the time left and Lock; 15 minutes unused locks every screen cleanly, and a key past its deadline can't sign even when the timer was held back | fork + Playwright (virtual passkey, ceremony counter, fake clock) + `cast nonce`; 5 unit tests | E-034 (2026-10-04) |
 | **One Face ID makes both keys (#41, D-030):** creating takes 1 ceremony and signing in 1; owner actions still prompt alone. Landing to first transaction: 4 taps, 2 Face IDs | Playwright ceremony counter; fork; one Face ID to sign in on the user's iPhone | E-032, E-033 (2026-10-04) |
@@ -27,7 +30,7 @@ _Last verified: 2026-10-04, branch `47-lighthouse`; repo: https://github.com/emm
 | Refusal moment, proofs, owner withdraw and send; create, deposit, place, cancel, fills, Orders and History from the device ledger (D-018, D-019) | anvil + Playwright + virtual passkey | E-017, E-018 |
 | M1: real passkey on the user's iPhone; owner key signs a real mainnet tx with Face ID | tx 0x72c21e7e…4a9ab4 | E-013 (2026-09-28) |
 | Board redesign and identity | Playwright, Lighthouse | E-006 to E-011 (2026-09-27) |
-| Gate: web lint 0 warnings, typecheck, 78 tests, warning-free build; `impeccable detect` [] (E-035); contracts 39/39, `forge lint` 0 (E-030) | local and CI | E-030, E-035 (2026-10-04) |
+| Gate: web lint 0 warnings, typecheck, 80 tests, warning-free build; `impeccable detect` [] (E-035); contracts 39/39, `forge lint` 0 (E-030) | local and CI | E-030, E-035 (2026-10-04) |
 
 ## Deployed
 
