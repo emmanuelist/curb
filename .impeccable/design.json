@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-27T00:00:00Z",
+  "generatedAt": "2026-10-04T00:00:00Z",
   "title": "Design System: Curb",
   "extensions": {
     "colorMeta": {
@@ -124,6 +124,38 @@
       "description": "A money-moving panel: painted kerb strip on top, yellow focus, the yellow Face ID button.",
       "html": "<section class=\"ds-money\"><div class=\"ds-kerb\"></div><h2>Send gas to the trading key</h2><p class=\"ds-signer\"><b>Owner key</b> · Face ID required</p><button>Send with Face ID</button></section>",
       "css": ".ds-money { display: flex; flex-direction: column; gap: 16px; padding: 20px; background: #111417; border: 1px solid #242a30; border-radius: 16px; box-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -12px rgb(0 0 0 / 0.7); font-family: Switzer, system-ui, sans-serif; } .ds-kerb { margin: -20px -20px 0; height: 6px; border-radius: 15px 15px 0 0; background-image: repeating-linear-gradient(90deg, #ffd600 0 77px, rgb(0 0 0 / 0.45) 0 78px); } .ds-money h2 { margin: 0; font-size: 17px; font-weight: 600; color: #ededed; } .ds-signer { margin: 0; font-size: 12px; color: #9aa1a8; } .ds-signer b { color: #ffd600; } .ds-money button { min-height: 56px; border: 0; border-radius: 12px; background: #ffd600; color: #0b0d0f; font: 600 17px Switzer, system-ui, sans-serif; cursor: pointer; } .ds-money button:active { transform: scale(0.985); } .ds-money button:focus-visible { outline: 2px solid #ededed; outline-offset: 3px; }"
+    },
+    {
+      "name": "Session Line",
+      "kind": "custom",
+      "refersTo": "pill",
+      "description": "A 12px row under the trading CTA and atop Orders' open list: the trading key unlocked, the idle-lock countdown, and Lock. Turns grey in place after the 15-minute idle lock.",
+      "html": "<div class=\"ds-session\"><p><svg class=\"ds-key\" width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"7.5\" cy=\"15.5\" r=\"4.5\"/><path d=\"m10.7 12.3 9.3-9.3M16 7l3 3\"/></svg><span><span class=\"ds-nw\">Unlocked</span> · <span class=\"ds-nw\">locks in <b>14:52</b> if unused</span></span></p><button>Lock</button></div>",
+      "css": ".ds-session { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 400 12px Switzer, system-ui, sans-serif; color: #9aa1a8; font-variant-numeric: tabular-nums; } .ds-session p { display: flex; align-items: center; gap: 8px; margin: 0; min-width: 0; } .ds-key { color: #ededed; } .ds-nw { white-space: nowrap; } .ds-session b { font-weight: 400; color: #ededed; } .ds-session button { min-height: 44px; margin: -8px -12px -8px 0; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: #ededed; font: inherit; cursor: pointer; } .ds-session button:hover { background: #171b1f; }"
+    },
+    {
+      "name": "Segmented Choice",
+      "kind": "chip",
+      "refersTo": "segment-well",
+      "description": "Market switch (Kuru spot / Perpl perpetual) and the AUSD card's Get / Add / Withdraw / Cap: 44px options in an asphalt well; the selected one is a road-white border on high asphalt, never yellow.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\"><button role=\"radio\" aria-checked=\"false\"><b>MON / USDC</b><span>Kuru spot</span></button><button role=\"radio\" aria-checked=\"true\"><b>MON Perp</b><span>Perpl perpetual</span></button></div>",
+      "css": ".ds-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border: 1px solid #242a30; border-radius: 12px; background: #0b0d0f; } .ds-seg button { min-height: 44px; padding: 0 12px; text-align: left; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #9aa1a8; font-family: Switzer, system-ui, sans-serif; cursor: pointer; } .ds-seg button b { display: block; font-size: 14px; font-weight: 600; } .ds-seg button span { display: block; font-size: 11.5px; color: #9aa1a8; } .ds-seg button[aria-checked=true] { border-color: #ededed; background: #171b1f; color: #ededed; } .ds-seg button:hover { color: #ededed; }"
+    },
+    {
+      "name": "Leverage Segment",
+      "kind": "chip",
+      "refersTo": "segment-option-selected",
+      "description": "Leverage choices with the account's cap drawn as a curb (two 2px road-white strokes 7px apart) between the last choice under it and the first past it; choices past it are hatched and dashed.",
+      "html": "<div class=\"ds-lev\"><button>1×</button><button aria-checked=\"true\">2×</button><button>3×</button><button>5×</button><span class=\"ds-cap\"></span><button class=\"ds-past\">10×</button></div>",
+      "css": ".ds-lev { display: flex; gap: 6px; } .ds-lev button { flex: 1; height: 44px; border: 1px solid #242a30; border-radius: 10px; background: transparent; color: #9aa1a8; font: 600 14px Switzer, system-ui, sans-serif; font-variant-numeric: tabular-nums; } .ds-lev button[aria-checked=true] { border-color: #ededed; background: #171b1f; color: #ededed; } .ds-cap { width: 7px; flex-shrink: 0; border-left: 2px solid #ededed; border-right: 2px solid #ededed; box-sizing: border-box; } .ds-past { border-style: dashed !important; border-color: #5f666d !important; background-image: repeating-linear-gradient(135deg, rgb(237 237 237 / 0.16) 0 6px, transparent 0 14px) !important; }"
+    },
+    {
+      "name": "Venue Rejection",
+      "kind": "card",
+      "refersTo": "rejection-panel",
+      "description": "A transaction Kuru or Perpl rejected under its own rules, or an unreadable revert: neutral, strong-hairline border, no stop red, hatching or stencil sign. The red refusal plate stays the Curb account's own.",
+      "html": "<section class=\"ds-rej\" role=\"alert\"><p class=\"ds-rej-t\">Perpl rejected it. <code>TakerOrderSettlementFailed()</code></p><p>Perpl couldn't settle it against the book just then. Nothing traded; try again in a moment.</p><p>Your Curb account allowed it; Perpl's own rules stopped it.</p><p class=\"ds-rej-trail\"><b>Trading key</b> 0x2524…6020 tried it · nothing else moved</p><a class=\"ds-rej-pill\" href=\"#\"><b>REJECTED</b> · 0x5d45ad59…138227</a></section>",
+      "css": ".ds-rej { padding: 14px 16px 16px; border: 1px solid #343b42; border-radius: 14px; background: #0b0d0f; font-family: Switzer, system-ui, sans-serif; } .ds-rej p { margin: 4px 0 0; font-size: 13px; line-height: 1.625; color: #9aa1a8; } .ds-rej .ds-rej-t { margin: 0; font-size: 14px; font-weight: 600; color: #ededed; } .ds-rej code { font: 400 12px Archivo, sans-serif; color: #9aa1a8; } .ds-rej-trail { margin-top: 12px !important; font-size: 12px !important; } .ds-rej-trail b { color: #ededed; } .ds-rej-pill { display: inline-flex; align-items: center; min-height: 44px; margin-top: 12px; padding: 0 12px; border: 1px solid #343b42; border-radius: 999px; color: #ededed; font-size: 12px; text-decoration: none; } .ds-rej-pill b { letter-spacing: 0.08em; }"
     }
   ],
   "narrative": {
@@ -143,6 +175,7 @@
       { "name": "The Full Precision Rule", "body": "Prices print at the market's full precision from live data (six decimals on MON/USDC), never rounded; a one-tick spread must never read as zero.", "section": "typography" },
       { "name": "The Borrowed Four Rule", "body": "Every stencil \"4\" on the site renders from Big Shoulders (the non-stencil cut, loaded for U+0034 only and first in the stencil stack) because the stencil 4's detached crossbar reads as a second decimal point.", "section": "typography" },
       { "name": "The Tabular Figures Rule", "body": "Every compared number is tabular (`tnum`); addresses and hashes are Martian Mono.", "section": "typography" },
+      { "name": "The Order Is the Heading Rule", "body": "An order, a position or a history event is its own heading, worded the way History words it; where it rests (venue and market, in a muted 12.5px line) goes under it. Nothing sits above a heading: no label, eyebrow or kicker. Rows say \"at\"; \"@\" survives only in the Trade hero's draft bar.", "section": "typography" },
       { "name": "The One Lift Rule", "body": "Panels share a single shadow; nothing floats higher. Hierarchy is carried by tone, borders and paint.", "section": "elevation" }
     ],
     "dos": [
@@ -159,8 +192,10 @@
       "Don't use kerb yellow for selection, hover, emphasis, charts or brand accents beyond the wordmark slashes.",
       "Don't use stop red for anything but an onchain refusal, and never for small text.",
       "Don't fade a paint button when disabled; switch it to dashed high asphalt.",
-      "Don't add a second shadow level, glow or gradient surface; the only gradient is the scrim over the photographic plate.",
+      "Don't add a second shadow level, glow or gradient surface; the only gradients are the scrim over the photographic plate and the masks that feather it in.",
       "Don't use stencil signage as a label above a heading or outside a hatched zone.",
+      "Don't put a label, eyebrow or kicker above any heading; the thing itself is the heading.",
+      "Don't give a venue's rejection or an unreadable revert the refusal plate's red line, hatching or stencil sign; those belong to the Curb account's refusals.",
       "Don't show mock, placeholder or rounded figures; an absent value is an em dash."
     ]
   }

@@ -131,6 +131,21 @@ components:
     textColor: "{colors.road-grey}"
     typography: "{typography.label}"
     height: "72px"
+  segment-well:
+    backgroundColor: "{colors.asphalt}"
+    textColor: "{colors.road-grey}"
+    rounded: "{rounded.md}"
+    padding: "4px"
+  segment-option-selected:
+    backgroundColor: "{colors.asphalt-high}"
+    textColor: "{colors.road-white}"
+    rounded: "9px"
+    height: "44px"
+  rejection-panel:
+    backgroundColor: "{colors.asphalt}"
+    textColor: "{colors.road-white}"
+    rounded: "14px"
+    padding: "14px 16px 16px"
 ---
 
 # Design System: Curb
@@ -195,8 +210,8 @@ The chain's two verdicts.
 ### Hierarchy
 - **Display** (700, 81px on the phone hero, clamp(84px, 7vw, 112px) on desktop, 0.94): the live mid price only. Rendered through a settling-number component so only changed digits animate.
 - **Headline** (600, 30px mobile / 44px desktop, tight, -0.015em): one screen title per page, followed by a 122px stretch of lane dashes at 60% opacity.
-- **Title** (600, 17px): panel and card headings; 15px for the lane header.
-- **Figure** (Archivo 600, 13–26px, wdth 66–80, tabular): book prices (15px, wdth 72), book sizes (13px, wdth 80), hero ask/bid (21px, 26px on the side the draft joins, wdth 66), balances (24px, wdth 75), the BUY bar (20.5px, wdth 80).
+- **Title** (600, 17px, sentence case): every panel and card heading, the account and money cards included ("Curb account", "AUSD · futures margin"); 15px for the lane header. Display type stays reserved for the price.
+- **Figure** (Archivo 600, 13–26px, wdth 66–80, tabular): book prices (15px, wdth 72), book sizes (13px, wdth 80), hero ask/bid (21px, 26px on the side the draft joins, wdth 66), balances (24px, wdth 75), the BUY bar (20.5px, wdth 80), and an order or position used as its card's heading (22px, wdth 75: "Sell 200 MON at 0.033019", "Long 300 MON"), with "at" in road grey.
 - **Body** (400, 13.5–14px, 1.625, max 44–52ch): explanations, in road grey.
 - **Label** (500, 12px): field labels, pills, curb-edge notes, tab-bar labels.
 - **Data mono** (Martian Mono 400, 11–12.5px, 1.7): addresses and transaction hashes.
@@ -209,15 +224,19 @@ The chain's two verdicts.
 
 **The Tabular Figures Rule.** Every compared number is tabular (`tnum`); addresses and hashes are Martian Mono.
 
+**The Order Is the Heading Rule.** An order, a position or a history event is its own heading, worded the way History words it; where it rests (venue and market, in a muted 12.5px line) goes under it. Nothing sits above a heading: no label, eyebrow or kicker. Rows say "at"; "@" survives only in the Trade hero's draft bar.
+
 ## Layout
 
 Mobile-first at 375px. Phone content runs in one column with 16px gutters (22px on the Trade hero and screen headers), 16px stacks, and 128px bottom padding to clear the 72px tab bar plus the safe-area inset. The Trade hero is a full-bleed stack: header, network/block row, market, price over the photographic plate, spread, live pill, lane dashes, ask, centre line, bid, BUY bar.
 
 At 768px (md) the tab bar becomes a 72px sticky top bar, gutters widen to 32px, stacks to 24px, and Trade becomes two columns with the market panel spanning both. At 1280px (xl) Trade is a three-column terminal (market + key limits / order lane / ticket, 1.05fr : 1.2fr : 0.95fr) inside max 1480px. Keys runs in max 1100px; narrower screens in max 860px. The block indicator joins the top bar at 1024px (lg).
 
+The photographic plate runs under the price at every size. On the phone hero it fades in over its first 56px below the header (a mask), never starting on a hard edge. On desktop the photograph and its scrim are a 440px band pinned to the top of the market panel and feathered into the panel by a mask, so the curb stays under the price however tall the panel grows.
+
 ## Elevation & Depth
 
-Layered and mostly flat: depth comes from three asphalt tones plus hairlines, with one shadow for panels. Translucent chrome (tab bar, top bar, live pill) sits on asphalt at 60–95% with a backdrop blur.
+Layered and mostly flat: depth comes from three asphalt tones plus hairlines, with one shadow for panels. Translucent chrome (tab bar, top bar, live pill) sits on asphalt at 60–95% with a backdrop blur. The plate's scrim and the masks that feather the photograph in (see Layout) are the only gradients.
 
 ### Shadow Vocabulary
 - **Panel lift** (`box-shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -12px rgb(0 0 0 / 0.7)`): every panel.
@@ -263,6 +282,29 @@ Gently rounded panels (16px) holding 12px buttons, fields and wells; nested elem
 ### Signer line
 Before every action, a 12px line names the key that signs it: the key glyph and name in road white ("Trading key · no prompt") or kerb yellow ("Owner key · Face ID required").
 
+### Session line
+A 12px road-grey row under the trading CTA and atop Orders' open list: the trading-key glyph in road white, "Unlocked · locks in m:ss if unused" with the countdown in road white, and a quiet Lock button (12px lock icon, 44px target) at the right edge. Each phrase is unbreakable, so the row wraps only at a dot. When the idle lock fires, the same row stays put and turns grey ("Locked after 15 minutes unused, …"): the state changed, the place didn't.
+
+### Segmented choices
+Market switch, leverage and the AUSD card's actions share one selection language: 44px options, the selected one a road-white border on high asphalt, never yellow. The market switch and the AUSD actions sit in an asphalt well with a hairline border (12px radius, 4px inset) at 9px option radius; leverage options stand free as 10px hairline-bordered cells.
+- **Market switch:** on tablet and desktop, two options side by side, each the market name (14px/600) over "Kuru spot" or "Perpl perpetual" (11.5px, road grey). On the phone the hero's market name (23px/500) with a chevron opens a panel listbox of the same two.
+- **Leverage:** 1×, 2×, 3×, 5×, 10× in tabular 14px/600. The account's cap is drawn as a curb, two 2px road-white strokes 7px apart, once, between the last choice under the cap and the first past it; choices past it are hatched with a dashed border. Above the row: "Your cap 5× · set by the owner key", with "owner key" in kerb yellow. A choice past the cap swaps the CTA for "Use your cap" and a disabled hatched "Over the cap".
+- **AUSD card:** a money panel (kerb strip) titled "AUSD · futures margin", four figure cells (owner key holds, free on Perpl, in orders and margin, leverage cap), then a four-way segment: Get, Add, Withdraw, Cap. Each action that signs is the yellow Face ID button.
+
+### Order and position cards
+The order is the heading (see The Order Is the Heading Rule), with its status pill at the right (road-white border while open). Under it, the order's own lane: two short curb marks at min sell and max buy with the order's price as a dot between. The position card's heading is "Long 300 MON" with "PnL at mark …" on the same baseline (road white, road grey when negative, never green or red); under it "Entry · mark · margin". An absent Perpl mark prints an em dash for both the mark and the PnL.
+
+### Refusal plate and venue rejection
+Two panels at 14px radius on asphalt, sharing one tail: the signer trail ("Trading key 0x… tried it · paid … MON gas · nothing else moved") and a pill reading "Rejected · 0x…" linking the transaction.
+- **Refusal plate:** only for the Curb account's own refusal (classified by the error's name). A stop-red line comes down, the stencil sign is painted on a hatched plate, then the reason; border and pill border are stop red at 55%.
+- **Venue rejection:** a transaction Kuru or Perpl rejected under its own rules, or one that reverted with no readable reason. A strong-hairline border and pill, no red line, no hatching, no stencil sign. Title "Perpl rejected it." (or "Kuru rejected it.", "It reverted onchain."), the error name in muted figures, the venue's reason, and "Your Curb account allowed it; Perpl's own rules stopped it."
+
+### History rows
+A 20px glyph column over a dashed connector, then a two-column row: title | time, so a long error name wraps under the title and every time stays in one column. The glyph is the signer's key in its paint; a fill by another trader is a signal-green dot. Only the account's own refusals are titled "Refused onchain", take a stop-red glyph and file under Refusals; a venue rejection is "Rejected by Perpl" or "Rejected by Kuru" in road white, filed under Trades (Transfers for a withdrawal).
+
+### Settings rows (More)
+Icon, label, value, chevron. Markets read "Spot market" (list glyph) and "Perp market" (infinity glyph); "Leverage cap" shows the account's cap plus "set by the owner key" in kerb yellow; owner-key values are kerb-yellow text, never a yellow button.
+
 ### Order Lane (signature)
 Kuru's live book between two curb lines. From top: a hatched off-book zone with its stencil sign, the max-buy curb line and its value, asks inside the lane, the centre line (a road-white dot or the draft chip, then lane dashes stepping per block), bids inside the lane, the min-sell curb line, a hatched off-book zone below. Levels past a curb are drawn inside the hatching at 55% opacity. Depth bars are square-root scaled, road white at 30–100% alpha.
 
@@ -287,6 +329,8 @@ A pill: status dot (signal green and pulsing once per block when live, faint whe
 - **Don't** use stop red for anything but an onchain refusal, and never for small text.
 - **Don't** use signal green for prices, gains, selection, or success that never touched the chain; offline is a hollow grey ring, not red.
 - **Don't** fade a paint button when disabled; switch it to dashed high asphalt.
-- **Don't** add a second shadow level, glow or gradient surface; the only gradient is the scrim over the photographic plate.
+- **Don't** add a second shadow level, glow or gradient surface; the only gradients are the scrim over the photographic plate and the masks that feather it in.
 - **Don't** use stencil signage as a label above a heading or outside a hatched zone.
+- **Don't** put a label, eyebrow or kicker above any heading; the thing itself is the heading.
+- **Don't** give a venue's rejection or an unreadable revert the refusal plate's red line, hatching or stencil sign; those belong to the Curb account's refusals.
 - **Don't** show mock, placeholder or rounded figures; an absent value is an em dash.
