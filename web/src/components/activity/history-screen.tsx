@@ -100,7 +100,8 @@ function Event({ entry, last }: { entry: LedgerEntry; last: boolean }) {
         {!last ? <span className="mt-1.5 w-[3px] grow bg-[repeating-linear-gradient(180deg,var(--mark-faint)_0_14px,transparent_0_26px)]" /> : null}
       </div>
       <div className={`min-w-0 ${last ? "" : "pb-6"}`}>
-        <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+        {/* The time keeps its own column; a long error name wraps under the title instead of pushing the time down. */}
+        <p className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3">
           <span className="text-[15px] font-semibold text-road">
             {title}
             {code ? <span className="figures text-[12px] font-normal text-muted"> {code}()</span> : null}

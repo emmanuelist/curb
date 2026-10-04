@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
-import { ArrowUpFromLine, ChevronRight, Code2, ExternalLink, Gauge, Globe, ListOrdered, Ruler, type LucideIcon } from "lucide-react";
+import { ArrowUpFromLine, ChevronRight, Code2, ExternalLink, Gauge, Globe, InfinityIcon, ListOrdered, Ruler, type LucideIcon } from "lucide-react";
 import { KeyGlyph } from "@/components/keys/signer";
 import { ScreenHeader } from "@/components/navigation/app-nav";
 import { explorerUrl } from "@/lib/chain/clients";
@@ -32,8 +32,16 @@ export function MoreScreen() {
 
         <Group i={2}>
           <Row icon={Globe} label="Network" value="Monad mainnet" />
+          {/* A perpetual never expires, hence its glyph; spot is a plain book. */}
           {MARKETS.map((m) => (
-            <Row key={m.id} href={explorerUrl("address", m.orderBook)} external icon={ListOrdered} label="Market" value={`${venueName(m)} ${marketLabel(m)}`} />
+            <Row
+              key={m.id}
+              href={explorerUrl("address", m.orderBook)}
+              external
+              icon={m.venue === "perpl" ? InfinityIcon : ListOrdered}
+              label={m.venue === "perpl" ? "Perp market" : "Spot market"}
+              value={`${venueName(m)} ${marketLabel(m)}`}
+            />
           ))}
           <Row icon={Ruler} label="Lane width" value={`${band} of best price`} />
           {PERPS_ENABLED ? (

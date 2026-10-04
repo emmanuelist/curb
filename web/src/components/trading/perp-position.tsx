@@ -124,15 +124,15 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
 
       {pos ? (
         <div className="rounded-[12px] border border-rule bg-asphalt p-3.5">
-          <p className="flex items-baseline justify-between gap-3">
-            <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">{pos.type}</span>
+          {/* The position is the heading ("Long 300 MON"), as on Orders and History; no label above it. */}
+          <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+            <span className="font-display text-[22px] font-semibold leading-tight text-road tnum [font-variation-settings:'wdth'_75]">
+              {pos.type === "long" ? "Long" : "Short"} {formatSize(pos.lots, market.sizePrecision)} {market.base.symbol}
+            </span>
             <span className={`text-[13px] tnum ${pnlSign === "−" ? "text-muted" : "text-road"}`}>
               PnL at mark {pnlSign}
               {`${pnl} ${market.quote.symbol}`}
             </span>
-          </p>
-          <p className="mt-1 font-display text-[22px] font-semibold leading-tight text-road tnum [font-variation-settings:'wdth'_75]">
-            {formatSize(pos.lots, market.sizePrecision)} {market.base.symbol}
           </p>
           <p className="mt-1 text-[12.5px] text-muted tnum">
             Entry {p(pos.entry)} · mark {mark !== null ? p(mark) : "—"} · margin {`${formatToken(pos.deposit, market.quote.decimals)} ${market.quote.symbol}`}
@@ -158,7 +158,7 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
             <li key={e.hash} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-[13px]">
               <span className="min-w-0">
                 <span className="text-road">
-                  {e.action === "open-long" ? "Long" : e.action === "open-short" ? "Short" : "Close"} {formatSize(remaining > 0n ? remaining : BigInt(e.lots), market.sizePrecision)} @{" "}
+                  {e.action === "open-long" ? "Long" : e.action === "open-short" ? "Short" : "Close"} {formatSize(remaining > 0n ? remaining : BigInt(e.lots), market.sizePrecision)} at{" "}
                   {p(BigInt(e.price))}
                 </span>
                 <span className="block text-[12px] text-muted tnum">

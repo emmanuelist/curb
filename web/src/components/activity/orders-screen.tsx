@@ -19,7 +19,7 @@ import { activeTradingKey } from "@/lib/curb/trading-session";
 import { formatPrice, formatSize } from "@/lib/format";
 import type { Side } from "@/lib/lane";
 import { MON_USDC, PERPS_ENABLED, type Market } from "@/lib/markets/registry";
-import { marketLabel } from "@/lib/markets/selected";
+import { marketLabel, venueName } from "@/lib/markets/selected";
 import { explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
 import type { CurbAccountRecord } from "@/lib/passkey/keys";
 import { useChainHistory } from "@/hooks/use-chain-history";
@@ -54,7 +54,8 @@ type Row = {
   market: Market;
   /** "Buy", "Long", "Close long": what the order does, in the venue's words. */
   word: string;
-  eyebrow: string;
+  /** " · 2×" on an order that opens a perp position, otherwise empty. */
+  leverage: string;
   side: Side;
   size: bigint;
   price: bigint;
@@ -84,7 +85,7 @@ function kuruRow(o: OrderView, account: Address): Row {
     at: entry.at,
     market: MON_USDC,
     word,
-    eyebrow: PERPS_ENABLED ? `${word} · ${marketLabel(MON_USDC)}` : word,
+    leverage: "",
     side: entry.side,
     size: BigInt(entry.size),
     price: BigInt(entry.price),
@@ -118,13 +119,13 @@ function perpRow(o: PerpOrderView, account: Address): Row {
   const { entry, market } = o;
   const word = PERP_WORD[entry.action];
   const id = entry.orderId;
-  const leverage = entry.action.startsWith("open") ? ` ${entry.leverageHdths / 100}×` : "";
+  const leverage = entry.action.startsWith("open") ? ` · ${entry.leverageHdths / 100}×` : "";
   return {
     hash: entry.hash,
     at: entry.at,
     market,
     word,
-    eyebrow: `${word}${leverage} · ${marketLabel(market)}`,
+    leverage,
     side: perpSide(entry.action),
     size: BigInt(entry.lots),
     price: BigInt(entry.price),
@@ -248,11 +249,17 @@ function OrderRow({ row, i, record, onCancelled }: { row: Row; i: number; record
   return (
     <article className="panel rise flex flex-col gap-3.5 p-4 md:p-5" style={{ "--i": i } as CSSProperties} aria-label={`${row.word} ${s(row.size)} ${market.base.symbol} at ${p(row.price)}`}>
       <header className="flex items-start justify-between gap-3">
+        {/* The order is the heading, as History words it; where it rests is the line under it, not a label above. */}
         <div className="min-w-0">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">{row.eyebrow}</p>
-          <p className="mt-0.5 font-display text-[22px] font-semibold leading-tight text-road tnum [font-variation-settings:'wdth'_75]">
-            {s(row.size)} {market.base.symbol} <span className="text-muted">@</span> {p(row.price)}
+          <p className="font-display text-[22px] font-semibold leading-tight text-road tnum [font-variation-settings:'wdth'_75]">
+            {row.word} {s(row.size)} {market.base.symbol} <span className="text-muted">at</span> {p(row.price)}
+            {row.leverage}
           </p>
+          {PERPS_ENABLED ? (
+            <p className="mt-0.5 text-[12.5px] text-muted">
+              {venueName(market)} {marketLabel(market)}
+            </p>
+          ) : null}
         </div>
         <span className={`pill shrink-0 ${open ? "border-road text-road" : "text-muted"}`}>{status}</span>
       </header>

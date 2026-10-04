@@ -58,7 +58,8 @@ export const TradeHero = memo(function TradeHero({ market, lane, bids, asks, dra
         fetchPriority="high"
         // The hero is phone-only (md:hidden); from md up the smallest candidate stands in, so desktop never downloads it.
         sizes="(min-width: 768px) 1px, 100vw"
-        className="pointer-events-none absolute left-0 top-[55px] -z-10 h-[348px] w-full object-cover"
+        // The plate's top fades into the ground under the header instead of starting on a hard line (the comp's edge).
+        className="pointer-events-none absolute left-0 top-[55px] -z-10 h-[348px] w-full object-cover [mask-image:linear-gradient(180deg,transparent,#000_56px)]"
       />
 
       <header className="relative h-[54px] px-[22px] pt-[24px]">

@@ -143,8 +143,12 @@ function MarketPanel({
   const open = lane?.status === "open" ? lane : null;
   return (
     <section aria-label="Market" className={`panel relative isolate flex min-h-[440px] flex-col justify-between overflow-hidden p-6 ${className ?? ""}`}>
-      <Image src="/plates/curb-photo.png" alt="" fill sizes="(min-width: 1280px) 33vw, 100vw" className="pointer-events-none -z-10 object-cover object-[70%_100%]" loading="eager" fetchPriority="high" />
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgb(11_13_15/0.94)_0%,rgb(11_13_15/0.88)_50%,rgb(11_13_15/0.12)_76%,rgb(11_13_15/0.6)_100%)]" aria-hidden="true" />
+      {/* The plate is a band at the panel's resting height, so the curb runs under the price however tall the column
+          makes the panel; its foot fades into the panel's own ground. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[440px] [mask-image:linear-gradient(180deg,#000_78%,transparent)]" aria-hidden="true">
+        <Image src="/plates/curb-photo.png" alt="" fill sizes="(min-width: 1280px) 33vw, 100vw" className="object-cover object-[70%_100%]" loading="eager" fetchPriority="high" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(11_13_15/0.94)_0%,rgb(11_13_15/0.88)_50%,rgb(11_13_15/0.12)_76%,rgb(11_13_15/0.6)_100%)]" />
+      </div>
       <div>
         <div className="flex items-start justify-between gap-4">
           <div className="w-full max-w-[340px]">

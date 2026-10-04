@@ -57,7 +57,7 @@ export function CurbAccountCard({ record, state, ownerMon, onChanged }: Props) {
         <div className="flex flex-col gap-5">
           <header className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 id={`${id}-h`} className="font-display text-[26px] font-bold uppercase leading-none tracking-[0.01em] text-road [font-variation-settings:'wdth'_75]">
+              <h2 id={`${id}-h`} className="text-[17px] font-semibold text-road">
                 Curb account
               </h2>
               <p className="mt-2 text-[13px] leading-relaxed text-muted">
