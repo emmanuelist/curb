@@ -122,8 +122,9 @@ export function AusdCard({
 }
 
 /**
- * MON on the owner key, swapped for AUSD through Kuru Flow (#56, D-026): the way in for someone who only has MON. The
- * quote is Kuru's estimate. Curb checks the transaction against it before Face ID and reads what arrived from the receipt.
+ * MON on the owner key, swapped for AUSD through Kuru Flow (#56, D-026): the way in for someone who only has MON. Kuru
+ * Flow picks the route; Monad prices it (D-027): the amount shown is the route simulated from the owner key, the minimum
+ * sits just under it, and what arrived is read from the receipt.
  */
 function Get({
   record,
@@ -165,7 +166,7 @@ function Get({
       const q = shown && Date.now() - quote.dataUpdatedAt < 10_000 ? shown : await quoteMonForAusd(record.owner, amount);
       const gas = await flowSwapGas(record.owner, q).catch(() => {
         void quote.refetch();
-        throw new FlowQuoteError("The price moved since this quote, so the swap would fail. A new quote is on its way.");
+        throw new FlowQuoteError("The route stopped paying its minimum since this quote, so the swap would fail. A new quote is on its way.");
       });
       setTx({ kind: "signing" });
       const hash = await keys.withOwnerKey(window.location.hostname, record, (owner) => sendFlowSwap(owner, q, gas));
@@ -187,7 +188,7 @@ function Get({
   };
 
   const line = shown
-    ? `At least ${formatToken(shown.minOut, 6)} · Kuru Flow quote${shown.feeBps > 0n ? ` · ${Number(shown.feeBps) / 100}% fee` : ""}`
+    ? `At least ${formatToken(shown.minOut, 6)} · Kuru Flow route, priced on Monad${shown.feeBps > 0n ? ` · ${Number(shown.feeBps) / 100}% fee` : ""}`
     : amount === null || amount === 0n || tooMuch
       ? "Kuru Flow finds the best route across Monad's exchanges."
       : quote.error
