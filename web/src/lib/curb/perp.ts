@@ -14,6 +14,17 @@ export const PERP_ORDER_TYPE: Record<PerpAction, number> = { "open-long": 0, "op
 export const perpSide = (action: PerpAction) => (action === "open-long" || action === "close-short" ? "buy" : "sell");
 
 /**
+ * How History names a Perpl order (#77). An open goes by its size. A close goes by what it traded on arrival, so one
+ * that walked a thin book and took 79 of 300 doesn't read as a full close, and one that hasn't traded isn't "Closed".
+ */
+export function perpOrderHeading(action: PerpAction, lots: bigint, filled: bigint, size: (n: bigint) => string): string {
+  const side = action.endsWith("long") ? "long" : "short";
+  if (action.startsWith("open")) return `${side === "long" ? "Long" : "Short"} ${size(lots)}`;
+  if (filled === 0n) return `Close ${side} ${size(lots)}`;
+  return filled < lots ? `Closed ${side} ${size(filled)} of ${size(lots)}` : `Closed ${side} ${size(lots)}`;
+}
+
+/**
  * Explicit gas limits for CurbAccount v2's Perpl paths. Monad charges the full limit, so each sits a little above
  * what the app's own transactions used under Monad rules on a mainnet fork (#51, E-022): create 2,140,933;
  * perplDeposit opening the Perpl account 250,099; a resting perplOrder 280,808; a taking one 339,217 (one level; each
