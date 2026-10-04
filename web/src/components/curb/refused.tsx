@@ -2,7 +2,7 @@ import { ExternalLink, X } from "lucide-react";
 import type { Address, Hash } from "viem";
 import { KeyGlyph } from "@/components/keys/signer";
 import { explorerUrl } from "@/lib/chain/clients";
-import type { Refusal } from "@/lib/curb/refusal";
+import { verdict, type Refusal } from "@/lib/curb/refusal";
 import { formatToken, shortAddress } from "@/lib/format";
 
 export type RefusedView = {
@@ -113,7 +113,7 @@ function Trail({ view, paid, pill }: { view: RefusedView; paid: string | null; p
         {paid ? ` · paid ${paid} MON gas` : ""} · nothing else moved
       </p>
       <a className={`pill mt-3 min-h-11 px-3 text-road ${pill}`} href={explorerUrl("tx", hash)} target="_blank" rel="noreferrer">
-        <span className="font-semibold uppercase tracking-[0.08em]">Rejected</span> ·{" "}
+        <span className="font-semibold uppercase tracking-[0.08em]">{verdict(view.refusal.by)}</span> ·{" "}
         <span className="figures text-[11px]">
           {hash.slice(0, 10)}…{hash.slice(-6)}
         </span>

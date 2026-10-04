@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { encodeErrorResult } from "viem";
 import { curbAccountAbi } from "@/lib/curb/abi";
-import { explainRefusal, feePaid, refusedBy } from "@/lib/curb/refusal";
+import { explainRefusal, feePaid, refusedBy, verdict } from "@/lib/curb/refusal";
 import { kuruErrorsAbi } from "@/lib/kuru/abi";
 import { MON_PERP, MON_USDC } from "@/lib/markets/registry";
 import { perplErrorsAbi } from "@/lib/perpl/abi";
@@ -93,5 +93,12 @@ describe("refusedBy", () => {
     expect(refusedBy("TakerOrderSettlementFailed")).toBe("perpl");
     expect(refusedBy(null)).toBe("unknown");
     expect(refusedBy("SomethingElse")).toBe("unknown");
+  });
+});
+
+describe("verdict", () => {
+  it("lets only the Curb account refuse; a venue or a reasonless revert rejects (D-032, #77)", () => {
+    expect([verdict("curb"), verdict("kuru"), verdict("perpl"), verdict("unknown")]).toEqual(["Refused", "Rejected", "Rejected", "Rejected"]);
+    expect(verdict(refusedBy("LeverageAboveCap"))).toBe("Refused");
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { encodeAbiParameters, encodeEventTopics, type Hex } from "viem";
-import { closePrice, perpOrderFromReceipt, perpOrderDesc, perpSide } from "@/lib/curb/perp";
+import { closePrice, perpOrderDesc, perpOrderFromReceipt, perpOrderHeading, perpSide } from "@/lib/curb/perp";
 import { MON_PERP } from "@/lib/markets/registry";
 import { perplExchangeAbi } from "@/lib/perpl/abi";
 
@@ -79,5 +79,18 @@ describe("perp orders", () => {
   it("never prices a close past the touch, however narrow the lane", () => {
     expect(closePrice("long", { bid: 100n, ask: 101n, minSell: 100n, maxBuy: 101n })).toBe(100n);
     expect(closePrice("short", { bid: 100n, ask: 101n, minSell: 100n, maxBuy: 101n })).toBe(101n);
+  });
+});
+
+describe("perpOrderHeading", () => {
+  const size = (n: bigint) => n.toString();
+  it("names a close by what it traded, so a partial close doesn't read as a full one (#77)", () => {
+    expect(perpOrderHeading("close-long", 300n, 300n, size)).toBe("Closed long 300");
+    expect(perpOrderHeading("close-long", 300n, 79n, size)).toBe("Closed long 79 of 300");
+    expect(perpOrderHeading("close-short", 300n, 0n, size)).toBe("Close short 300");
+  });
+  it("names an open by its size", () => {
+    expect(perpOrderHeading("open-long", 300n, 0n, size)).toBe("Long 300");
+    expect(perpOrderHeading("open-short", 2n, 2n, size)).toBe("Short 2");
   });
 });
