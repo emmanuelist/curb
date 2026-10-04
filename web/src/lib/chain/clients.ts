@@ -15,6 +15,17 @@ export const publicClient: PublicClient = createPublicClient({
   batch: { multicall: true },
 });
 
+/**
+ * Reads that come in waves (#40's history search): requests made within a few milliseconds go out as one JSON-RPC
+ * batch. The public RPC answers batches (40 historical nonce reads in 1.4 s, 2026-10-04).
+ */
+export const batchedClient: PublicClient = createPublicClient({
+  chain: monad,
+  // A background read: a slow node (or an anvil fork fetching history it hasn't cached) gets 30 s, not viem's 10, and
+  // the public RPC's occasional 429 under a burst gets more patient retries.
+  transport: http(rpcHttpUrl, { batch: { batchSize: 50, wait: 8 }, timeout: 30_000, retryCount: 5, retryDelay: 300 }),
+});
+
 let wsClient: PublicClient | null = null;
 
 /** Push subscriptions (new blocks). Browser only; one shared socket. */

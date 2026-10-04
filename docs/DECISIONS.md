@@ -355,3 +355,25 @@ Append-only. To change a decision, add a new entry that supersedes it.
 
 **Consequences:** in a thin book a close may fill well below the top bid, but never below the curb. Gas is paid on what the route needs plus 20%.
 **Evidence:** E-029.
+
+## D-029 · Orders and History are read from the chain; the device's ledger is a cache · 2026-10-04 · accepted
+**Context:** the Mera UX bounty's stateless test: judges clear local storage or open the app on a fresh device mid-demo, and identity and access must fully reconstruct from the passkey. Keys, the account and balances already did. Orders and History came from a per-device ledger (D-018), so a fresh device showed neither. Kuru's and Perpl's events aren't indexed by account, and the public RPC serves `eth_getLogs` over 100 blocks at a time.
+**Decision:** supersedes D-018's per-device scope.
+
+- When Orders or History opens, the app finds every transaction the owner and trading keys sent since the account was created and decodes each into the entry the device would have written.
+- The account's creation block comes from a parallel search on its code. Each transaction comes from a parallel search on the key's historical nonces, all nonces narrowed together, as JSON-RPC batches.
+- A resting order that left the book with no cancel from either key is traced to the block it left in, by a search on its slot; that block's logs give the fill.
+- A sync marker records how far the device matches the chain, so later visits read only what's new. Progress and elapsed time are shown while it runs.
+
+**Alternatives:**
+
+- Scanning logs per 100 blocks over the account's whole life: cost grows with age, not with activity.
+- An indexer: a backend, which breaks rule 1.
+
+**Consequences:**
+
+- A first read takes about 20 s for a few transactions on the public RPC; later visits take about 1 s.
+- Fills of an order that filled in parts are found only for its last part.
+- The public RPC may not serve state far in the past.
+
+**Evidence:** E-030.

@@ -77,6 +77,9 @@ export const KURU_MARGIN_ACCOUNT: Address = "0x2A68ba1833cDf93fa9Da1EEbd7F46242a
 export const CURB_FACTORY: Address =
   (process.env.NEXT_PUBLIC_CURB_FACTORY as Address | undefined) || "0xC3b37bfa0c4496005F01a9E92cD5d285398db000";
 
+/** The block CurbFactory v2 was deployed in (E-024): no account it makes can be older, so history searches start here. */
+export const CURB_FACTORY_BLOCK = process.env.NEXT_PUBLIC_CURB_FACTORY ? 0n : 110_314_645n;
+
 /** The v1 factory (#31): its accounts trade Kuru only. */
 const FACTORY_V1: Address = "0x633Bf378031d694Bcb8E39E6CF160efD75Af18e8";
 
