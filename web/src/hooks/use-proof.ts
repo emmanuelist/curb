@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import type { Address, Hash, Hex, LocalAccount, TransactionReceipt } from "viem";
 import type { RefusedView } from "@/components/curb/refused";
 import { publicClient } from "@/lib/chain/clients";
+import { confirm } from "@/lib/chain/confirm";
 import { dryRun } from "@/lib/curb/account";
 import { appendLedger } from "@/lib/curb/ledger";
 import { explainRefusal, feePaid, revertDataOf, type Attempt } from "@/lib/curb/refusal";
@@ -58,7 +59,7 @@ export function useProof() {
       setPhase({ kind: "sending" });
       const hash = await proof.send(key.account);
       setPhase({ kind: "confirming", hash });
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      const receipt = await confirm(hash);
       if (receipt.status === "success") {
         proof.onAccepted?.(receipt);
         setPhase({ kind: "idle" });

@@ -4,6 +4,7 @@ import { ArrowRight, ExternalLink } from "lucide-react";
 import { SessionLine } from "@/components/curb/session-line";
 import { KeyGlyph } from "@/components/keys/signer";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
+import { confirm, seconds, stopwatch } from "@/lib/chain/confirm";
 import type { RefusedView } from "@/components/curb/refused";
 import { crosses, GAS, GAS_PRICE_SEEN, restingOrderFromReceipt, sendPlaceOrder, takerFillFromReceipt } from "@/lib/curb/account";
 import { explainRefusal, feePaid, revertDataOf } from "@/lib/curb/refusal";
@@ -21,7 +22,7 @@ type Phase =
   | { kind: "idle" }
   | { kind: "sending" }
   | { kind: "confirming"; hash: Hash }
-  | { kind: "done"; hash: Hash; orderId: bigint | null; filled: bigint }
+  | { kind: "done"; hash: Hash; orderId: bigint | null; filled: bigint; ms: number }
   | { kind: "error"; problem: PasskeyProblem; hash?: Hash };
 
 type Props = {
@@ -125,12 +126,15 @@ export function PlaceOrder({ market, lane, side, price, size, notional, blocked,
     if (blocked || price === null || size === null || lane?.status !== "open") return;
     const key = activeTradingKey();
     if (!key) return;
+    // Tap to receipt: what "Confirmed in 0.9 s" reports (#44).
+    const lap = stopwatch();
     setPhase({ kind: "sending" });
     try {
       const takes = crosses(side, price, { bid: lane.bid, ask: lane.ask });
       const hash = await sendPlaceOrder(key.account, state.address, market, { side, price, size, takes });
       setPhase({ kind: "confirming", hash });
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      const receipt = await confirm(hash);
+      const ms = lap();
       if (receipt.status !== "success") {
         const data = await revertDataOf(publicClient, hash);
         const refusal = explainRefusal(data, "order", market);
@@ -152,7 +156,7 @@ export function PlaceOrder({ market, lane, side, price, size, notional, blocked,
         takerFill: filled.toString(),
         lane: { bid: lane.bid.toString(), ask: lane.ask.toString(), minSell: lane.minSell.toString(), maxBuy: lane.maxBuy.toString() },
       });
-      setPhase({ kind: "done", hash, orderId: rest?.orderId ?? null, filled });
+      setPhase({ kind: "done", hash, orderId: rest?.orderId ?? null, filled, ms });
     } catch (error) {
       setPhase({ kind: "error", problem: explainPasskeyError(error) });
     }
@@ -182,7 +186,9 @@ function PhaseLine({ phase, market }: { phase: Phase; market?: Market }) {
     return (
       <a className="pill mx-auto min-h-11 px-3 text-road" href={explorerUrl("tx", phase.hash)} target="_blank" rel="noreferrer">
         <span className="size-1.5 rounded-full bg-live" aria-hidden="true" />
-        <span className="text-live">Confirmed</span>
+        <span>
+          <span className="text-live">Confirmed</span> in {seconds(phase.ms)}
+        </span>
         {phase.orderId !== null ? ` · resting on Kuru #${phase.orderId}` : " · filled on arrival"}
         {market && phase.filled > 0n && phase.orderId !== null ? ` · ${formatSize(phase.filled, market.sizePrecision)} filled` : null}
         <ExternalLink size={13} aria-hidden="true" />

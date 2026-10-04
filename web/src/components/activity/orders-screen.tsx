@@ -10,7 +10,8 @@ import { EmptyPanel } from "@/components/curb/empty-state";
 import { SessionLine } from "@/components/curb/session-line";
 import { FilterTabs } from "@/components/curb/tabs";
 import { ScreenHeader } from "@/components/navigation/app-nav";
-import { explorerUrl, publicClient } from "@/lib/chain/clients";
+import { explorerUrl } from "@/lib/chain/clients";
+import { confirm } from "@/lib/chain/confirm";
 import { cancelledIdsFromReceipt, sendCancel } from "@/lib/curb/account";
 import { appendLedger, setCancelling } from "@/lib/curb/ledger";
 import { perpSide, sendPerpCancel } from "@/lib/curb/perp";
@@ -101,7 +102,7 @@ function kuruRow(o: OrderView, account: Address): Row {
           key: id,
           run: async (trader) => {
             const hash = await sendCancel(trader, account, MON_USDC, [BigInt(id)]);
-            const receipt = await publicClient.waitForTransactionReceipt({ hash });
+            const receipt = await confirm(hash);
             if (receipt.status !== "success") return REVERTED;
             const removed = cancelledIdsFromReceipt(receipt, MON_USDC, account).map(String);
             if (removed.length === 0) return { title: "Nothing to cancel.", body: "The order had already left Kuru's book." };
@@ -141,7 +142,7 @@ function perpRow(o: PerpOrderView, account: Address): Row {
           key: perpCancelKey(market.id, id),
           run: async (trader) => {
             const hash = await sendPerpCancel(trader, account, market, BigInt(id));
-            const receipt = await publicClient.waitForTransactionReceipt({ hash });
+            const receipt = await confirm(hash);
             if (receipt.status !== "success") return REVERTED;
             appendLedger(account, { kind: "perp-cancel", hash, at: Date.now(), market: market.id, orderId: id });
             return null;
