@@ -1,9 +1,9 @@
 # State
 
-_Last verified: 2026-10-04, branch `45-video-links`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-04, branch `m4-state`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
-**Milestone:** M2 done 2026-10-03 (E-019); now M3 · Proof surface (due 2026-10-11) · **Deadline:** 2026-10-13 23:59 ET · 9 days left
+**Milestone:** M3 · Proof surface done 2026-10-04 (#8; E-038, E-040); now M4 · submission · **Deadline:** 2026-10-13 23:59 ET · 9 days left
 **Next action:** the user adds "· voice: elevenlabs.io" to the three YouTube titles (ElevenLabs' free plan requires it in the title; the URLs don't change). Then M4: submit Track 1, Kuru, Mera UX and Agora with the answers in `internal/submission/answers.md` and the links in the README. After submission, return the demo funds (#61).
 **Blocked on:** Agora's answer on whether a mobile web app counts (#52).
 
