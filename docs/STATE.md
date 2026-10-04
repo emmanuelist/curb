@@ -1,10 +1,10 @@
 # State
 
-_Last verified: 2026-10-04, branch `m4-state`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-04, branch `9-titles`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M3 · Proof surface done 2026-10-04 (#8; E-038, E-040); now M4 · submission · **Deadline:** 2026-10-13 23:59 ET · 9 days left
-**Next action:** the user adds "· voice: elevenlabs.io" to the three YouTube titles (ElevenLabs' free plan requires it in the title; the URLs don't change). Then M4: submit Track 1, Kuru, Mera UX and Agora with the answers in `internal/submission/answers.md` and the links in the README. After submission, return the demo funds (#61).
+**Next action:** M4 (#9): the user submits on hackathon.monad.xyz in Track 1 and selects the Kuru, Mera UX and Agora bounties, pasting from `internal/submission/answers.md` (the Kuru roadmap and onboarding plan need the user's edit first). Submissions stay editable until the deadline. Then preflight from a phone on cellular. After submission, return the demo funds (#61).
 **Blocked on:** Agora's answer on whether a mobile web app counts (#52).
 
 ## Works
@@ -14,7 +14,7 @@ _Last verified: 2026-10-04, branch `m4-state`; repo: https://github.com/emmanuel
 | **Agora's flow on mainnet from the user's iPhone (#51, #56):** passkey → create the v2 account → Get 354.08 MON → 11.86 AUSD through Kuru Flow → onto Perpl → long 300 MON at 2× → 10× refused onchain (`LeverageAboveCap`) → a bid past the curb refused onchain (`PerpOffLane`) → closed | 8 txs found by nonce and decoded with traces; account source exact match | E-028 (2026-10-04) |
 | **Demand evidence (#46):** docs/DEMAND.md, with Binance's trade-only key permissions, HAPI's account of the 3Commas drain ($27.3M with trade-only keys) and a mainnet sample showing most Kuru and Perpl order flow signed by gas-only keys for contracts that hold the funds | public sources; `web/scripts/order-flow-sample.mjs` | E-037 (2026-10-04) |
 | **README as a proof surface (#43):** eight mainnet transactions (four onchain refusals) with their status read onchain, addresses, how it works, limits | all 25 links checked | PR #71 (2026-10-04) |
-| **Demo videos, public (#45, #52, D-034):** main 1:54, Agora 1:03, Mera 0:56, linked at the top of the README; fork scenes labelled, each refusal followed by its mainnet transaction | YouTube oEmbed and watch pages | E-040 (2026-10-04) |
+| **Demo videos, public (#45, #52, D-034):** main 1:54, Agora 1:03, Mera 0:56, linked at the top of the README; fork scenes labelled, each refusal followed by its mainnet transaction; titles credit elevenlabs.io | YouTube oEmbed and watch pages | E-040, E-041 (2026-10-04) |
 | **Two labels match what happened (#77):** a Curb refusal's pill says Refused, a venue's Rejected; History names a close by what it traded ("Closed long 79 of 300 MON") | unit tests; production bundle | E-039 (2026-10-04) |
 | **Order latency on mainnet (#44):** tap to receipt from the user's iPhone, median 1.4 s, p90 1.8 s over 17 trading-key transactions (orders median 1.55 s); a close refused when the bid moved led to D-033 (close 0.10% inside the curb), and the next close went through | screenshots matched to transactions by nonce | E-038 (2026-10-04) |
 | **Polish pass (#47):** every screen at 390 and 1280, two finish-review rounds (8 fixes resolved, 1 regression fixed). Venue rejections no longer wear the account's red (D-032); production Lighthouse: phone Trade 91–92 / 100 / 100 / 100, desktop 85–86 from here (99 locally, network-bound) | fork + Playwright; impeccable detect []; Lighthouse 12.8.2 | E-035, E-036 (2026-10-04) |
