@@ -422,3 +422,14 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** red for every revert. That makes red mean "failed", and the claim's proof, Curb refusing onchain, would share its colour with a venue's hiccup.
 **Consequences:** History's Refusals tab now holds only Curb's refusals. A rejection recorded before this change reclassifies from its stored error name, with no migration.
 **Evidence:** E-035.
+
+## D-033 · A one-tap close keeps 0.10% inside the curb (supersedes D-028's price) · 2026-10-04 · accepted
+**Context:** D-028 priced "Close now" exactly at the far curb (min sell for a long), the worst price the lane allows. On mainnet the user's close of a 1 MON long was refused (`PerpOffLane`, tx `0xa05bd67c…4518f1`). The app read the curb as 0.033334; by the block the close landed in, the bid had risen and the curb was 0.033340. The rule worked, but a close shouldn't fail because the market moved in the trader's favour, and the refusal cost 0.0459 MON of gas.
+**Decision:** the close is priced 0.10% of the touch inside the far curb: min sell + ceil(bid × 10 bps) for a long, max buy − floor(ask × 10 bps) for a short. It never goes past the touch (`closePrice` in `web/src/lib/curb/perp.ts`). For the refused close that is 34 ticks of headroom against the 6-tick move that refused it. The close still walks most of the lane (0.40% of the 0.50%), and D-028's measured gas limit is unchanged.
+**Alternatives:**
+
+- Retry after a refusal: that costs a second transaction and more gas.
+- Price at the touch: that walks nothing, so a thin top level would leave part of the position open (the reason for D-028).
+
+**Consequences:** "Close now · no worse than X" shows the new price. A move of more than 0.10% between reading the book and landing can still refuse a close, and the refusal says so.
+**Evidence:** unit tests on the mainnet case; the refusal above (E-038).

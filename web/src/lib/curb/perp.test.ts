@@ -68,9 +68,16 @@ describe("perp orders", () => {
     expect([perpSide("open-long"), perpSide("close-short"), perpSide("open-short"), perpSide("close-long")]).toEqual(["buy", "buy", "sell", "sell"]);
   });
 
-  it("prices a one-tap close at the lane's far curb, so it can walk the book", () => {
-    const lane = { minSell: 33_125n, maxBuy: 33_523n };
-    expect(closePrice("long", lane)).toBe(33_125n);
-    expect(closePrice("short", lane)).toBe(33_523n);
+  it("prices a one-tap close just inside the far curb, so it walks the book and survives a small move", () => {
+    // The mainnet refusal: the app's curb was 0.033334, and the bid rose so the curb was 0.033340 when the close landed.
+    const lane = { bid: 33_502n, ask: 33_550n, minSell: 33_334n, maxBuy: 33_717n };
+    expect(closePrice("long", lane)).toBe(33_368n); // 33,334 + ceil(33,502 × 0.10%)
+    expect(closePrice("long", lane)).toBeGreaterThanOrEqual(33_340n);
+    expect(closePrice("short", lane)).toBe(33_684n); // 33,717 − floor(33,550 × 0.10%)
+  });
+
+  it("never prices a close past the touch, however narrow the lane", () => {
+    expect(closePrice("long", { bid: 100n, ask: 101n, minSell: 100n, maxBuy: 101n })).toBe(100n);
+    expect(closePrice("short", { bid: 100n, ask: 101n, minSell: 100n, maxBuy: 101n })).toBe(101n);
   });
 });
