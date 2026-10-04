@@ -49,9 +49,10 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
   const mark = perp.mark;
   const p = (x: bigint) => formatPrice(x, market.pricePrecision);
   const usd = (x: bigint) => formatToken(x < 0n ? -x : x, market.quote.decimals);
-  const pnl = pos ? usd(pos.pnl) : "";
+  // Perpl figures PnL at its mark; when it calls the mark invalid there is no PnL to show, only a dash.
+  const pnl = pos && mark !== null ? usd(pos.pnl) : null;
   // Under a cent either way shows as 0.00, and a zero carries no sign.
-  const pnlSign = !pos || /^0\.0+$/.test(pnl) ? "" : pos.pnl > 0n ? "+" : "−";
+  const pnlSign = !pos || pnl === null || /^0\.0+$/.test(pnl) ? "" : pos.pnl > 0n ? "+" : "−";
 
   const run = async (send: (trader: LocalAccount) => Promise<Hash>, record: (hash: Hash, receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>>) => string) => {
     const key = activeTradingKey();
@@ -131,7 +132,7 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
             </span>
             <span className={`text-[13px] tnum ${pnlSign === "−" ? "text-muted" : "text-road"}`}>
               PnL at mark {pnlSign}
-              {`${pnl} ${market.quote.symbol}`}
+              {pnl === null ? "—" : `${pnl} ${market.quote.symbol}`}
             </span>
           </p>
           <p className="mt-1 text-[12.5px] text-muted tnum">
