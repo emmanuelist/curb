@@ -104,15 +104,16 @@ contract PerplProbeForkTest is Test {
         acct = EX.getAccountByAddr(address(probe));
         assertEq(acct.lockedBalanceCNS, 0, "nothing locked after cancel");
 
-        // 4. Take the best ask: open a 300 MON long at 10x.
-        probe.order(_desc(0, 0, ask, 300, false, true));
+        // 4. Take the asks: open a 300 MON long at 10x. Priced 0.5% through the best ask so the order can walk levels: the
+        //    live book's top level doesn't always hold 300 MON.
+        probe.order(_desc(0, 0, ask * 1005 / 1000, 300, false, true));
         (IPerplExchange.PositionInfoV2 memory pos,,) = EX.getPositionV2(MON_PERP, acct.accountId);
         console2.log("position lots", pos.lotLNS, "type", pos.positionType);
         assertEq(pos.lotLNS, 300, "long opened");
 
-        // 5. Close it against the best bid.
+        // 5. Close it into the bids, 0.5% through the best one for the same reason (on 2026-10-04 it held 79 MON).
         p = EX.getPerpetualInfo(MON_PERP);
-        probe.order(_desc(2, 0, p.maxBidPriceONS + p.basePricePNS, 300, false, true));
+        probe.order(_desc(2, 0, (p.maxBidPriceONS + p.basePricePNS) * 995 / 1000, 300, false, true));
         (pos,,) = EX.getPositionV2(MON_PERP, acct.accountId);
         assertEq(pos.lotLNS, 0, "long closed");
 

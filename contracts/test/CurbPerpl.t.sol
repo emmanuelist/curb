@@ -162,10 +162,12 @@ contract CurbPerplForkTest is Test {
     }
 
     function test_trader_opensAndClosesALong_insideTheLane() public {
-        (, uint256 ask) = _top();
+        // At the lane's edges, the curbs themselves: the furthest the trading key may go, so the order can walk the
+        // book's levels. The live top level doesn't always hold 300 MON (on 2026-10-04 the best bid held 79).
+        (uint256 maxBuy,) = account.perpLane(MON_PERP);
         vm.prank(trader);
         uint256 g = gasleft();
-        account.perplOrder(_order(0, ask, 300, CAP, false, true));
+        account.perplOrder(_order(0, maxBuy, 300, CAP, false, true));
         console2.log("perplOrder taking gas", g - gasleft());
 
         uint256 id = PERPL.getAccountByAddr(address(account)).accountId;
@@ -173,9 +175,9 @@ contract CurbPerplForkTest is Test {
         assertEq(pos.lotLNS, 300, "long opened at 5x");
         assertEq(pos.positionType, 0);
 
-        (uint256 bid,) = _top();
+        (, uint256 minSell) = account.perpLane(MON_PERP);
         vm.prank(trader);
-        account.perplOrder(_order(2, bid, 300, CAP, false, true));
+        account.perplOrder(_order(2, minSell, 300, CAP, false, true));
         (pos,,) = PERPL.getPositionV2(MON_PERP, id);
         assertEq(pos.lotLNS, 0, "long closed");
     }
