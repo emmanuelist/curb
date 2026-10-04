@@ -1,12 +1,27 @@
-import { createWalletClient, decodeFunctionData, erc20Abi, http, parseAbi, parseEventLogs, zeroAddress, type Address, type Hash, type Hex, type LocalAccount, type TransactionReceipt } from "viem";
+import {
+  createWalletClient,
+  decodeFunctionData,
+  decodeFunctionResult,
+  encodeFunctionData,
+  erc20Abi,
+  http,
+  parseAbi,
+  parseEventLogs,
+  zeroAddress,
+  type Address,
+  type Hash,
+  type Hex,
+  type LocalAccount,
+  type TransactionReceipt,
+} from "viem";
 import { chain, publicClient, rpcHttpUrl } from "@/lib/chain/clients";
 import { AUSD } from "@/lib/markets/registry";
 
 /**
  * Kuru Flow, Kuru's swap aggregator (docs.monad.xyz/guides/kuru-flow). It finds the best route across Monad's venues
  * (Kuru's books, Uniswap and others) and returns a transaction for its router. Curb uses it for one thing: turning MON
- * on the owner key into AUSD for futures margin (#56, D-026). The quote is Kuru's offchain estimate; the swap, its
- * minimum and the AUSD received are onchain.
+ * on the owner key into AUSD for futures margin (#56, D-026). Kuru Flow picks the route; Monad prices it. The route is
+ * simulated from the owner key, and the swap's minimum is set from what it pays (D-027).
  */
 export const KURU_FLOW_API = "https://ws.kuru.io";
 
@@ -15,6 +30,9 @@ export const KURU_FLOW_ROUTER: Address = "0xb3e6778480b2E488385E8205eA05E20060B8
 
 /** The most fee a quote may carry (Kuru's plus a referrer's), in basis points. Quotes on 2026-10-04 carried none. */
 export const MAX_FLOW_FEE_BPS = 50n;
+
+/** How far under the route's simulated payout the swap's minimum sits: room for the price to move before the block. */
+export const FLOW_FLOOR_BPS = 50n;
 
 /** The router's two swap entrypoints, from its verified source (src/entrypoint/KuruFlowEntrypoint.sol). */
 export const kuruFlowAbi = parseAbi([
@@ -25,10 +43,12 @@ export const kuruFlowAbi = parseAbi([
 ]);
 
 export type FlowQuote = {
-  /** AUSD Kuru Flow expects the route to return (6 decimals). An estimate. */
+  /** AUSD the route pays now (6 decimals): Kuru Flow's estimate until `priceOnchain` replaces it with a simulation. */
   out: bigint;
   /** The least AUSD the router will accept, written into the transaction: the swap reverts below it. */
   minOut: bigint;
+  /** Kuru Flow's own estimate, kept for comparison. */
+  estimate: bigint;
   feeBps: bigint;
   to: Address;
   data: Hex;
@@ -50,8 +70,8 @@ const refuse = (why: string) => new FlowQuoteError(`Curb won't sign this quote: 
 
 /**
  * The quote as something the owner key may sign, or a refusal. The transaction must call Kuru Flow's router, sell
- * exactly `amountIn` of MON for AUSD to the owner key itself, carry an onchain minimum no lower than the quote's, and
- * pay at most MAX_FLOW_FEE_BPS. The calldata is decoded and checked; the API's own fields aren't trusted alone.
+ * exactly `amountIn` of MON for AUSD to the owner key itself, and pay at most MAX_FLOW_FEE_BPS. The calldata is decoded
+ * and checked; the API's own fields aren't trusted alone. Its minimum is replaced later, from the chain (`priceOnchain`).
  */
 export function checkFlowQuote(raw: unknown, amountIn: bigint, user: Address): FlowQuote {
   const q = (raw ?? {}) as RawQuote;
@@ -70,11 +90,41 @@ export function checkFlowQuote(raw: unknown, amountIn: bigint, user: Address): F
   if (call.functionName === "executeSwapWithReceiver" && call.args[3].toLowerCase() !== user.toLowerCase()) throw refuse("it pays the AUSD to another address");
   if (intent.tokenUserSells !== zeroAddress || intent.amountUserSells !== amountIn) throw refuse("it sells something other than your MON");
   if (intent.tokenUserBuys.toLowerCase() !== AUSD.toLowerCase()) throw refuse("it buys something other than AUSD");
-  const quotedMin = BigInt(q.minOut ?? "0");
-  if (intent.minAmountUserBuys === 0n || intent.minAmountUserBuys < quotedMin) throw refuse("its onchain minimum is below the quote");
   const feeBps = fee.feeBps + fee.referrerFeeBps;
   if (feeBps > MAX_FLOW_FEE_BPS) throw refuse(`it carries a ${Number(feeBps) / 100}% fee`);
-  return { out: BigInt(q.output ?? "0"), minOut: intent.minAmountUserBuys, feeBps, to: KURU_FLOW_ROUTER, data, value: amountIn };
+  const estimate = BigInt(q.output ?? "0");
+  return { out: estimate, minOut: intent.minAmountUserBuys, estimate, feeBps, to: KURU_FLOW_ROUTER, data, value: amountIn };
+}
+
+/** The same swap with its onchain minimum replaced; the route and everything else stay as Kuru Flow wrote them. */
+export function withMinimum(data: Hex, minOut: bigint): Hex {
+  const call = decodeFunctionData({ abi: kuruFlowAbi, data });
+  if (call.functionName === "executeSwap") {
+    const [intent, fee, program] = call.args;
+    return encodeFunctionData({ abi: kuruFlowAbi, functionName: "executeSwap", args: [{ ...intent, minAmountUserBuys: minOut }, fee, program] });
+  }
+  const [intent, fee, program, receiver] = call.args;
+  return encodeFunctionData({ abi: kuruFlowAbi, functionName: "executeSwapWithReceiver", args: [{ ...intent, minAmountUserBuys: minOut }, fee, program, receiver] });
+}
+
+/**
+ * The quote priced by Monad rather than by Kuru's API. On 2026-10-04 Kuru Flow's estimates ran about 1% above what its
+ * route paid onchain, above even the minimum Kuru wrote in, so every swap reverted (`InsufficientAmountAfterFees`).
+ * The route is simulated from the owner key with no minimum; what it pays becomes `out`, and the minimum is set
+ * FLOW_FLOOR_BPS under that.
+ */
+export async function priceOnchain(q: FlowQuote, user: Address): Promise<FlowQuote> {
+  let out: bigint;
+  try {
+    const { data } = await publicClient.call({ account: user, to: q.to, data: withMinimum(q.data, 1n), value: q.value });
+    const call = decodeFunctionData({ abi: kuruFlowAbi, data: q.data });
+    out = data ? decodeFunctionResult({ abi: kuruFlowAbi, functionName: call.functionName, data }) : 0n;
+  } catch {
+    throw new FlowQuoteError("Kuru Flow's route doesn't run on Monad right now, so nothing was signed. A new quote is on its way.");
+  }
+  if (out === 0n) throw new FlowQuoteError("Kuru Flow's route pays nothing on Monad right now, so nothing was signed.");
+  const minOut = (out * (10_000n - FLOW_FLOOR_BPS)) / 10_000n;
+  return { ...q, out, minOut, data: withMinimum(q.data, minOut) };
 }
 
 /** Kuru Flow's bearer tokens are per address and last about a day; the API takes one quote a second per token. */
@@ -96,7 +146,7 @@ async function flowToken(user: Address, signal?: AbortSignal): Promise<string> {
   return body.token;
 }
 
-/** Kuru Flow's quote for swapping `amountIn` MON on `user` for AUSD, checked before anything can be signed. */
+/** Kuru Flow's route for swapping `amountIn` MON on `user` for AUSD: checked, then priced on Monad. */
 export async function quoteMonForAusd(user: Address, amountIn: bigint, signal?: AbortSignal): Promise<FlowQuote> {
   const token = await flowToken(user, signal);
   const res = await fetch(`${KURU_FLOW_API}/api/quote`, {
@@ -107,7 +157,7 @@ export async function quoteMonForAusd(user: Address, amountIn: bigint, signal?: 
   });
   if (res.status === 429) throw new FlowQuoteError("Kuru Flow takes one quote a second; the next one comes in a moment.");
   if (!res.ok) throw new FlowQuoteError(`Kuru Flow couldn't quote right now (${res.status}).`);
-  return checkFlowQuote(await res.json(), amountIn, user);
+  return priceOnchain(checkFlowQuote(await res.json(), amountIn, user), user);
 }
 
 /**

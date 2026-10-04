@@ -328,3 +328,14 @@ Append-only. To change a decision, add a new entry that supersedes it.
 - A price that moves past the minimum between dry run and block reverts the swap; only gas is spent.
 
 **Evidence:** E-026.
+
+## D-027 · Kuru Flow picks the route; Monad prices it · 2026-10-04 · accepted
+**Context:** the first mainnet swap from the user's phone (354.08 MON) was refused before Face ID. Kuru Flow's quotes ran about 1% above what their routes paid onchain, which put the payout below even the minimum Kuru wrote into the transaction, so the router would revert `KuruFlowEntrypoint_InsufficientAmountAfterFees()` (`0x5264a63f`). This supersedes D-026's "an onchain minimum no lower than the quote's".
+**Decision:** after checking the quote's transaction (router, function, tokens, amount, receiver, fee), the app simulates the route from the owner key with no minimum. What the route pays is shown as "You get about", and the swap's minimum is set 0.5% under it. Kuru Flow's own estimate is kept only for comparison.
+**Alternatives:**
+
+- A fixed 1.5–2% slippage on Kuru's quote: a looser floor than needed, and it still fails when the gap grows.
+- Uniswap v4 directly: a worse price (D-026).
+
+**Consequences:** the number on screen comes from Monad, not from Kuru, at the cost of one extra `eth_call` per quote. A move of more than 0.5% between the dry run and the block still reverts the swap, costing only gas.
+**Evidence:** E-027.
