@@ -7,7 +7,21 @@ import { perplErrorsAbi } from "@/lib/perpl/abi";
 
 // No error name appears twice across the three (checked 2026-10-03), so a decode names exactly one source.
 const errorsAbi = [...curbAccountAbi, ...kuruErrorsAbi, ...perplErrorsAbi] as const;
+const curbErrorNames: ReadonlySet<string> = new Set(curbAccountAbi.flatMap((e) => (e.type === "error" ? [e.name] : [])));
+const kuruErrorNames: ReadonlySet<string> = new Set(kuruErrorsAbi.map((e) => e.name));
 const perplErrorNames: ReadonlySet<string> = new Set(perplErrorsAbi.map((e) => e.name));
+
+/**
+ * Who stopped a transaction, from its error's name alone (History keeps only the name). A venue's error means Curb's
+ * account had already let the call through, since its own checks run first.
+ */
+export function refusedBy(error: string | null): Refusal["by"] {
+  if (error === null) return "unknown";
+  if (curbErrorNames.has(error)) return "curb";
+  if (kuruErrorNames.has(error)) return "kuru";
+  if (perplErrorNames.has(error)) return "perpl";
+  return "unknown";
+}
 
 /** What the key was trying to do, which decides the signage ("NO WITHDRAWAL" only makes sense for a withdrawal). */
 export type Attempt = "order" | "withdraw" | "cancel";
@@ -46,8 +60,9 @@ export function explainRefusal(data: Hex | null | undefined, attempt: Attempt, m
     body,
     ...extra,
   });
-  const kuru = (body: string): Refusal => ({ error: decoded?.errorName ?? null, by: "kuru", signage: ["REFUSED"], title: "Kuru refused it.", body });
-  const perpl = (body: string): Refusal => ({ error: decoded?.errorName ?? null, by: "perpl", signage: ["REFUSED"], title: "Perpl refused it.", body });
+  // Kuru and Perpl reject; only Curb's account refuses (DESIGN.md: red is the account's refusal, nothing else).
+  const kuru = (body: string): Refusal => ({ error: decoded?.errorName ?? null, by: "kuru", signage: [], title: "Kuru rejected it.", body });
+  const perpl = (body: string): Refusal => ({ error: decoded?.errorName ?? null, by: "perpl", signage: [], title: "Perpl rejected it.", body });
   const times = (hdths: bigint | number) => `${(Number(hdths) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 })}×`;
 
   switch (decoded?.errorName) {
@@ -129,13 +144,16 @@ export function explainRefusal(data: Hex | null | undefined, attempt: Attempt, m
     case "CloseOrderExceedsPosition":
     case "OrderSizeExceedsAvailableSize":
       return perpl("The close is larger than the open position.");
+    case "TakerOrderSettlementFailed":
+      // Perpl settles a taker only against a reference price under refPriceMaxAgeSec (60 s for MON) old (CONTEXT.md).
+      return perpl("Perpl couldn't settle it against the book just then: it needs a reference price under a minute old. Nothing traded; try again in a moment.");
     default:
-      if (decoded && perplErrorNames.has(decoded.errorName)) return perpl(`Perpl's rule: ${decoded.errorName}.`);
+      if (decoded && perplErrorNames.has(decoded.errorName)) return perpl(`One of Perpl's own checks stopped it. Nothing traded.`);
       return {
         error: null,
         by: "unknown",
-        signage: ["REFUSED"],
-        title: "Refused onchain.",
+        signage: [],
+        title: "It reverted onchain.",
         body: "The transaction reverted, and the chain didn't give back a reason Curb can read. The transaction page has the details.",
       };
   }

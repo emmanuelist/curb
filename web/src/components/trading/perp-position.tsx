@@ -49,9 +49,10 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
   const mark = perp.mark;
   const p = (x: bigint) => formatPrice(x, market.pricePrecision);
   const usd = (x: bigint) => formatToken(x < 0n ? -x : x, market.quote.decimals);
-  const pnl = pos ? usd(pos.pnl) : "";
+  // Perpl figures PnL at its mark; when it calls the mark invalid there is no PnL to show, only a dash.
+  const pnl = pos && mark !== null ? usd(pos.pnl) : null;
   // Under a cent either way shows as 0.00, and a zero carries no sign.
-  const pnlSign = !pos || /^0\.0+$/.test(pnl) ? "" : pos.pnl > 0n ? "+" : "−";
+  const pnlSign = !pos || pnl === null || /^0\.0+$/.test(pnl) ? "" : pos.pnl > 0n ? "+" : "−";
 
   const run = async (send: (trader: LocalAccount) => Promise<Hash>, record: (hash: Hash, receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>>) => string) => {
     const key = activeTradingKey();
@@ -124,15 +125,15 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
 
       {pos ? (
         <div className="rounded-[12px] border border-rule bg-asphalt p-3.5">
-          <p className="flex items-baseline justify-between gap-3">
-            <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">{pos.type}</span>
+          {/* The position is the heading ("Long 300 MON"), as on Orders and History; no label above it. */}
+          <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+            <span className="font-display text-[22px] font-semibold leading-tight text-road tnum [font-variation-settings:'wdth'_75]">
+              {pos.type === "long" ? "Long" : "Short"} {formatSize(pos.lots, market.sizePrecision)} {market.base.symbol}
+            </span>
             <span className={`text-[13px] tnum ${pnlSign === "−" ? "text-muted" : "text-road"}`}>
               PnL at mark {pnlSign}
-              {`${pnl} ${market.quote.symbol}`}
+              {pnl === null ? "—" : `${pnl} ${market.quote.symbol}`}
             </span>
-          </p>
-          <p className="mt-1 font-display text-[22px] font-semibold leading-tight text-road tnum [font-variation-settings:'wdth'_75]">
-            {formatSize(pos.lots, market.sizePrecision)} {market.base.symbol}
           </p>
           <p className="mt-1 text-[12.5px] text-muted tnum">
             Entry {p(pos.entry)} · mark {mark !== null ? p(mark) : "—"} · margin {`${formatToken(pos.deposit, market.quote.decimals)} ${market.quote.symbol}`}
@@ -158,16 +159,23 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
             <li key={e.hash} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-[13px]">
               <span className="min-w-0">
                 <span className="text-road">
-                  {e.action === "open-long" ? "Long" : e.action === "open-short" ? "Short" : "Close"} {formatSize(remaining > 0n ? remaining : BigInt(e.lots), market.sizePrecision)} @{" "}
+                  {e.action === "open-long" ? "Long" : e.action === "open-short" ? "Short" : "Close"} {formatSize(remaining > 0n ? remaining : BigInt(e.lots), market.sizePrecision)} at{" "}
                   {p(BigInt(e.price))}
                 </span>
                 <span className="block text-[12px] text-muted tnum">
                   #{e.orderId} · {e.leverageHdths / 100}×
                 </span>
               </span>
-              <button type="button" onClick={() => cancel(e.orderId!)} disabled={busy || !session || status === "cancelling"} className="btn btn-quiet min-h-11 shrink-0 px-4 text-[13px]">
-                {status === "cancelling" ? "Cancelling…" : "Cancel"}
-              </button>
+              {session ? (
+                <button type="button" onClick={() => cancel(e.orderId!)} disabled={busy || status === "cancelling"} className="btn btn-quiet min-h-11 shrink-0 px-4 text-[13px]">
+                  {status === "cancelling" ? "Cancelling…" : "Cancel"}
+                </button>
+              ) : (
+                // Locked, the button says how to get there, as on Orders, rather than sitting disabled.
+                <button type="button" onClick={unlocker.unlock} disabled={!unlocker.ready || unlocker.unlocking} className="btn btn-quiet min-h-11 shrink-0 px-4 text-[13px]">
+                  {unlocker.unlocking ? "Face ID…" : "Unlock to cancel"}
+                </button>
+              )}
             </li>
           ))}
         </ul>

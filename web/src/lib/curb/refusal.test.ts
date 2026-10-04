@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { encodeErrorResult } from "viem";
 import { curbAccountAbi } from "@/lib/curb/abi";
-import { explainRefusal, feePaid } from "@/lib/curb/refusal";
+import { explainRefusal, feePaid, refusedBy } from "@/lib/curb/refusal";
 import { kuruErrorsAbi } from "@/lib/kuru/abi";
 import { MON_PERP, MON_USDC } from "@/lib/markets/registry";
 import { perplErrorsAbi } from "@/lib/perpl/abi";
@@ -41,7 +41,8 @@ describe("explainRefusal", () => {
 
   it("never invents a reason it can't read", () => {
     for (const data of [null, undefined, "0x", "0xdeadbeef"] as const) {
-      expect(explainRefusal(data, "withdraw", MON_USDC)).toMatchObject({ error: null, by: "unknown", signage: ["REFUSED"] });
+      // No reason, no claim about who: not the account's red refusal, just a revert.
+      expect(explainRefusal(data, "withdraw", MON_USDC)).toMatchObject({ error: null, by: "unknown", signage: [], title: "It reverted onchain." });
     }
   });
 });
@@ -71,5 +72,26 @@ describe("explainRefusal on Perpl", () => {
   it("names Perpl for Perpl's own rules", () => {
     const data = encodeErrorResult({ abi: perplErrorsAbi, errorName: "CrossesBook", args: [10n, 5_394n, 33_376n, true, 33_376n, false] });
     expect(explainRefusal(data, "order", MON_PERP)).toMatchObject({ error: "CrossesBook", by: "perpl" });
+  });
+
+  it("calls a venue's no a rejection, without the account's stencil sign", () => {
+    // Seen on a fork whose clock ran past Perpl's 60-second price age (fork tx 0xc4f5ca39…). Arguments illustrative.
+    const data = encodeErrorResult({ abi: perplErrorsAbi, errorName: "TakerOrderSettlementFailed", args: [10n, 5_400n, 33_090n, 33_090n, 33_090n, 0n, 300n, 1n] });
+    const r = explainRefusal(data, "order", MON_PERP);
+    expect(r).toMatchObject({ error: "TakerOrderSettlementFailed", by: "perpl", title: "Perpl rejected it.", signage: [] });
+    expect(r.body).toContain("Nothing traded");
+    expect(explainRefusal(encodeErrorResult({ abi: kuruErrorsAbi, errorName: "PostOnlyError" }), "order", MON_USDC)).toMatchObject({ title: "Kuru rejected it.", signage: [] });
+  });
+});
+
+describe("refusedBy", () => {
+  it("tells the account's refusals from a venue's rejections by the error's name alone", () => {
+    expect(refusedBy("OffLane")).toBe("curb");
+    expect(refusedBy("NotOwner")).toBe("curb");
+    expect(refusedBy("LeverageAboveCap")).toBe("curb");
+    expect(refusedBy("PostOnlyError")).toBe("kuru");
+    expect(refusedBy("TakerOrderSettlementFailed")).toBe("perpl");
+    expect(refusedBy(null)).toBe("unknown");
+    expect(refusedBy("SomethingElse")).toBe("unknown");
   });
 });

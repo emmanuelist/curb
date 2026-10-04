@@ -69,7 +69,7 @@ export function AusdCard({
       <div className="kerb-painted -mx-5 -mt-5 rounded-t-[15px]" aria-hidden="true" />
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="ausd-h" className="font-display text-[22px] font-bold uppercase leading-none text-road [font-variation-settings:'wdth'_75]">
+          <h2 id="ausd-h" className="text-[17px] font-semibold text-road">
             AUSD · futures margin
           </h2>
           <p className="mt-2 max-w-[60ch] text-[13px] leading-relaxed text-muted">

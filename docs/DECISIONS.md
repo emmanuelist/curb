@@ -410,3 +410,15 @@ Append-only. To change a decision, add a new entry that supersedes it.
 
 **Consequences:** The countdown re-renders once a second while unlocked, only in the rows that show it.
 **Evidence:** E-034.
+
+## D-032 · Only the Curb account refuses; a venue rejects · 2026-10-04 · accepted
+**Context:** The polish pass (#47) found Perpl's own rejection of an order (`TakerOrderSettlementFailed`) drawn as the account's red refusal plate, and filed in History's Refusals tab. DESIGN.md binds stop red to "a refusal made onchain by the Curb account", and the product's claim rests on that red meaning exactly one thing.
+**Decision:** a transaction is classed by its error's name (`refusedBy` in `web/src/lib/curb/refusal.ts`).
+
+- **The account's own error** (`OffLane`, `NotOwner`, `LeverageAboveCap`, …): the red plate, and History's Refusals tab.
+- **Kuru's or Perpl's error:** a neutral panel, "Perpl rejected it." It adds that the account allowed it, which is always true, since the account's checks run before the venue is called. History lists it as "Rejected by Perpl" under Trades (or Transfers for a withdrawal).
+- **No readable reason:** "It reverted onchain." It makes no claim about who refused.
+
+**Alternatives:** red for every revert. That makes red mean "failed", and the claim's proof, Curb refusing onchain, would share its colour with a venue's hiccup.
+**Consequences:** History's Refusals tab now holds only Curb's refusals. A rejection recorded before this change reclassifies from its stored error name, with no migration.
+**Evidence:** E-035.
