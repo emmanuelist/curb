@@ -1,10 +1,10 @@
 # State
 
-_Last verified: 2026-10-04, branch `44-latency-evidence`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-04, branch `77-evidence`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M2 done 2026-10-03 (E-019); now M3 · Proof surface (due 2026-10-11) · **Deadline:** 2026-10-13 23:59 ET · 9 days left
-**Next action:** the recording session for the videos (#45, #52; run of show in `internal/demo/`). It needs the user's yes on about 200 MON for the Kuru beats and a voice choice (ElevenLabs key or their own voice). The trading key holds about 0.13 MON after the latency run, so it needs gas for the recording too. #43 waits only on the video link. After submission, return the demo funds (#61).
+**Next action:** the user watches the three cuts in `internal/demo/remotion/out/` (main `curb-main.mp4` 1:54 for Track 1 and Kuru; `curb-agora.mp4` 1:03 for Agora; `curb-mera.mp4` 0:56 for Mera; made by the agent per D-034, no new MON spent), uploads them to YouTube as Public and sends the links. Then the links go into the README (#43) and EVIDENCE, closing #45 and #52. After submission, return the demo funds (#61).
 **Blocked on:** Agora's answer on whether a mobile web app counts (#52).
 
 ## Works
@@ -14,6 +14,7 @@ _Last verified: 2026-10-04, branch `44-latency-evidence`; repo: https://github.c
 | **Agora's flow on mainnet from the user's iPhone (#51, #56):** passkey → create the v2 account → Get 354.08 MON → 11.86 AUSD through Kuru Flow → onto Perpl → long 300 MON at 2× → 10× refused onchain (`LeverageAboveCap`) → a bid past the curb refused onchain (`PerpOffLane`) → closed | 8 txs found by nonce and decoded with traces; account source exact match | E-028 (2026-10-04) |
 | **Demand evidence (#46):** docs/DEMAND.md, with Binance's trade-only key permissions, HAPI's account of the 3Commas drain ($27.3M with trade-only keys) and a mainnet sample showing most Kuru and Perpl order flow signed by gas-only keys for contracts that hold the funds | public sources; `web/scripts/order-flow-sample.mjs` | E-037 (2026-10-04) |
 | **README as a proof surface (#43):** eight mainnet transactions (four onchain refusals) with their status read onchain, addresses, how it works, limits | all 25 links checked | PR #71 (2026-10-04) |
+| **Two labels match what happened (#77):** a Curb refusal's pill says Refused, a venue's Rejected; History names a close by what it traded ("Closed long 79 of 300 MON") | unit tests; production bundle | E-039 (2026-10-04) |
 | **Order latency on mainnet (#44):** tap to receipt from the user's iPhone, median 1.4 s, p90 1.8 s over 17 trading-key transactions (orders median 1.55 s); a close refused when the bid moved led to D-033 (close 0.10% inside the curb), and the next close went through | screenshots matched to transactions by nonce | E-038 (2026-10-04) |
 | **Polish pass (#47):** every screen at 390 and 1280, two finish-review rounds (8 fixes resolved, 1 regression fixed). Venue rejections no longer wear the account's red (D-032); production Lighthouse: phone Trade 91–92 / 100 / 100 / 100, desktop 85–86 from here (99 locally, network-bound) | fork + Playwright; impeccable detect []; Lighthouse 12.8.2 | E-035, E-036 (2026-10-04) |
 | **The trading session's scope and expiry, stated and enforced (#42, D-031):** the unlock step says what the key can't do; every ticket state and Orders show the time left and Lock; 15 minutes unused locks every screen cleanly, and a key past its deadline can't sign even when the timer was held back | fork + Playwright (virtual passkey, ceremony counter, fake clock) + `cast nonce`; 5 unit tests | E-034 (2026-10-04) |
