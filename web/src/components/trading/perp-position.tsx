@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useState, type CSSProperties } from "react";
 import { ChevronRight, ExternalLink } from "lucide-react";
-import type { Hash } from "viem";
+import type { Hash, LocalAccount } from "viem";
 import type { RefusedView } from "@/components/curb/refused";
 import { RefusedMoment } from "@/components/curb/refused";
 import { KeyGlyph } from "@/components/keys/signer";
@@ -53,13 +53,13 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
   // Under a cent either way shows as 0.00, and a zero carries no sign.
   const pnlSign = !pos || /^0\.0+$/.test(pnl) ? "" : pos.pnl > 0n ? "+" : "−";
 
-  const run = async (send: () => Promise<Hash>, record: (hash: Hash, receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>>) => string) => {
+  const run = async (send: (trader: LocalAccount) => Promise<Hash>, record: (hash: Hash, receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>>) => string) => {
     const key = activeTradingKey();
     if (!key) return;
     setRefused(null);
     setTx({ kind: "sending" });
     try {
-      const hash = await send();
+      const hash = await send(key.account);
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") {
         const refusal = explainRefusal(await revertDataOf(publicClient, hash), "order", market);
@@ -83,10 +83,7 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
     const limit = closePrice(pos.type, lane);
     const order = { action, price: limit, lots: pos.lots, leverageHdths: BigInt(Math.min(state.perps.capHdths ?? 100, 100)), postOnly: false };
     void run(
-      async () => {
-        const trader = activeTradingKey()!.account;
-        return sendPerpOrder(trader, state.address, market, order, await takingGas(trader.address, state.address, market, order));
-      },
+      async (trader) => sendPerpOrder(trader, state.address, market, order, await takingGas(trader.address, state.address, market, order)),
       (hash, receipt) => {
         const fill = perpOrderFromReceipt(receipt, market, perp.accountId);
         const price = fill.avgPrice ?? limit;
@@ -103,7 +100,7 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
     // Held as in flight until the receipt is handled, so the order reads as cancelling rather than vanishing early.
     const flight = perpCancelKey(market.id, orderId);
     setCancelling([flight], true);
-    void run(() => sendPerpCancel(activeTradingKey()!.account, state.address, market, BigInt(orderId)), (hash) => {
+    void run((trader) => sendPerpCancel(trader, state.address, market, BigInt(orderId)), (hash) => {
       appendLedger(state.address, { kind: "perp-cancel", hash, at: now(), market: market.id, orderId });
       return `Cancelled #${orderId}`;
     }).finally(() => setCancelling([flight], false));

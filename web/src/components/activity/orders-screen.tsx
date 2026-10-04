@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { ClipboardList, ExternalLink, Lock } from "lucide-react";
+import { ClipboardList, ExternalLink } from "lucide-react";
 import type { Address, Hash, LocalAccount } from "viem";
 import { ChainSync } from "@/components/activity/chain-sync";
 import { LanePreview } from "@/components/activity/lane-preview";
 import { KeyGlyph } from "@/components/keys/signer";
 import { EmptyPanel } from "@/components/curb/empty-state";
+import { SessionLine } from "@/components/curb/session-line";
 import { FilterTabs } from "@/components/curb/tabs";
 import { ScreenHeader } from "@/components/navigation/app-nav";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
@@ -14,7 +15,7 @@ import { cancelledIdsFromReceipt, sendCancel } from "@/lib/curb/account";
 import { appendLedger, setCancelling } from "@/lib/curb/ledger";
 import { perpSide, sendPerpCancel } from "@/lib/curb/perp";
 import { perpCancelKey, type PerpOrderStatus } from "@/lib/curb/perp-orders";
-import { activeTradingKey, lockTrading } from "@/lib/curb/trading-session";
+import { activeTradingKey } from "@/lib/curb/trading-session";
 import { formatPrice, formatSize } from "@/lib/format";
 import type { Side } from "@/lib/lane";
 import { MON_USDC, PERPS_ENABLED, type Market } from "@/lib/markets/registry";
@@ -174,7 +175,7 @@ export function OrdersScreen() {
         <div role="tabpanel" aria-label={TABS.find((t) => t.id === tab)?.label} className="flex flex-col gap-3">
           {shown.length > 0 && record && account ? (
             <>
-              {tab === "open" ? <SessionBar /> : null}
+              {tab === "open" ? <SessionLine scope="cancels sign with no prompt" /> : null}
               {shown.map((row, i) => (
                 <OrderRow key={row.hash} row={row} i={i + 3} record={record} onCancelled={refetch} />
               ))}
@@ -198,25 +199,6 @@ export function OrdersScreen() {
         {rows.length > 0 ? <p className="px-1 text-[12px] text-muted">Orders your trading key sent, found on Monad. Each status is read from {VENUES.books}.</p> : null}
       </div>
     </main>
-  );
-}
-
-/** Shown while the trading key is unlocked in this tab: cancels sign with no prompt, and it can be locked from here. */
-function SessionBar() {
-  const session = useTradingSession();
-  if (!session) return null;
-  return (
-    <div className="rise flex items-center justify-between gap-2 rounded-[12px] border border-rule bg-panel py-1.5 pl-4 pr-1.5 text-[12.5px] text-muted" style={{ "--i": 3 } as CSSProperties}>
-      <span className="flex items-center gap-2">
-        <span className="text-road">
-          <KeyGlyph role="trading" size={15} />
-        </span>
-        Trading key unlocked · cancels sign with no prompt
-      </span>
-      <button type="button" onClick={lockTrading} className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-3 text-road hover:bg-high">
-        <Lock size={12} aria-hidden="true" /> Lock
-      </button>
-    </div>
   );
 }
 

@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowRight, ExternalLink, Lock } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import type { Hash } from "viem";
 import type { RefusedView } from "@/components/curb/refused";
+import { SessionLine } from "@/components/curb/session-line";
 import { KeyGlyph } from "@/components/keys/signer";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
 import { appendLedger } from "@/lib/curb/ledger";
 import { perpOrderFromReceipt, sendPerpOrder, takingGas, type PerpAction } from "@/lib/curb/perp";
 import { explainRefusal, feePaid, revertDataOf } from "@/lib/curb/refusal";
-import { activeTradingKey, lockTrading } from "@/lib/curb/trading-session";
+import { activeTradingKey, IDLE_MINUTES } from "@/lib/curb/trading-session";
 import { formatPrice, formatSize, formatToken } from "@/lib/format";
 import type { Lane } from "@/lib/lane";
 import type { Market } from "@/lib/markets/registry";
@@ -85,7 +86,11 @@ export function PerpPlaceOrder({ market, lane, action, price, lots, leverageHdth
           <KeyGlyph role="trading" size={19} />
           {unlocker.unlocking ? "Waiting for Face ID…" : "Unlock trading · Face ID once"}
         </button>
-        <Note>After one Face ID, orders and cancels sign without a prompt until you lock it, leave, or 15 minutes pass unused.</Note>
+        <SessionLine />
+        <Note>
+          One Face ID unlocks the trading key in this tab: it places and cancels orders inside the lane with no prompt. It can never withdraw: your Curb
+          account refuses that onchain. It locks when you tap Lock, close the tab, or after {IDLE_MINUTES} minutes unused.
+        </Note>
         <PhaseLine phase={unlocker.problem ? { kind: "error", problem: unlocker.problem } : phase} market={market} />
       </Cta>
     );
@@ -138,12 +143,7 @@ export function PerpPlaceOrder({ market, lane, action, price, lots, leverageHdth
       <button type="button" onClick={place} disabled={blocked || busy} className="btn btn-primary w-full">
         {phase.kind === "sending" ? "Signing…" : phase.kind === "confirming" ? "Confirming on Monad…" : `${WORD[action]} ${sizeText} ${market.base.symbol}${closing ? "" : ` · ${lev}`}`}
       </button>
-      <p className="flex items-center justify-center gap-2 text-center text-[12px] text-muted">
-        <span>Trading key unlocked · no prompt</span>
-        <button type="button" onClick={lockTrading} className="-my-2 inline-flex min-h-11 items-center gap-1 rounded-full px-3 text-road hover:bg-high">
-          <Lock size={12} aria-hidden="true" /> Lock
-        </button>
-      </p>
+      <SessionLine />
       <PhaseLine phase={phase} market={market} />
     </Cta>
   );
@@ -156,6 +156,8 @@ function Go({ href, label, note, children }: { href: string; label: string; note
         {label} <ArrowRight size={18} strokeWidth={2.2} aria-hidden="true" />
       </Link>
       <Note>{note}</Note>
+      {/* The key can be unlocked from another market while this one waits on a step: its clock still shows. */}
+      <SessionLine />
       {children}
     </Cta>
   );
@@ -176,7 +178,7 @@ function Cta({ children }: { children: React.ReactNode }) {
 }
 
 function Note({ children }: { children: React.ReactNode }) {
-  return <p className="text-center text-[12px] leading-relaxed text-muted">{children}</p>;
+  return <p className="text-center text-[12px] leading-relaxed text-pretty text-muted">{children}</p>;
 }
 
 /** What an order did, in full: resting, all traded, part traded, or nothing (an immediate order's rest is cancelled). */
