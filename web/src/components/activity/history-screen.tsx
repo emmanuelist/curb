@@ -8,6 +8,7 @@ import { FilterTabs } from "@/components/curb/tabs";
 import { ScreenHeader } from "@/components/navigation/app-nav";
 import { explorerUrl } from "@/lib/chain/clients";
 import type { LedgerEntry } from "@/lib/curb/ledger";
+import { perpOrderHeading } from "@/lib/curb/perp";
 import { refusedBy } from "@/lib/curb/refusal";
 import { formatPrice, formatSize, formatToken, shortAddress } from "@/lib/format";
 import { MARKETS, MON_USDC, PERPS_ENABLED } from "@/lib/markets/registry";
@@ -159,11 +160,11 @@ function describe(e: LedgerEntry): { title: string; detail: string; signer: "own
     }
     case "perp-order": {
       const m = MARKETS.find((x) => x.id === e.market) ?? market;
-      const word = { "open-long": "Long", "open-short": "Short", "close-long": "Closed long", "close-short": "Closed short" }[e.action];
-      const traded = BigInt(e.filled) > 0n ? `${formatSize(BigInt(e.filled), m.sizePrecision)} traded on arrival` : "";
+      const size = (n: bigint) => formatSize(n, m.sizePrecision);
+      const traded = BigInt(e.filled) > 0n ? `${size(BigInt(e.filled))} traded on arrival` : "";
       const rest = e.orderId ? `resting on Perpl as #${e.orderId}` : "";
       return {
-        title: `${word} ${formatSize(BigInt(e.lots), m.sizePrecision)} ${m.base.symbol} at ${formatPrice(BigInt(e.price), m.pricePrecision)}${e.action.startsWith("open") ? ` · ${e.leverageHdths / 100}×` : ""}`,
+        title: `${perpOrderHeading(e.action, BigInt(e.lots), BigInt(e.filled), size)} ${m.base.symbol} at ${formatPrice(BigInt(e.price), m.pricePrecision)}${e.action.startsWith("open") ? ` · ${e.leverageHdths / 100}×` : ""}`,
         detail: [traded, rest].filter(Boolean).join(", ") || "on Perpl",
         signer: "trading",
       };
