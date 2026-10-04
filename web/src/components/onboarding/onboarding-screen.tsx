@@ -7,7 +7,7 @@ import { ArrowRight, Check, Copy, Menu } from "lucide-react";
 import { Wordmark } from "@/components/curb/wordmark";
 import { KeyGlyph } from "@/components/keys/signer";
 import { CopyAddress } from "@/components/keys/copy-address";
-import type { KeyRole } from "@/lib/passkey/keys";
+import type { KeyRole, KeyStage } from "@/lib/passkey/keys";
 import { usePasskeyKeys } from "@/hooks/use-passkey-keys";
 import { detectPasskeyEnvironment, explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
 import { saveAccount } from "@/lib/passkey/store";
@@ -16,7 +16,7 @@ import { useAccount } from "@/hooks/use-account";
 const noop = () => () => {};
 const useIsClient = () => useSyncExternalStore(noop, () => true, () => false);
 
-type Phase = { kind: "idle" } | { kind: "working"; mode: "create" | "sign-in"; stage: KeyRole } | { kind: "error"; problem: PasskeyProblem };
+type Phase = { kind: "idle" } | { kind: "working"; mode: "create" | "sign-in"; stage: KeyStage } | { kind: "error"; problem: PasskeyProblem };
 
 /** Onboarding: one passkey, two keys (D-011 amendment 4). Guards run before any ceremony. */
 export function OnboardingScreen() {
@@ -64,7 +64,7 @@ export function OnboardingScreen() {
     if (!keys) return;
     const rpId = window.location.hostname;
     try {
-      const onStage = (stage: KeyRole) => setPhase({ kind: "working", mode, stage });
+      const onStage = (stage: KeyStage) => setPhase({ kind: "working", mode, stage });
       const record = mode === "create" ? await keys.createAccount(rpId, onStage) : await keys.signIn(rpId, onStage);
       saveAccount(record);
       setPhase({ kind: "idle" });
@@ -75,13 +75,12 @@ export function OnboardingScreen() {
 
   const working = phase.kind === "working" ? phase : null;
 
+  // One Face ID makes both keys (#41). A device that can't evaluate two PRF inputs at once asks again for the second.
   const stateOf = (role: KeyRole): StepState => {
     if (!working) return "idle";
-    if (working.stage === role) return "active";
-    const order: KeyRole[] = working.mode === "create" ? ["owner", "trading"] : ["trading", "owner"];
-    return order.indexOf(role) < order.indexOf(working.stage) ? "done" : "waiting";
+    if (working.stage === "both" || working.stage === role) return "active";
+    return "done";
   };
-  const promptNumber = working ? (working.mode === "create" ? (working.stage === "owner" ? 1 : 2) : working.stage === "trading" ? 1 : 2) : null;
 
   return (
     <Shell title={<>One passkey.<br />Two keys.</>} lede="No seed phrase, no wallet app. Your passkey makes both keys on this device each time you need them. Neither is stored.">
@@ -98,7 +97,7 @@ export function OnboardingScreen() {
         {working ? (
           <p className="pill h-8 px-3 text-road">
             <span className="block-pulse size-1.5 rounded-full bg-kerb [--pulse:var(--owner-key)]" aria-hidden="true" />
-            Face ID {promptNumber} of 2 · {working.stage === "owner" ? "owner key" : "trading key"}
+            {working.stage === "both" ? "Face ID · makes both keys" : `Face ID once more · ${working.stage === "owner" ? "owner key" : "trading key"}`}
           </p>
         ) : phase.kind === "error" ? (
           <Problem problem={phase.problem} />
@@ -115,7 +114,7 @@ export function OnboardingScreen() {
         </button>
       </div>
       <p className="rise mt-4 text-center text-[12px] leading-relaxed text-muted" style={{ "--i": 4 } as CSSProperties}>
-        You&apos;ll see Face ID (or your device PIN) twice: once for each key.
+        One Face ID (or your device PIN) makes both keys. A few devices ask a second time.
       </p>
     </Shell>
   );
@@ -173,7 +172,7 @@ function StepCard({ role, state, step, i, children }: { role: KeyRole; state: St
         <p className="flex items-center justify-between gap-2">
           <span className={`text-[16px] font-semibold ${owner ? "text-kerb" : "text-road"}`}>{owner ? "Owner key" : "Trading key"}</span>
           <span className="text-[12px] text-muted">
-            {state === "done" ? "Ready" : active ? "Waiting for Face ID" : step ? `Face ID ${step} of 2` : null}
+            {state === "done" ? "Ready" : active ? "Waiting for Face ID" : step ? "Made by your passkey" : null}
           </span>
         </p>
         <div className="mt-1 text-[13px] leading-relaxed text-muted">{children}</div>

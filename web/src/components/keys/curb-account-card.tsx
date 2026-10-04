@@ -90,7 +90,11 @@ export function CurbAccountCard({ record, state, ownerMon, onChanged }: Props) {
 
           {state ? (
             <div>
-              {!live ? <p className="mb-2 text-[12px] text-muted">Its address is fixed by your two keys, before it exists.</p> : null}
+              {!live ? (
+                <p className="mb-2 text-[12px] leading-relaxed text-muted">
+                  Its address is fixed by your two keys, before it exists. <span className="text-road">Don&apos;t send funds here yet:</span> MON for gas goes to your owner key.
+                </p>
+              ) : null}
               <CopyAddress address={state.address} />
             </div>
           ) : null}
@@ -174,6 +178,10 @@ function Create({ record, account, ownerMon, onChanged }: { record: CurbAccountR
   const fee = GAS.create * GAS_PRICE_SEEN;
   const short = ownerMon !== null && ownerMon < fee + GAS_HEADROOM;
   const busy = tx.kind === "signing" || tx.kind === "sent";
+  // Funding is the slow step (#41): remember that the key was short, so the moment MON lands can be said out loud.
+  const [wasShort, setWasShort] = useState(false);
+  if (short && !wasShort) setWasShort(true);
+  const arrived = wasShort && !short && ownerMon !== null;
 
   const create = async () => {
     if (!keys) return;
@@ -214,8 +222,25 @@ function Create({ record, account, ownerMon, onChanged }: { record: CurbAccountR
         <KeyGlyph role="owner" size={20} />
         {tx.kind === "signing" ? "Waiting for Face ID…" : tx.kind === "sent" ? "Confirming on Monad…" : "Create with Face ID"}
       </button>
+      {short ? (
+        <div className="flex flex-col gap-3 rounded-[12px] border border-dashed border-rule-strong px-3.5 py-3">
+          <p className="text-[13px] leading-relaxed text-muted">
+            Your owner key holds {formatToken(ownerMon ?? 0n, 18, 4)} MON; creating needs about {formatToken(fee + GAS_HEADROOM, 18, 2)} MON. Send MON on the{" "}
+            <span className="text-road">Monad</span> network to your owner key:
+          </p>
+          <CopyAddress address={record.owner} />
+          <p className="flex items-center gap-2 text-[12.5px] text-muted">
+            <span className="size-1.5 shrink-0 rounded-full bg-faint motion-safe:animate-pulse" aria-hidden="true" />
+            Watching your owner key on Monad. This moves on by itself when the MON lands.
+          </p>
+        </div>
+      ) : null}
       <div aria-live="polite" className="text-[13px] empty:hidden">
-        {short ? <p className="text-muted">Your owner key holds {formatToken(ownerMon ?? 0n, 18, 4)} MON; creating needs about {formatToken(fee + GAS_HEADROOM, 18, 2)} MON.</p> : null}
+        {arrived && tx.kind === "idle" ? (
+          <p className="text-road">
+            <span className="text-live">MON arrived</span> · {formatToken(ownerMon, 18, 4)} MON on your owner key. Create the account when you&apos;re ready.
+          </p>
+        ) : null}
         <TxLine tx={tx} />
       </div>
     </>

@@ -12,14 +12,17 @@ import { HDKey } from "@scure/bip32";
 import { entropyToMnemonic, mnemonicToSeedSync } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english.js";
 import type { Address, LocalAccount } from "viem";
+import { dualSaltClient } from "@/lib/passkey/dual-salt";
 
 export type KeyRole = "owner" | "trading";
+/** Which keys a ceremony in progress is making: both at once (#41), or one when a device needs a second prompt. */
+export type KeyStage = KeyRole | "both";
 
 /**
  * One PRF salt per role (D-012). A different salt yields an unrelated PRF output (Mera, passkey.d.ts),
  * so unlocking the trading key never puts owner-key material in memory. Changing these changes every address.
  */
-const SALTS: Record<KeyRole, Uint8Array> = {
+const SALTS: Record<KeyRole, Uint8Array<ArrayBuffer>> = {
   owner: sha256(utf8ToBytes("curb.owner.v1")),
   trading: sha256(utf8ToBytes("curb.trade.v1")),
 };
@@ -48,32 +51,45 @@ async function derive(rpId: string, credential: PasskeyCredentialMetadata | unde
   return { ...sessionFromPrf(prfOutput), credentialId };
 }
 
-/** New passkey → owner and trading addresses. Two biometric prompts; no key is kept afterwards. */
-export async function createAccount(rpId: string, onStage?: (role: KeyRole) => void): Promise<CurbAccountRecord> {
-  onStage?.("owner");
+/**
+ * New passkey → owner and trading addresses, from one ceremony when the authenticator evaluates PRF at creation (#41):
+ * the trading salt rides along as WebAuthn's second PRF input. Otherwise Mera's follow-up assertion carries both, so
+ * it is never more than two prompts. No key is kept afterwards.
+ */
+export async function createAccount(rpId: string, onStage?: (stage: KeyStage) => void): Promise<CurbAccountRecord> {
+  onStage?.("both");
   const handle = Array.from(crypto.getRandomValues(new Uint8Array(3)), (b) => b.toString(16).padStart(2, "0")).join("");
+  const dual = dualSaltClient(SALTS.trading);
   const created = await createPasskeyWithPrfOutput({
     rp: { id: rpId, name: "Curb" },
     user: { name: `curb-${handle}`, displayName: `Curb account ${handle}` },
     prfSalt: SALTS.owner,
+    webAuthnClient: dual.client,
   });
   const credential: PasskeyCredentialMetadata = { credentialId: created.credentialId, transports: created.transports };
   const owner = sessionFromPrf(created.prfOutput);
-  onStage?.("trading");
-  const trading = await derive(rpId, credential, "trading");
+  const tradingOutput = dual.second();
+  if (!tradingOutput) onStage?.("trading");
+  const trading = tradingOutput ? sessionFromPrf(tradingOutput) : await derive(rpId, credential, "trading");
   const record = { credential, owner: owner.address, trading: trading.address };
   owner.session.end();
   trading.session.end();
   return record;
 }
 
-/** Existing passkey on this or another device → the same two addresses. Two prompts. */
-export async function signIn(rpId: string, onStage?: (role: KeyRole) => void): Promise<CurbAccountRecord> {
-  onStage?.("trading");
-  const trading = await derive(rpId, undefined, "trading");
-  const credential: PasskeyCredentialMetadata = { credentialId: trading.credentialId };
-  onStage?.("owner");
-  const owner = await derive(rpId, credential, "owner");
+/**
+ * Existing passkey on this or another device → the same two addresses, in one prompt where WebAuthn evaluates two PRF
+ * salts at once (#41); otherwise a second prompt for the owner salt.
+ */
+export async function signIn(rpId: string, onStage?: (stage: KeyStage) => void): Promise<CurbAccountRecord> {
+  onStage?.("both");
+  const dual = dualSaltClient(SALTS.owner);
+  const { prfOutput, credentialId } = await getPasskeyPrfOutput({ rpId, prfSalt: SALTS.trading, webAuthnClient: dual.client });
+  const trading = sessionFromPrf(prfOutput);
+  const credential: PasskeyCredentialMetadata = { credentialId };
+  const ownerOutput = dual.second();
+  if (!ownerOutput) onStage?.("owner");
+  const owner = ownerOutput ? sessionFromPrf(ownerOutput) : await derive(rpId, credential, "owner");
   const record = { credential, owner: owner.address, trading: trading.address };
   owner.session.end();
   trading.session.end();
