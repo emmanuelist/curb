@@ -6,6 +6,7 @@ import type { RefusedView } from "@/components/curb/refused";
 import { SessionLine } from "@/components/curb/session-line";
 import { KeyGlyph } from "@/components/keys/signer";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
+import { confirm, seconds, stopwatch } from "@/lib/chain/confirm";
 import { appendLedger } from "@/lib/curb/ledger";
 import { perpOrderFromReceipt, sendPerpOrder, takingGas, type PerpAction } from "@/lib/curb/perp";
 import { explainRefusal, feePaid, revertDataOf } from "@/lib/curb/refusal";
@@ -22,7 +23,7 @@ type Phase =
   | { kind: "idle" }
   | { kind: "sending" }
   | { kind: "confirming"; hash: Hash }
-  | { kind: "done"; hash: Hash; orderId: bigint | null; filled: bigint; lots: bigint; avgPrice: bigint | null }
+  | { kind: "done"; hash: Hash; orderId: bigint | null; filled: bigint; lots: bigint; avgPrice: bigint | null; ms: number }
   | { kind: "error"; problem: PasskeyProblem };
 
 type Props = {
@@ -100,6 +101,8 @@ export function PerpPlaceOrder({ market, lane, action, price, lots, leverageHdth
     if (blocked || price === null || lots === null || lane?.status !== "open") return;
     const key = activeTradingKey();
     if (!key) return;
+    // Tap to receipt: what "Confirmed in 0.9 s" reports (#44).
+    const lap = stopwatch();
     setPhase({ kind: "sending" });
     try {
       const bid = action === "open-long" || action === "close-short";
@@ -109,7 +112,8 @@ export function PerpPlaceOrder({ market, lane, action, price, lots, leverageHdth
       const gas = takes ? await takingGas(key.address, state.address, market, order) : undefined;
       const hash = await sendPerpOrder(key.account, state.address, market, order, gas);
       setPhase({ kind: "confirming", hash });
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      const receipt = await confirm(hash);
+      const ms = lap();
       if (receipt.status !== "success") {
         const refusal = explainRefusal(await revertDataOf(publicClient, hash), "order", market);
         appendLedger(state.address, { kind: "refused", hash, at: Date.now(), attempt: "order", signer: "trading", error: refusal.error, detail: refusal.body });
@@ -132,7 +136,7 @@ export function PerpPlaceOrder({ market, lane, action, price, lots, leverageHdth
         filled: fill.filled.toString(),
         lane: { bid: lane.bid.toString(), ask: lane.ask.toString(), minSell: lane.minSell.toString(), maxBuy: lane.maxBuy.toString() },
       });
-      setPhase({ kind: "done", hash, orderId: fill.orderId, filled: fill.filled, lots, avgPrice: fill.avgPrice });
+      setPhase({ kind: "done", hash, orderId: fill.orderId, filled: fill.filled, lots, avgPrice: fill.avgPrice, ms });
     } catch (error) {
       setPhase({ kind: "error", problem: explainPasskeyError(error) });
     }
@@ -196,7 +200,9 @@ function PhaseLine({ phase, market }: { phase: Phase; market: Market }) {
     return (
       <a className="pill mx-auto min-h-11 px-3 text-road" href={explorerUrl("tx", phase.hash)} target="_blank" rel="noreferrer">
         <span className="size-1.5 rounded-full bg-live" aria-hidden="true" />
-        <span className="text-live">Confirmed</span>
+        <span>
+          <span className="text-live">Confirmed</span> in {seconds(phase.ms)}
+        </span>
         {` · ${tradedText(phase, market)}`}
         <ExternalLink size={13} aria-hidden="true" />
       </a>

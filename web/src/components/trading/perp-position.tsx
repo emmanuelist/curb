@@ -6,6 +6,7 @@ import type { RefusedView } from "@/components/curb/refused";
 import { RefusedMoment } from "@/components/curb/refused";
 import { KeyGlyph } from "@/components/keys/signer";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
+import { confirm, seconds, stopwatch } from "@/lib/chain/confirm";
 import { appendLedger, setCancelling } from "@/lib/curb/ledger";
 import { closePrice, perpOrderFromReceipt, sendPerpCancel, sendPerpOrder, takingGas } from "@/lib/curb/perp";
 import { perpCancelKey } from "@/lib/curb/perp-orders";
@@ -24,7 +25,7 @@ import { useTradingSession, useUnlockTrading } from "@/hooks/use-trading-session
 /** When a ledger entry happened. Only ever called from tap handlers, never while rendering. */
 const now = () => Date.now();
 
-type Tx = { kind: "idle" } | { kind: "sending" } | { kind: "done"; hash: Hash; text: string } | { kind: "error"; problem: PasskeyProblem };
+type Tx = { kind: "idle" } | { kind: "sending" } | { kind: "done"; hash: Hash; text: string; ms: number } | { kind: "error"; problem: PasskeyProblem };
 
 /**
  * The account on Perpl: its AUSD margin, the open position on this perpetual (with a one-tap close inside the
@@ -57,11 +58,14 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
   const run = async (send: (trader: LocalAccount) => Promise<Hash>, record: (hash: Hash, receipt: Awaited<ReturnType<typeof publicClient.waitForTransactionReceipt>>) => string) => {
     const key = activeTradingKey();
     if (!key) return;
+    // Tap to receipt, as the ticket reports it (#44).
+    const lap = stopwatch();
     setRefused(null);
     setTx({ kind: "sending" });
     try {
       const hash = await send(key.account);
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      const receipt = await confirm(hash);
+      const ms = lap();
       if (receipt.status !== "success") {
         const refusal = explainRefusal(await revertDataOf(publicClient, hash), "order", market);
         appendLedger(state.address, { kind: "refused", hash, at: now(), attempt: "order", signer: "trading", error: refusal.error, detail: refusal.body });
@@ -69,7 +73,7 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
         setTx({ kind: "idle" });
         return;
       }
-      setTx({ kind: "done", hash, text: record(hash, receipt) });
+      setTx({ kind: "done", hash, text: record(hash, receipt), ms });
       void refetch();
     } catch (error) {
       setTx({ kind: "error", problem: explainPasskeyError(error) });
@@ -185,7 +189,10 @@ export function PerpPosition({ market, lane }: { market: Market; lane: Lane | nu
         {tx.kind === "done" ? (
           <a className="pill min-h-11 px-3 text-road" href={explorerUrl("tx", tx.hash)} target="_blank" rel="noreferrer">
             <span className="size-1.5 rounded-full bg-live" aria-hidden="true" />
-            <span className="text-live">Confirmed</span> · {tx.text}
+            <span>
+              <span className="text-live">Confirmed</span> in {seconds(tx.ms)}
+            </span>{" "}
+            · {tx.text}
             <ExternalLink size={13} aria-hidden="true" />
           </a>
         ) : null}
