@@ -94,6 +94,32 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 - **Perpl reuses order ids (verified 2026-10-04).** The book has 2^16−1 slots and hands a freed id straight out again; perpl-sdk 0.2.9 `state/order.rs` notes that even one request can reuse an id. On a fork, three successive resting orders from one account were each #35, each placed after the last was cancelled. Never key an order's state by id alone. Pair a cancel or a fill with the latest earlier order that held the id. Check that the slot still holds the order before calling it yours: `getOrderV2(perpId, id)` must match on `accountId`, `orderType` and `priceONS` (`priceONS` + `getPerpetualInfo().basePricePNS` = the order's PNS price). An empty slot returns all zeros; it doesn't revert (fork and mainnet). `orderDescId` is a client id that appears only in events, not on the stored order.
 - **Maker fills:** `MakerOrderFilled(V2)(perpId, accountId, orderId, pricePNS, lotLNS, feeCNS, lockedBalanceCNS, amountCNS, balanceCNS[, builderId, builderFeeCNS])`, all unindexed. Scan the exchange's logs and match on perpetual, account and order id. Decoded from a real mainnet log (block 110,306,199, tx 0x80be3795…a217e3), and seen for the app's own resting order on a fork (E-023).
 
+## Swapping MON for AUSD (verified 2026-10-04)
+
+- **Kuru Flow** is Kuru's swap aggregator (docs.monad.xyz/guides/kuru-flow).
+  - API at `https://ws.kuru.io`.
+  - Token: `POST /api/generate-token {user_address}` returns `{token, expires_at, rate_limit: {rps: 1, burst: 1}}`. No secret; the token lasts about a day.
+  - Quote: `POST /api/quote` with `Authorization: Bearer <token>` and `{userAddress, tokenIn, tokenOut, amount, autoSlippage}`. It returns `{status, output, minOut, transaction: {to, calldata (no 0x prefix), value}}`.
+  - Native MON is `0x0…0`, sent as the transaction's `value`.
+  - CORS answers `*` and allows `Authorization`, so a browser can call it directly.
+- **Router:** `KuruFlowEntrypoint` at `0xb3e6778480b2E488385E8205eA05E20060B813cb`. Sourcify match; not a proxy.
+  - Quotes decode as `executeSwap((tokenUserBuys, minAmountUserBuys, tokenUserSells, amountUserSells), (feeCollectorAddress, feeBps, referrerAddress, referrerFeeBps, isInTokenFee), program)`, selector `0xce1e7030`. The other entrypoint is `executeSwapWithReceiver(…, receiver)`.
+  - Quotes carried `feeBps` 0.
+  - 450 MON quoted at 15.23 AUSD. On a fork, a 450 MON swap used 504,324 gas (limit 605,188, estimate × 1.2) and delivered 15.297463 AUSD (E-026).
+- **Uniswap v4 on Monad** (developers.uniswap.org deployments):
+
+  | Contract | Address |
+  |---|---|
+  | PoolManager | `0x188d586ddcf52439676ca21a244753fa19f9ea8e` (the busiest AUSD counterparty onchain) |
+  | V4Quoter | `0xa222dd357a9076d1091ed6aa2e16c9742dd26891` |
+  | StateView | `0x77395f3b2e73ae90843717371294fa97cc419d64` |
+  | Universal Router | `0x0d97dc33264bfc1c226207428a79b26757fb9dc3` |
+  | Permit2 | `0x000000000022D473030F116dDEE9F6B43aC78BA3` |
+
+  Native MON/AUSD pools without hooks:
+  - fee 100 / tickSpacing 1: nearly empty.
+  - fee 10000 / tickSpacing 200: 450 MON → 14.48 AUSD, about 5% under Kuru Flow.
+
 ## Mera (`@category-labs/mera` 0.2.0; verified by reading `dist/*.d.ts`, 2026-09-26)
 
 - `createPasskeyWithPrfOutput({ rp: { id, name }, user: { name, displayName }, timeout?, prfSalt?, webAuthnClient? })` returns credential metadata plus `prfSalt` and a 32-byte `prfOutput`. It shows one prompt, or two on authenticators that don't evaluate PRF at creation.
@@ -165,6 +191,7 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 - **Kuru refuses a crossing post-only order** with `PostOnlyError()` 0x06e6da4d instead of filling it (fork, 2026-10-03). A post-only order inside the lane but behind the best price rests normally.
 - **Gas for #33's transactions on a fork under Monad rules:** trading key's withdrawal attempt (reverts `NotOwner`) 22,930; off-lane order (reverts `OffLane`) 172,826–172,868; owner withdraw MON to a plain address 99,010, USDC 180,112; a crossing post-only sell (reverts in Kuru) 315,753.
 - **`forge script` can't deploy CurbFactory v2:** it aborts before broadcasting with "Failed to decode constructor arguments … buffer overrun" (it mis-slices the constructor arguments). `forge create … --constructor-args …` works. The v2 mainnet deploy estimates 2,888,343 gas.
+- **A fork's pools freeze at its block.** A live aggregator quote fails against a fork that is more than a minute or so old. One fork delivered 15.264 AUSD against a 15.27 minimum, and Curb's dry run refused it before Face ID. Fork right before testing a swap.
 - **Contract verification:** `forge verify-contract <addr> <path>:<Name> --chain 143 --verifier sourcify --verifier-url https://sourcify-api-monad.blockvision.org/ --constructor-args …` (no API key; shows on MonadVision). Monadscan's etherscan verifier needs an API key.
 
 ## Environment (names and purpose only, never values)

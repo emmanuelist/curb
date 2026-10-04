@@ -91,7 +91,18 @@ function Keys({ account }: { account: CurbAccountRecord }) {
 
       <div className="mt-6 grid gap-4 px-4 md:mt-10 md:grid-cols-2 md:gap-6 md:px-0">
         <CurbAccountCard record={account} state={curb.state} ownerMon={owner.data?.mon ?? null} onChanged={() => void curb.refetch()} />
-        {curb.state ? <AusdCard record={account} state={curb.state} ownerAusd={owner.data?.ausd ?? null} onChanged={() => void curb.refetch()} /> : null}
+        {curb.state ? (
+          <AusdCard
+            record={account}
+            state={curb.state}
+            ownerAusd={owner.data?.ausd ?? null}
+            ownerMon={owner.data?.mon ?? null}
+            onChanged={() => {
+              void curb.refetch();
+              void owner.refetch();
+            }}
+          />
+        ) : null}
 
         <div className="flex flex-col gap-4 md:gap-6">
           <KeyCard role="owner" i={2} badge={<span className="pill border-kerb/40 text-kerb">Moves money</span>}>

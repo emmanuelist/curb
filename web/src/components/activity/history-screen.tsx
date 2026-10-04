@@ -159,6 +159,8 @@ function describe(e: LedgerEntry): { title: string; detail: string; signer: "own
     }
     case "ausd-in":
       return { title: `Added ${formatToken(BigInt(e.amount), 6, 2)} AUSD`, detail: "to the account's margin on Perpl", signer: "owner" };
+    case "swap":
+      return { title: `Swapped ${formatToken(BigInt(e.monIn), 18, 4)} MON for ${formatToken(BigInt(e.ausdOut), 6, 2)} AUSD`, detail: "through Kuru Flow, onto the owner key", signer: "owner" };
     case "ausd-out":
       return { title: `Withdrew ${formatToken(BigInt(e.amount), 6, 2)} AUSD`, detail: `from Perpl to ${shortAddress(e.to)}`, signer: "owner" };
     case "cap":
