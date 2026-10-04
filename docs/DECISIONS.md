@@ -339,3 +339,19 @@ Append-only. To change a decision, add a new entry that supersedes it.
 
 **Consequences:** the number on screen comes from Monad, not from Kuru, at the cost of one extra `eth_call` per quote. A move of more than 0.5% between the dry run and the block still reverts the swap, costing only gas.
 **Evidence:** E-027.
+
+## D-028 · A one-tap close walks the book inside the lane, with a measured gas limit · 2026-10-04 · accepted
+**Context:** "Close at {best bid}" sent an immediate order at exactly the top level with a fixed 450,000 gas limit. A thin top level leaves part of the position open: on 2026-10-04 Perpl's best bid held 79 MON, and two fork tests failed this way. A close that walks levels can also need more gas than 450,000; one two-level close used 615,930 on a fork.
+**Decision:**
+
+- The close is priced at the lane's far curb: min sell for a long, max buy for a short. That is the worst it may get, still inside the lane, so it can walk levels; Perpl fills at each resting order's own price. The button says "Close now · no worse than X".
+- Taking orders (the close and the ticket's) get a measured gas limit: a dry run from the trading key plus a fifth. The fixed limit applies only when the dry run fails.
+- History records the size-weighted average fill price from the receipt's maker fills. Partial fills are reported as partial.
+
+**Alternatives:**
+
+- Close at the best bid and retry the remainder: several transactions and prompts.
+- A fixed higher gas limit: Monad charges the whole limit on every close.
+
+**Consequences:** in a thin book a close may fill well below the top bid, but never below the curb. Gas is paid on what the route needs plus 20%.
+**Evidence:** E-029.
