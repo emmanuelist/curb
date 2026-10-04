@@ -1,10 +1,10 @@
 # State
 
-_Last verified: 2026-10-04, branch `41-phone-check`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-04, branch `42-session-scope`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M2 done 2026-10-03 (E-019); now M3 · Proof surface (due 2026-10-11) · **Deadline:** 2026-10-13 23:59 ET · 9 days left
-**Next action:** #42 (session scope and expiry, stated in the app), the polish pass (#47), the README and submission answers (#43), and the videos (#45, #52). After submission, return the demo funds (#61).
+**Next action:** the polish pass (#47), then the README and submission answers (#43), Kuru demand evidence (#46), latency on mainnet (#44, needs the user's go-ahead), and the videos (#45, #52). After submission, return the demo funds (#61).
 **Blocked on:** Agora's answer on whether a mobile web app counts (#52).
 
 ## Works
@@ -12,6 +12,7 @@ _Last verified: 2026-10-04, branch `41-phone-check`; repo: https://github.com/em
 | Capability | Verified by | Evidence |
 |---|---|---|
 | **Agora's flow on mainnet from the user's iPhone (#51, #56):** passkey → create the v2 account → Get 354.08 MON → 11.86 AUSD through Kuru Flow → onto Perpl → long 300 MON at 2× → 10× refused onchain (`LeverageAboveCap`) → a bid past the curb refused onchain (`PerpOffLane`) → closed | 8 txs found by nonce and decoded with traces; account source exact match | E-028 (2026-10-04) |
+| **The trading session's scope and expiry, stated and enforced (#42, D-031):** the unlock step says what the key can't do; every ticket state and Orders show the time left and Lock; 15 minutes unused locks every screen cleanly, and a key past its deadline can't sign even when the timer was held back | fork + Playwright (virtual passkey, ceremony counter, fake clock) + `cast nonce`; 5 unit tests | E-034 (2026-10-04) |
 | **One Face ID makes both keys (#41, D-030):** creating takes 1 ceremony and signing in 1; owner actions still prompt alone. Landing to first transaction: 4 taps, 2 Face IDs | Playwright ceremony counter; fork; one Face ID to sign in on the user's iPhone | E-032, E-033 (2026-10-04) |
 | **Orders and History rebuild from the chain alone (#40, D-029):** a fresh profile read the user's 8 mainnet transactions and the long's fill in about 20 s; a wiped device rebuilt an open order and cancelled it | Playwright on mainnet (read-only) and on a fork; the user's iPhone in a Private tab, 12.9 s | E-030, E-031 (2026-10-04) |
 | A one-tap close walks a thin book inside the lane with a measured gas limit (D-028): 300 MON closed across two levels when the top held 10 | fork + Playwright + virtual passkey | E-029 (2026-10-04) |
@@ -25,7 +26,7 @@ _Last verified: 2026-10-04, branch `41-phone-check`; repo: https://github.com/em
 | Refusal moment, proofs, owner withdraw and send; create, deposit, place, cancel, fills, Orders and History from the device ledger (D-018, D-019) | anvil + Playwright + virtual passkey | E-017, E-018 |
 | M1: real passkey on the user's iPhone; owner key signs a real mainnet tx with Face ID | tx 0x72c21e7e…4a9ab4 | E-013 (2026-09-28) |
 | Board redesign, identity, performance (phone Lighthouse 84–99, desktop 99) | Playwright, Lighthouse | E-006 to E-011 (2026-09-27) |
-| Gate: web lint 0 warnings, typecheck, 71 tests, warning-free build; contracts 39/39, `forge lint` 0; `impeccable detect` 0 | local | E-030 (2026-10-04) |
+| Gate: web lint 0 warnings, typecheck, 76 tests, warning-free build; `impeccable detect` 0 (E-034); contracts 39/39, `forge lint` 0 (E-030) | local | E-030, E-034 (2026-10-04) |
 
 ## Deployed
 

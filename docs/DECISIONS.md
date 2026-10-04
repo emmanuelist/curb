@@ -393,3 +393,20 @@ Append-only. To change a decision, add a new entry that supersedes it.
 
 **Consequences:** Curb now runs its own copy of Mera's browser client, so a Mera update must be checked against it. Funding, the slow step, now shows the owner address and watches for MON in the create step itself.
 **Evidence:** E-032.
+
+## D-031 · The trading session locks after 15 minutes unused, checked again whenever the key is used · 2026-10-04 · accepted
+**Context:** Mera's UX bounty judges "session design — sensible scoping of prompt-free vs. re-prompt actions, clean session-expiry UX" (#42). The trading key already locked after 15 minutes unused, but only on a timer, and the app said so in one sentence. A phone asleep in a pocket can hold a timer back, so on waking, a key that should be gone could still sign for a moment.
+**Decision:** a session ends on whichever comes first: 15 minutes without the key being used, a tap on Lock, or leaving the page. Every use of the key pushes the 15 minutes back.
+
+- The deadline is checked in three places: when the timer fires, when the page becomes visible again, and when the key is about to sign. A key past its deadline is never handed out.
+- The unlock step states the scope: places and cancels inside the lane with no prompt, can never withdraw, because the account refuses that onchain.
+- While unlocked, every ticket state and Orders show the time left and a Lock button. After a timeout the same row says why the key locked.
+- Owner actions keep their own Face ID (D-030).
+
+**Alternatives:**
+
+- A fixed lifetime from unlock: it would lock someone in the middle of trading, and an idle key would still be live for the whole lifetime.
+- A prompt for every order: that undoes the product. What limits the key is what the account enforces onchain, not how often it prompts.
+
+**Consequences:** The countdown re-renders once a second while unlocked, only in the rows that show it.
+**Evidence:** E-034.

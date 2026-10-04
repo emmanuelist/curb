@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { RefusedMoment, type RefusedView } from "@/components/curb/refused";
 import { KeyGlyph } from "@/components/keys/signer";
-import { GAS, proofCalldata, sendProofWithdraw, type CurbAccountState } from "@/lib/curb/account";
+import { GAS, GAS_PRICE_SEEN, proofCalldata, sendProofWithdraw, type CurbAccountState } from "@/lib/curb/account";
 import { formatToken } from "@/lib/format";
 import { MON_USDC } from "@/lib/markets/registry";
 import type { CurbAccountRecord } from "@/lib/passkey/keys";
@@ -9,8 +9,6 @@ import { proofLabel, useProof } from "@/hooks/use-proof";
 import { useTradingSession, useUnlockTrading } from "@/hooks/use-trading-session";
 
 const MON = 10n ** 18n;
-/** Monad's price as paid on mainnet (102 gwei, E-013): for showing a cost only. */
-const GAS_PRICE_SEEN = 102n * 10n ** 9n;
 
 /**
  * The trading key asks the account to send its MON to the trading key itself. The account refuses (NotOwner), onchain:

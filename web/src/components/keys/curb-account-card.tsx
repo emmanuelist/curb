@@ -6,7 +6,7 @@ import { CopyAddress } from "@/components/keys/copy-address";
 import { KeyGlyph, Signer } from "@/components/keys/signer";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
 import { curbAccountAbi } from "@/lib/curb/abi";
-import { GAS, gasFor, NATIVE, RESERVE, sendCreateAccount, sendDepositMon, sendWithdraw, waitForQuiet, type CurbAccountState } from "@/lib/curb/account";
+import { GAS, GAS_PRICE_SEEN, gasFor, NATIVE, RESERVE, sendCreateAccount, sendDepositMon, sendWithdraw, waitForQuiet, type CurbAccountState } from "@/lib/curb/account";
 import { explainRefusal, feePaid, revertDataOf } from "@/lib/curb/refusal";
 import { appendLedger } from "@/lib/curb/ledger";
 import { formatToken, parseDecimal, shortAddress } from "@/lib/format";
@@ -17,8 +17,6 @@ import { marketLabel } from "@/lib/markets/selected";
 import { usePasskeyKeys } from "@/hooks/use-passkey-keys";
 
 const MON = 10n ** 18n;
-/** Monad's gas price as paid on mainnet (102 gwei, E-013 and E-016): for showing a cost, never for sending. */
-const GAS_PRICE_SEEN = 102n * 10n ** 9n;
 /**
  * What an owner-key transaction must leave beyond its value: the node checks value + gas limit x max fee up front,
  * and viem's max fee sits ~20% above the price paid. 0.05 MON covers that gap for the create and deposit limits here.

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import type { RefusedView } from "@/components/curb/refused";
 import { KeyGlyph } from "@/components/keys/signer";
-import { GAS, proofCalldata, restingOrderFromReceipt, sendProofOffLane } from "@/lib/curb/account";
+import { GAS, GAS_PRICE_SEEN, proofCalldata, restingOrderFromReceipt, sendProofOffLane } from "@/lib/curb/account";
 import { appendLedger } from "@/lib/curb/ledger";
 import { PERP_GAS, perpOrderCalldata, perpOrderFromReceipt, sendPerpOrder, type PerpAction, type PerpOrder } from "@/lib/curb/perp";
 import { formatToken } from "@/lib/format";
@@ -12,8 +12,6 @@ import { useCurbAccount } from "@/hooks/use-curb-account";
 import { proofLabel, useProof, type ProofPhase } from "@/hooks/use-proof";
 import { useTradingSession, useUnlockTrading } from "@/hooks/use-trading-session";
 
-/** Monad's price as paid on mainnet (102 gwei, E-013): for showing a cost only. */
-const GAS_PRICE_SEEN = 102n * 10n ** 9n;
 const cost = (gas: bigint) => formatToken(gas * GAS_PRICE_SEEN, 18, 3);
 
 type Props = {

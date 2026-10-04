@@ -20,6 +20,9 @@ import type { Side } from "@/lib/lane";
 /** Kuru's MarginAccount treats the zero address as native MON. */
 export const NATIVE: Address = zeroAddress;
 
+/** Monad's gas price as paid on mainnet (102 gwei, E-013), for showing a cost only: limits are what Monad charges. */
+export const GAS_PRICE_SEEN = 102n * 10n ** 9n;
+
 /**
  * Explicit gas limits. Monad charges the full limit, not the gas used (docs/CONTEXT.md), so each sits a little above
  * what was measured under Monad rules. Create 1,161,151, deposit 78,784, a resting placeSell 324,104-352,246 (a new
