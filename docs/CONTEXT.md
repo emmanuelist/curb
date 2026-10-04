@@ -122,6 +122,7 @@ The ABI may lag the deployed implementation. Fork tests are the source of truth.
 
 ## Mera (`@category-labs/mera` 0.2.0; verified by reading `dist/*.d.ts`, 2026-09-26)
 
+- **Two PRF salts in one ceremony:** Mera's options accept `webAuthnClient` (the `WebAuthnClient` type is exported). A client that adds `extensions.prf.eval.second` gets both outputs from one `create` or `get`. Chrome's virtual authenticator (`ctap2_1`, `hasPrf`) returns both at creation and at assertion (E-032). iOS behaviour is unverified until the phone check (#41).
 - **Safari Private Browsing on iOS offers the iCloud Keychain passkey, PRF included** (2026-10-04, the user's iPhone, E-031): a private tab is a clean device for the stateless test.
 
 - `createPasskeyWithPrfOutput({ rp: { id, name }, user: { name, displayName }, timeout?, prfSalt?, webAuthnClient? })` returns credential metadata plus `prfSalt` and a 32-byte `prfOutput`. It shows one prompt, or two on authenticators that don't evaluate PRF at creation.

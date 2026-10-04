@@ -1,10 +1,10 @@
 # State
 
-_Last verified: 2026-10-04, branch `40-phone-check`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-04, branch `41-one-prompt`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M2 done 2026-10-03 (E-019); now M3 · Proof surface (due 2026-10-11) · **Deadline:** 2026-10-13 23:59 ET · 9 days left
-**Next action:** the demo videos (#45: main ≤ 3:00, Mera ≤ 2:00, Agora ≤ 2:00 via #52), then the README proof surface and submission answers (#43). After submission, return the demo funds (#61).
+**Next action:** the user's phone check of one-prompt sign-in (#41), then #42 (session scope and expiry, stated in the app), the polish pass (#47), the README and submission answers (#43), and the videos (#45, #52). After submission, return the demo funds (#61).
 **Blocked on:** Agora's answer on whether a mobile web app counts (#52).
 
 ## Works
@@ -12,6 +12,7 @@ _Last verified: 2026-10-04, branch `40-phone-check`; repo: https://github.com/em
 | Capability | Verified by | Evidence |
 |---|---|---|
 | **Agora's flow on mainnet from the user's iPhone (#51, #56):** passkey → create the v2 account → Get 354.08 MON → 11.86 AUSD through Kuru Flow → onto Perpl → long 300 MON at 2× → 10× refused onchain (`LeverageAboveCap`) → a bid past the curb refused onchain (`PerpOffLane`) → closed | 8 txs found by nonce and decoded with traces; account source exact match | E-028 (2026-10-04) |
+| **One Face ID makes both keys (#41, D-030):** creating takes 1 ceremony and signing in 1; owner actions still prompt alone. Landing to first transaction: 4 taps, 2 Face IDs | Playwright ceremony counter; fork | E-032 (2026-10-04) |
 | **Orders and History rebuild from the chain alone (#40, D-029):** a fresh profile read the user's 8 mainnet transactions and the long's fill in about 20 s; a wiped device rebuilt an open order and cancelled it | Playwright on mainnet (read-only) and on a fork; the user's iPhone in a Private tab, 12.9 s | E-030, E-031 (2026-10-04) |
 | A one-tap close walks a thin book inside the lane with a measured gas limit (D-028): 300 MON closed across two levels when the top held 10 | fork + Playwright + virtual passkey | E-029 (2026-10-04) |
 | Kuru Flow picks the route; Monad prices it (D-027): Kuru's estimates ran about 1% above what routes paid | read-only `eth_call` and `estimateGas` from the owner key | E-027 (2026-10-04) |
@@ -40,6 +41,7 @@ Read on mainnet 2026-10-04 after the run: the owner key holds 10.39 MON (Monad's
 
 ## Broken or unverified
 
+- One-prompt onboarding and sign-in are verified with Chrome's virtual authenticator; real iOS behaviour is unverified until the phone check (#41).
 - Get depends on Kuru Flow's API for the route (one quote a second); AUSD can still arrive from outside (D-026, D-027).
 - A v1 account no longer shows in the app; the user's holds nothing.
 - Kuru deposits are MON only; USDC deposit deferred (D-018).

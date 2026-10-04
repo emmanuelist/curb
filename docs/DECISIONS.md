@@ -377,3 +377,19 @@ Append-only. To change a decision, add a new entry that supersedes it.
 - The public RPC may not serve state far in the past.
 
 **Evidence:** E-030.
+
+## D-030 · One passkey ceremony makes both keys; owner actions still prompt alone · 2026-10-04 · accepted
+**Context:** Mera's UX bounty asks for "one-prompt onboarding: a single passkey ceremony" and judges time to first transaction. Onboarding took two ceremonies or three, one per key (D-012's separate PRF salts), and sign-in took two. Mera's API evaluates one salt per ceremony, but it accepts a custom `webAuthnClient`, and WebAuthn's PRF extension evaluates two salts (`first`, `second`) in one ceremony.
+**Decision:** onboarding and sign-in use a Mera `webAuthnClient` (`web/src/lib/passkey/dual-salt.ts`) that mirrors Mera's browser client and adds the other key's salt as `second`. Mera receives the first output as usual; the second derives the other key.
+
+- Creating a passkey is one ceremony where the authenticator evaluates PRF at creation, and two where it doesn't.
+- Signing in is one ceremony.
+- Unlocking the trading key and every owner action keep their own single-salt ceremony. The trading session never holds owner material, and each owner action still asks for Face ID.
+
+**Alternatives:**
+
+- Derive both keys from one salt: unlocking trading would then hold the owner key's secret (rejected under D-012).
+- Bypass Mera for the ceremony: the bounty is for Mera-powered UX.
+
+**Consequences:** Curb now runs its own copy of Mera's browser client, so a Mera update must be checked against it. Funding, the slow step, now shows the owner address and watches for MON in the create step itself.
+**Evidence:** E-032.
