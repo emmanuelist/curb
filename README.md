@@ -11,6 +11,14 @@ A contract account, `CurbAccount`, enforces both limits onchain. It reads the ve
 
 **Live app:** [curb-jet.vercel.app](https://curb-jet.vercel.app). It runs on Monad mainnet. Open it in Safari or Chrome rather than inside a social app's browser.
 
+**Demo videos:**
+
+- [Curb in 1:54](https://youtu.be/KTfEX9fxlMQ): the problem, the two keys, the lane, and three refusals, each followed by its mainnet transaction.
+- [Trading perps from a phone, in 1:03](https://youtu.be/FOd77wVufD8): passkey login, AUSD through Kuru Flow, a long on Perpl, 10× refused, the close.
+- [Mera as the account layer, in 0:56](https://youtu.be/F7ZPS6zysI8): one passkey prompt for both keys, the trading session, owner re-prompts, the stateless rebuild.
+
+The app scenes in the videos were recorded on a fork of Monad mainnet with a test passkey, and each is labelled on screen. The mainnet transactions they show are in the table below.
+
 Built for Monad Metropolis, Track 1: Onchain Finance & Trading.
 
 ## Proof on Monad mainnet
@@ -126,7 +134,7 @@ Then fund your keys on the fork with `anvil_setBalance`. [docs/CONTEXT.md](docs/
 
 ## AI disclosure
 
-This project was built with AI coding assistance (Claude Code), as the Metropolis rules (§4.1.4) permit and require us to disclose. Design decisions and their reasons are in [docs/DECISIONS.md](docs/DECISIONS.md).
+This project was built with AI coding assistance (Claude Code), as the Metropolis rules (§4.1.4) permit and require us to disclose. Design decisions and their reasons are in [docs/DECISIONS.md](docs/DECISIONS.md). The demo videos were also made with AI: the agent edited them in Remotion, and the narration is an AI voice from [elevenlabs.io](https://elevenlabs.io) (D-034).
 
 ## License
 
