@@ -179,12 +179,24 @@ export function perpOrderFromReceipt(receipt: Pick<TransactionReceipt, "logs">, 
   return { orderId, filled, closed, avgPrice: makerLots > 0n ? makerValue / makerLots : null };
 }
 
+/** How far inside the far curb a one-tap close is priced, as a share of the touch: 10 bps (D-033). */
+export const CLOSE_HEADROOM_BPS = 10n;
+
 /**
- * Where a one-tap close is priced: the lane's own curb on the far side (min sell to close a long, max buy to close a
- * short). It is the worst the close may get, not what it pays: Perpl fills at each resting order's price, so the close
- * walks levels inside the lane when the top one is thinner than the position (#59).
+ * Where a one-tap close is priced: just inside the lane's far curb (min sell to close a long, max buy to close a short).
+ * It is the worst the close may get, not what it pays: Perpl fills at each resting order's price, so the close walks
+ * levels inside the lane when the top one is thinner than the position (#59). Priced at the curb itself, a close was
+ * refused on mainnet when the bid rose 6 ticks before it landed (0.033334 against a curb of 0.033340), so it keeps
+ * 0.10% of the touch in hand, and never goes past the touch itself. Perpl's MON tick is one price unit.
  */
-export const closePrice = (type: "long" | "short", lane: { minSell: bigint; maxBuy: bigint }) => (type === "long" ? lane.minSell : lane.maxBuy);
+export function closePrice(type: "long" | "short", lane: { bid: bigint; ask: bigint; minSell: bigint; maxBuy: bigint }): bigint {
+  if (type === "long") {
+    const price = lane.minSell + (lane.bid * CLOSE_HEADROOM_BPS + 9_999n) / 10_000n;
+    return price < lane.bid ? price : lane.bid;
+  }
+  const price = lane.maxBuy - (lane.ask * CLOSE_HEADROOM_BPS) / 10_000n;
+  return price > lane.ask ? price : lane.ask;
+}
 
 /**
  * The gas limit for a taking order, read before it is sent: a dry run from the trading key, plus a fifth. Walking more
