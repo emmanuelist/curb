@@ -433,3 +433,19 @@ Append-only. To change a decision, add a new entry that supersedes it.
 
 **Consequences:** "Close now · no worse than X" shows the new price. A move of more than 0.10% between reading the book and landing can still refuse a close, and the refusal says so.
 **Evidence:** unit tests on the mainnet case; the refusal above (E-038).
+
+## D-034 · The agent makes the videos: fork footage, mainnet proof, captions first (narrows D-007) · 2026-10-04 · accepted
+**Context:** D-007 planned agent-driven footage of mainnet transactions. A fresh test passkey has no money: recording the full flow on mainnet would cost about 210 MON plus AUSD, and transactions sent from the agent's side are blocked. The user's own passkey is on their iPhone. The user asked the agent to make the videos without the 202 MON top-up.
+**Decision:**
+
+- **The interactive beats are recorded on an anvil fork of Monad mainnet.** These are onboarding, orders and cancels, the refusals, futures and the stateless rebuild, recorded in the deployed app's code with a virtual passkey. A caption on screen says it is a fork recording. The words never call the virtual authenticator "Face ID" (D-008).
+- **Each beat is paired with its mainnet proof.** Every such beat cuts to the same thing having happened on Monad mainnet from the user's iPhone, on Monadscan (E-019, E-028, E-038). The app's live mainnet screens (book, blocks, lane) are recorded read-only.
+- **Captions carry the story, so the video works muted.** Narration is added with ElevenLabs only if the user provides a key. The local system voices aren't good enough.
+
+**Alternatives:**
+
+- Fund a new passkey on mainnet: about $7 plus AUSD, and the agent can't send the transactions anyway.
+- The user records on their phone: they declined; it costs their time and the 200 MON.
+
+**Consequences:** No real Face ID prompt appears on screen. The real-device proof is the mainnet transactions and the README.
+**Evidence:** to be recorded with the videos (#45, #52).
