@@ -303,3 +303,28 @@ Append-only. To change a decision, add a new entry that supersedes it.
 
 **Consequences:** a fill could be credited to the wrong order if the filled id is reused before the app sees the fill: both inside one ~5-block refresh while resting, or one 100-block scan window. #40's rebuild from the chain settles it.
 **Evidence:** E-023.
+
+## D-026 · Funding futures from MON goes through Kuru Flow, checked before Face ID · 2026-10-04 · accepted
+**Context:** the owner key lives in the passkey, so it can't connect to a DEX, and someone funding from an exchange arrives with MON. Agora's bounty is judged on UX and on "creative use of the three integrations together", and asks for "funding or viewing an AUSD balance" (#56).
+**Decision:**
+
+- The AUSD card's Get tab swaps MON on the owner key for AUSD with Face ID, routed by Kuru Flow (Kuru's aggregator). Its API returns a quote and a transaction for its router, `KuruFlowEntrypoint` `0xb3e6…13cb`.
+- The quote is Kuru's offchain estimate and is labelled as one, an exception to rule 1 that applies only to this estimate. What counts is onchain: the minimum written into the transaction, and the AUSD the receipt shows arriving.
+- Before Face ID, the app decodes the transaction. It signs only `executeSwap` on the pinned router (or `executeSwapWithReceiver` paying the owner key itself) that:
+  - sells exactly the chosen MON for AUSD;
+  - carries an onchain minimum no lower than the quote's;
+  - pays at most a 0.5% fee.
+  Then it dry-runs the swap; a stale price fails here and nothing is signed.
+- Max leaves Monad's 10 MON reserve and 0.5 MON for gas on the owner key.
+
+**Alternatives:**
+
+- Uniswap v4's MON/AUSD pools directly, quoted fully onchain. The 1% pool gave 14.48 AUSD for 450 MON against Kuru Flow's 15.23 (about 5% less); the 0.01% pool is empty.
+- Accepting only AUSD sent from outside: that needs a second wallet.
+
+**Consequences:**
+
+- The app depends on Kuru Flow's API for routes, at one quote a second per token. If it is down, Get says so, and AUSD can still arrive from outside.
+- A price that moves past the minimum between dry run and block reverts the swap; only gas is spent.
+
+**Evidence:** E-026.

@@ -12,7 +12,7 @@ import { appendLedger } from "@/lib/curb/ledger";
 import { formatToken, parseDecimal, shortAddress } from "@/lib/format";
 import { explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
 import type { CurbAccountRecord } from "@/lib/passkey/keys";
-import { MON_PERP, MON_USDC } from "@/lib/markets/registry";
+import { MON_PERP, MON_USDC, PERPS_ENABLED } from "@/lib/markets/registry";
 import { marketLabel } from "@/lib/markets/selected";
 import { usePasskeyKeys } from "@/hooks/use-passkey-keys";
 
@@ -50,8 +50,9 @@ export function CurbAccountCard({ record, state, ownerMon, onChanged }: Props) {
   const id = useId();
   const [mode, setMode] = useState<"deposit" | "withdraw">("deposit");
   const live = state?.deployed ?? false;
-  // A v2 account also trades Perpl's MON perpetual; a v1 account only ever trades Kuru.
-  const perps = state?.perps.supported ?? false;
+  // A v2 account also trades Perpl's MON perpetual; a v1 account only ever trades Kuru. One not created yet will be
+  // whatever the app's factory makes.
+  const perps = state?.deployed ? state.perps.supported : PERPS_ENABLED;
   return (
     <section aria-labelledby={`${id}-h`} className="panel rise overflow-hidden md:col-span-2" style={{ "--i": 1 } as CSSProperties}>
       <div className="grid gap-6 p-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-10 md:p-7">

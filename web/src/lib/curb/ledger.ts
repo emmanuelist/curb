@@ -56,6 +56,8 @@ export type LedgerEntry =
   | { kind: "ausd-in"; hash: Hash; at: number; amount: string }
   /** The owner key withdrew AUSD from Perpl to an address. */
   | { kind: "ausd-out"; hash: Hash; at: number; amount: string; to: Address }
+  /** The owner key swapped MON for AUSD through Kuru Flow (#56); `ausdOut` is what the receipt shows arriving. */
+  | { kind: "swap"; hash: Hash; at: number; monIn: string; ausdOut: string }
   /** The owner key set the trading key's leverage cap on a perpetual. */
   | { kind: "cap"; hash: Hash; at: number; market: string; capHdths: number };
 

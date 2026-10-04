@@ -1,32 +1,63 @@
 import { useId, useState, type CSSProperties } from "react";
-import { ClipboardPaste, ExternalLink } from "lucide-react";
+import { ArrowRight, ClipboardPaste, ExternalLink } from "lucide-react";
 import { getAddress, isAddress, type Address, type Hash } from "viem";
 import { KeyGlyph, Signer } from "@/components/keys/signer";
 import { explorerUrl, publicClient } from "@/lib/chain/clients";
-import type { CurbAccountState } from "@/lib/curb/account";
+import { RESERVE, type CurbAccountState } from "@/lib/curb/account";
 import { appendLedger } from "@/lib/curb/ledger";
 import { sendAusdToAccount, sendPerplDeposit, sendPerplWithdraw, sendSetPerp } from "@/lib/curb/perp";
 import { formatToken, parseDecimal, shortAddress } from "@/lib/format";
+import { ausdReceived, flowSwapGas, FlowQuoteError, quoteMonForAusd, sendFlowSwap } from "@/lib/kuru/flow";
 import { MON_PERP } from "@/lib/markets/registry";
 import { explainPasskeyError, type PasskeyProblem } from "@/lib/passkey/environment";
 import type { CurbAccountRecord } from "@/lib/passkey/keys";
+import { useFlowQuote, useSettled } from "@/hooks/use-flow-quote";
 import { usePasskeyKeys } from "@/hooks/use-passkey-keys";
 import { usePerpAccount } from "@/hooks/use-perp-account";
 
 const AUSD_UNIT = 10n ** 6n;
+const MON_UNIT = 10n ** 18n;
+/** MON the owner key keeps for gas after a swap: the swap itself and adding the AUSD to Perpl after it. */
+const SWAP_HEADROOM = MON_UNIT / 2n;
 /** Perpl's minimum to open an account: getMinAccountOpenCNS() = 10 AUSD (verified 2026-10-03). */
 const MIN_OPEN = 10n * AUSD_UNIT;
 const CAPS = [100, 200, 300, 500, 1000] as const;
 
-type Tx = { kind: "idle" } | { kind: "signing" } | { kind: "sent"; hash: Hash; step?: string } | { kind: "confirmed"; hash: Hash; text: string } | { kind: "error"; problem: PasskeyProblem };
+type Tx = { kind: "idle" } | { kind: "checking" } | { kind: "signing" } | { kind: "sent"; hash: Hash; step?: string } | { kind: "confirmed"; hash: Hash; text: string } | { kind: "error"; problem: PasskeyProblem };
 
 /**
  * AUSD for futures (Agora's stablecoin, Perpl's collateral): what the owner key holds, what the account has on Perpl,
  * and the owner-only moves: add AUSD, withdraw it anywhere, and set the trading key's leverage cap.
  */
-export function AusdCard({ record, state, ownerAusd, onChanged }: { record: CurbAccountRecord; state: CurbAccountState; ownerAusd: bigint | null; onChanged: () => void }) {
+const MODES = [
+  { id: "get", label: "Get" },
+  { id: "add", label: "Add" },
+  { id: "withdraw", label: "Withdraw" },
+  { id: "cap", label: "Cap" },
+] as const;
+type Mode = (typeof MODES)[number]["id"];
+
+/** An amount as typed: every decimal it has, none it doesn't. */
+const exact = (x: bigint, decimals: number) => formatToken(x, decimals, decimals).replace(/0+$/, "").replace(/\.$/, "");
+
+export function AusdCard({
+  record,
+  state,
+  ownerAusd,
+  ownerMon,
+  onChanged,
+}: {
+  record: CurbAccountRecord;
+  state: CurbAccountState;
+  ownerAusd: bigint | null;
+  ownerMon: bigint | null;
+  onChanged: () => void;
+}) {
   const { perp, refetch } = usePerpAccount(MON_PERP);
-  const [mode, setMode] = useState<"add" | "withdraw" | "cap">("add");
+  // Until someone picks a tab: Get when the owner key has no AUSD to add yet, Add otherwise.
+  const [chosen, setChosen] = useState<Mode | null>(null);
+  const [prefill, setPrefill] = useState("");
+  const mode: Mode = chosen ?? (ownerAusd === 0n ? "get" : "add");
   if (!state.deployed || !state.perps.supported) return null;
   const changed = () => {
     onChanged();
@@ -54,31 +85,171 @@ export function AusdCard({ record, state, ownerAusd, onChanged }: { record: Curb
         <Cell label="Leverage cap" value={state.perps.capHdths !== null ? `${state.perps.capHdths / 100}×` : "—"} />
       </dl>
 
-      <div role="radiogroup" aria-label="AUSD action" className="grid grid-cols-3 gap-1.5 rounded-[12px] border border-rule bg-asphalt p-1">
-        {(["add", "withdraw", "cap"] as const).map((m) => (
+      <div role="radiogroup" aria-label="AUSD action" className="grid grid-cols-4 gap-1.5 rounded-[12px] border border-rule bg-asphalt p-1">
+        {MODES.map((m) => (
           <button
-            key={m}
+            key={m.id}
             type="button"
             role="radio"
-            aria-checked={mode === m}
-            onClick={() => setMode(m)}
-            className={`h-11 rounded-[9px] text-[14px] font-semibold transition-colors ${mode === m ? "border border-road bg-high text-road" : "border border-transparent text-muted hover:text-road"}`}
+            aria-checked={mode === m.id}
+            onClick={() => setChosen(m.id)}
+            className={`h-11 rounded-[9px] text-[14px] font-semibold transition-colors ${mode === m.id ? "border border-road bg-high text-road" : "border border-transparent text-muted hover:text-road"}`}
           >
-            {m === "add" ? "Add" : m === "withdraw" ? "Withdraw" : "Cap"}
+            {m.label}
           </button>
         ))}
       </div>
 
-      {mode === "add" ? <Add record={record} state={state} ownerAusd={ownerAusd} onChanged={changed} /> : null}
+      {mode === "get" ? (
+        <Get
+          record={record}
+          state={state}
+          ownerMon={ownerMon}
+          // A swap pins this tab: the AUSD it brings would otherwise flip the default to Add mid-confirmation.
+          onStart={() => setChosen("get")}
+          onSwapped={onChanged}
+          onAdd={(ausd) => {
+            setPrefill(exact(ausd, 6));
+            setChosen("add");
+          }}
+        />
+      ) : null}
+      {mode === "add" ? <Add key={prefill} record={record} state={state} ownerAusd={ownerAusd} prefill={prefill} onChanged={changed} /> : null}
       {mode === "withdraw" ? <Withdraw record={record} state={state} free={perp ? perp.balance - perp.locked : 0n} onChanged={changed} /> : null}
       {mode === "cap" ? <Cap record={record} state={state} onChanged={changed} /> : null}
     </section>
   );
 }
 
-function Add({ record, state, ownerAusd, onChanged }: { record: CurbAccountRecord; state: CurbAccountState; ownerAusd: bigint | null; onChanged: () => void }) {
+/**
+ * MON on the owner key, swapped for AUSD through Kuru Flow (#56, D-026): the way in for someone who only has MON. The
+ * quote is Kuru's estimate. Curb checks the transaction against it before Face ID and reads what arrived from the receipt.
+ */
+function Get({
+  record,
+  state,
+  ownerMon,
+  onStart,
+  onSwapped,
+  onAdd,
+}: {
+  record: CurbAccountRecord;
+  state: CurbAccountState;
+  ownerMon: bigint | null;
+  onStart: () => void;
+  onSwapped: () => void;
+  onAdd: (ausd: bigint) => void;
+}) {
   const id = useId();
   const [text, setText] = useState("");
+  const [tx, setTx] = useState<Tx>({ kind: "idle" });
+  const [got, setGot] = useState<bigint | null>(null);
+  const keys = usePasskeyKeys();
+  const settled = useSettled(text, 900);
+  const amount = parseDecimal(text, MON_UNIT);
+  // Monad keeps 10 MON on every account (docs/CONTEXT.md); Max leaves that, plus gas for the swap and what follows.
+  const max = ownerMon === null ? null : ownerMon > RESERVE + SWAP_HEADROOM ? ownerMon - RESERVE - SWAP_HEADROOM : 0n;
+  const tooMuch = amount !== null && max !== null && amount > max;
+  const typing = settled !== text;
+  const quote = useFlowQuote(record.owner, !typing && !tooMuch ? amount : null);
+  const shown = !typing && quote.data ? quote.data : null;
+  const busy = tx.kind === "checking" || tx.kind === "signing" || tx.kind === "sent";
+
+  const swap = async () => {
+    if (!keys || amount === null || amount === 0n) return;
+    onStart();
+    setTx({ kind: "checking" });
+    setGot(null);
+    try {
+      // The quote on screen while it's fresh, else a new one; then a dry run of the swap. All of it before Face ID.
+      const q = shown && Date.now() - quote.dataUpdatedAt < 10_000 ? shown : await quoteMonForAusd(record.owner, amount);
+      const gas = await flowSwapGas(record.owner, q).catch(() => {
+        void quote.refetch();
+        throw new FlowQuoteError("The price moved since this quote, so the swap would fail. A new quote is on its way.");
+      });
+      setTx({ kind: "signing" });
+      const hash = await keys.withOwnerKey(window.location.hostname, record, (owner) => sendFlowSwap(owner, q, gas));
+      setTx({ kind: "sent", hash });
+      const r = await publicClient.waitForTransactionReceipt({ hash });
+      if (r.status !== "success") {
+        setTx({ kind: "error", problem: { title: "The swap reverted.", body: "The price moved past its minimum before it landed. Your MON is still on the owner key; only gas was spent." } });
+        return;
+      }
+      const received = ausdReceived(r, record.owner);
+      appendLedger(state.address, { kind: "swap", hash, at: Date.now(), monIn: amount.toString(), ausdOut: received.toString() });
+      setTx({ kind: "confirmed", hash, text: `${formatToken(received, 6)} AUSD on your owner key` });
+      setText("");
+      setGot(received);
+      onSwapped();
+    } catch (error) {
+      setTx({ kind: "error", problem: error instanceof FlowQuoteError ? { title: "Not swapped.", body: error.message } : explainPasskeyError(error) });
+    }
+  };
+
+  const line = shown
+    ? `At least ${formatToken(shown.minOut, 6)} · Kuru Flow quote${shown.feeBps > 0n ? ` · ${Number(shown.feeBps) / 100}% fee` : ""}`
+    : amount === null || amount === 0n || tooMuch
+      ? "Kuru Flow finds the best route across Monad's exchanges."
+      : quote.error
+        ? quote.error instanceof FlowQuoteError
+          ? quote.error.message
+          : "Can't reach Kuru Flow right now."
+        : "Asking Kuru Flow for the best route…";
+
+  return (
+    <div className="flex flex-col gap-3">
+      <label htmlFor={`${id}-mon`} className="block rounded-[12px] border border-rule bg-asphalt px-4 pb-2.5 pt-3 focus-within:border-kerb">
+        <span className="flex items-center justify-between text-[12px] text-muted">
+          You swap
+          <span className="font-medium text-road">MON</span>
+        </span>
+        <input
+          id={`${id}-mon`}
+          inputMode="decimal"
+          autoComplete="off"
+          placeholder="0"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="mt-1 w-full bg-transparent font-display text-[26px] font-semibold text-road outline-none tnum placeholder:text-faint [font-variation-settings:'wdth'_75]"
+        />
+        <span className="flex items-center justify-between gap-2 text-[12px] text-muted tnum">
+          <span>{ownerMon !== null ? `Owner key holds ${formatToken(ownerMon, 18, 2)} MON` : "Reading balance…"}</span>
+          {max !== null && max > 0n ? (
+            <button type="button" onClick={() => setText(formatToken(max, 18, 2))} className="-my-3 min-h-11 rounded-full px-3 font-medium text-road hover:bg-high">
+              Max
+            </button>
+          ) : null}
+        </span>
+      </label>
+      <div aria-live="polite" className="rounded-[12px] border border-rule bg-asphalt px-4 pb-2.5 pt-3">
+        <p className="flex items-center justify-between text-[12px] text-muted">
+          You get about
+          <span className="font-medium text-road">AUSD</span>
+        </p>
+        <p className="mt-1 font-display text-[26px] font-semibold text-road tnum [font-variation-settings:'wdth'_75]">{shown ? formatToken(shown.out, 6) : "—"}</p>
+        <p className="text-[12px] text-muted tnum">{line}</p>
+      </div>
+      <Signer role="owner" detail="swaps MON for AUSD through Kuru Flow" />
+      <button type="button" onClick={swap} disabled={busy || !keys || amount === null || amount === 0n || tooMuch || !shown} className="btn btn-owner w-full">
+        <KeyGlyph role="owner" size={20} />
+        {tx.kind === "checking" ? "Checking the quote…" : tx.kind === "signing" ? "Waiting for Face ID…" : tx.kind === "sent" ? "Confirming on Monad…" : "Swap with Face ID"}
+      </button>
+      <Messages tx={tx}>
+        {tooMuch ? <p className="text-muted">Max keeps 10 MON on the key, which Monad reserves on every account, and 0.5 MON for gas.</p> : null}
+        {max === 0n ? <p className="text-muted">Your owner key needs more than 10.5 MON to swap: Monad keeps 10 on every account. Send MON to it on Monad first.</p> : null}
+      </Messages>
+      {got !== null && got > 0n ? (
+        <button type="button" onClick={() => onAdd(got)} className="btn btn-quiet min-h-11 w-full text-[14px]">
+          Add {formatToken(got, 6)} AUSD to Perpl <ArrowRight size={16} aria-hidden="true" />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function Add({ record, state, ownerAusd, prefill, onChanged }: { record: CurbAccountRecord; state: CurbAccountState; ownerAusd: bigint | null; prefill: string; onChanged: () => void }) {
+  const id = useId();
+  const [text, setText] = useState(prefill);
   const [tx, setTx] = useState<Tx>({ kind: "idle" });
   const keys = usePasskeyKeys();
   const amount = parseDecimal(text, AUSD_UNIT);
@@ -144,7 +315,9 @@ function Add({ record, state, ownerAusd, onChanged }: { record: CurbAccountRecor
         {tx.kind === "signing" ? "Waiting for Face ID…" : tx.kind === "sent" ? (tx.step ?? "Confirming on Monad…") : "Add with Face ID"}
       </button>
       <Messages tx={tx}>
-        {ownerAusd === 0n ? <p className="text-muted">Your owner key has no AUSD yet. Swap MON for AUSD on Monad (a DEX like Uniswap) and send it to your owner key.</p> : null}
+        {ownerAusd === 0n && tx.kind !== "confirmed" ? (
+          <p className="text-muted">Your owner key has no AUSD yet. Get some for MON in the Get tab, or send AUSD to your owner key on Monad.</p>
+        ) : null}
         {tooMuch ? <p className="text-muted">That&apos;s more AUSD than your owner key holds.</p> : null}
         {underMin ? <p className="text-muted">Perpl opens an account with at least 10 AUSD.</p> : null}
       </Messages>
