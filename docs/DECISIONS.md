@@ -449,3 +449,13 @@ Append-only. To change a decision, add a new entry that supersedes it.
 
 **Consequences:** No real Face ID prompt appears on screen. The real-device proof is the mainnet transactions and the README.
 **Evidence:** to be recorded with the videos (#45, #52).
+
+## D-035 · Curb doesn't enter Mera's "One Passkey, Many Keys" · 2026-10-11 · accepted
+**Context:** D-021 allowed this bounty only with a non-account idea that could win. On 2026-10-04 the agent offered an encrypted trade journal: a third PRF salt whose key encrypts a note on each trade, stored as ciphertext in trading-key transactions and read back on any device. The submission was saved as ready for judging on 2026-10-11, with about 2.5 days left.
+**Decision:** don't build it. Curb enters Track 1, Kuru, Mera UX and Agora only.
+**Why:**
+- The journal would change the passkey ceremony and the trading session, the code that all four entered prizes judge, in the last days before the deadline. A regression there costs more than this $2,500 bounty is worth.
+- The bounty scores novelty as "the further from passkey wallet, the better". A journal inside a trading app sits close to the wallet.
+**Alternatives:** build it: one more PRF namespace evaluated in the unlock ceremony, WebCrypto encryption, notes found by the nonce rebuild (D-029), a mainnet demo from the user's phone, and a bounty answer. About a day's work, done under deadline pressure.
+**Supersedes:** the agent's 2026-10-04 offer to build it after submission. The user can overrule this.
+**Evidence:** none needed; nothing was built.
