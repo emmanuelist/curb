@@ -1,10 +1,10 @@
 # State
 
-_Last verified: 2026-10-11, branch `9-submitted`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
+_Last verified: 2026-10-11, branch `9-preflight`; repo: https://github.com/emmanuelist/curb (public); live: https://curb-jet.vercel.app_
 
 **Thesis:** A trading key that can't withdraw, and can't trade off Kuru's live order book.
 **Milestone:** M3 · Proof surface done 2026-10-04 (#8; E-038, E-040); now M4 · submitted 2026-10-11, editable until the deadline (E-043) · **Deadline:** 2026-10-13 23:59 ET · 2 days left
-**Next action:** the user's preflight from a phone on cellular data (#9): open https://curb-jet.vercel.app in a fresh Safari tab, sign in with the passkey, and open the README's links. Optional: replace Kuru target segment 3 on the form with the corrected sentence in `internal/submission/form.md`. Curb doesn't enter "One Passkey, Many Keys" (D-035). After the deadline, return the demo funds (#61).
+**Next action:** none before the deadline (14 Oct 04:59 GMT+1); the entry is saved and preflight passed (E-043, E-044). Optional: replace Kuru target segment 3 on the form with the corrected sentence in `internal/submission/form.md`. After the deadline, return the demo funds (#61). Curb doesn't enter "One Passkey, Many Keys" (D-035).
 **Blocked on:** Agora's answer on whether a mobile web app counts (#52).
 
 ## Works
@@ -14,7 +14,7 @@ _Last verified: 2026-10-11, branch `9-submitted`; repo: https://github.com/emman
 | **Agora's flow on mainnet from the user's iPhone (#51, #56):** passkey → create the v2 account → Get 354.08 MON → 11.86 AUSD through Kuru Flow → onto Perpl → long 300 MON at 2× → 10× refused onchain (`LeverageAboveCap`) → a bid past the curb refused onchain (`PerpOffLane`) → closed | 8 txs found by nonce and decoded with traces; account source exact match | E-028 (2026-10-04) |
 | **Demand evidence (#46):** docs/DEMAND.md, with Binance's trade-only key permissions, HAPI's account of the 3Commas drain ($27.3M with trade-only keys) and a mainnet sample showing most Kuru and Perpl order flow signed by gas-only keys for contracts that hold the funds | public sources; `web/scripts/order-flow-sample.mjs` | E-037 (2026-10-04) |
 | **README as a proof surface (#43):** eight mainnet transactions (four onchain refusals) with their status read onchain, addresses, how it works, limits | all 25 links checked | PR #71 (2026-10-04) |
-| **Submitted (#9):** "Ready for judging" on hackathon.monad.xyz, Track 1 with the Kuru, Mera UX and Agora bounties, all four videos | the user's screenshots; links and routes checked | E-043 (2026-10-11) |
+| **Submitted (#9):** "Ready for judging" on hackathon.monad.xyz, Track 1 with the Kuru, Mera UX and Agora bounties, all four videos | the user's screenshots; links and routes checked; phone preflight on cellular | E-043, E-044 (2026-10-11) |
 | **Demo videos, public (#45, #52, D-034):** main 1:54, Agora 1:03, Mera 0:56, pitch 1:15, linked at the top of the README; fork scenes labelled, each refusal followed by its mainnet transaction; titles credit elevenlabs.io | YouTube oEmbed and watch pages | E-040, E-041, E-042 (2026-10-04, 10-11) |
 | **Two labels match what happened (#77):** a Curb refusal's pill says Refused, a venue's Rejected; History names a close by what it traded ("Closed long 79 of 300 MON") | unit tests; production bundle | E-039 (2026-10-04) |
 | **Order latency on mainnet (#44):** tap to receipt from the user's iPhone, median 1.4 s, p90 1.8 s over 17 trading-key transactions (orders median 1.55 s); a close refused when the bid moved led to D-033 (close 0.10% inside the curb), and the next close went through | screenshots matched to transactions by nonce | E-038 (2026-10-04) |
