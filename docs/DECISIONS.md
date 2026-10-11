@@ -459,3 +459,10 @@ Append-only. To change a decision, add a new entry that supersedes it.
 **Alternatives:** build it: one more PRF namespace evaluated in the unlock ceremony, WebCrypto encryption, notes found by the nonce rebuild (D-029), a mainnet demo from the user's phone, and a bounty answer. About a day's work, done under deadline pressure.
 **Supersedes:** the agent's 2026-10-04 offer to build it after submission. The user can overrule this.
 **Evidence:** none needed; nothing was built.
+
+## D-036 · main's history rewritten to drop an attribution line · 2026-10-11 · accepted
+**Context:** the agent appended a co-author line to 8 commit messages on main (2026-10-04 to 10-11), although the owner's settings turn that off and the owner doesn't want it.
+**Decision:** rewrite those 8 messages without the line and force-push main. The code, authors and dates of every commit are unchanged; the 116 commits all remain. History before 2026-10-04 (`a58b9f7` and earlier) keeps its IDs. Commits after it have new IDs, including the merge commits.
+**Old → new IDs:** #78 merge `24056a4` → `83addb7` (cited by E-039); #79 `ad7a026` → `f077197`; #80 `30840d0` → `c815ddd`; #81 `38a90ff` → `0064666`; #82 `4d6155c` → `a93dec2`; #83 `671ae85` → `70d9422`; #84 `168e556` → `3a20671`.
+**Alternatives:** leave the history as it was.
+**Evidence:** GitHub's main is `3a20671`, its 116 commits carry no such line, and its tree is identical to `168e556`'s (2026-10-11).
