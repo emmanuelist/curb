@@ -16,8 +16,9 @@ A contract account, `CurbAccount`, enforces both limits onchain. It reads the ve
 - [Curb in 1:54](https://youtu.be/KTfEX9fxlMQ): the problem, the two keys, the lane, and three refusals, each followed by its mainnet transaction.
 - [Trading perps from a phone, in 1:03](https://youtu.be/FOd77wVufD8): passkey login, AUSD through Kuru Flow, a long on Perpl, 10× refused, the close.
 - [Mera as the account layer, in 0:56](https://youtu.be/F7ZPS6zysI8): one passkey prompt for both keys, the trading session, owner re-prompts, the stateless rebuild.
+- [The pitch, in 1:15](https://youtu.be/3GuCOrq3kNo): who builds Curb, the problem, and why now, from Monad mainnet's own order flow.
 
-The app scenes in the videos were recorded on a fork of Monad mainnet with a test passkey, and each is labelled on screen. The mainnet transactions they show are in the table below.
+The app scenes in the first three were recorded on a fork of Monad mainnet with a test passkey, and each is labelled on screen; the pitch shows the live app on mainnet. The mainnet transactions they show are in the table below.
 
 Built for Monad Metropolis, Track 1: Onchain Finance & Trading.
 
